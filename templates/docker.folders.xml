@@ -45,6 +45,10 @@
   </Overview>
 
   <Changes>
+### 2026.10.27c
+- Fix: on a phone, scrolling the table sideways no longer snaps back.
+- The table now reaches both screen edges on a phone.
+
 ### 2026.10.27b
 - Fix: Unraid's button styling repainted the plugin's controls as oversized orange boxes.
 - The page no longer repeats Unraid's heading.

@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.27b">
-<!ENTITY md5       "d2d68ef7c0cb063d302677b934a719d2">
+<!ENTITY version   "2026.10.27c">
+<!ENTITY md5       "f2f5cb016348d1df9d19067a248892b5">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +21,15 @@
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.27c
+- Fix: on a phone the table jumped back to the left a second after being
+  scrolled sideways. The live CPU/memory stream republishes about once a
+  second and was redrawing the whole table each time; those figures are now
+  written into the existing cells instead. Scroll position and the caret in
+  the filter box also survive a background refresh.
+- The table now reaches both screen edges on a phone instead of sitting
+  inside a gutter, and the header stacks rather than crowding.
+
 ###2026.10.27b
 - Fix: Unraid's own button styling repainted every control in the plugin -
   uppercase text, letter-spacing, a minimum width of 86px and an orange

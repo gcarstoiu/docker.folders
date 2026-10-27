@@ -67,9 +67,35 @@
     }, ms);
   }
 
+  /* A redraw replaces the whole table, which loses two things the viewer
+   * cares about: how far the card is scrolled sideways (the table is wider
+   * than a phone, so this is the only way to read the right-hand columns)
+   * and the caret in the filter box. Both are captured and restored around
+   * the redraw. Live CPU/memory updates avoid the redraw entirely - see
+   * render.updateLive(). */
   function render() {
+    var card = mount.querySelector('.df-card');
+    var scrollLeft = card ? card.scrollLeft : 0;
+
+    var active = document.activeElement;
+    var filterFocused = !!(active && active.classList
+      && active.classList.contains('df-filter-input'));
+    var caret = filterFocused ? [active.selectionStart, active.selectionEnd] : null;
+
     setNativeHidden(!DF.store.state.classic);
     DF.render.draw(mount);
+
+    var newCard = mount.querySelector('.df-card');
+    if (newCard && scrollLeft) newCard.scrollLeft = scrollLeft;
+
+    if (filterFocused) {
+      var input = mount.querySelector('.df-filter-input');
+      if (input) {
+        input.focus();
+        /* setSelectionRange throws on input types that do not support it. */
+        try { input.setSelectionRange(caret[0], caret[1]); } catch (e) {}
+      }
+    }
   }
 
   function start() {
@@ -88,7 +114,9 @@
     loadSprite().then(refresh).then(function () { scheduleRefresh(5000); });
 
     /* Live CPU and memory. The channel republishes about once a second;
-     * if nchan is unavailable those two columns simply stay empty. */
+     * if nchan is unavailable those two columns simply stay empty.
+     * These updates patch the existing cells rather than redrawing. */
+    DF.store.onLive(function () { DF.render.updateLive(mount); });
     DF.api.subscribe('dockerload', function (text) { DF.store.applyLive(text); });
 
     /* Unraid reloads its own table on its own schedule. When it does, our

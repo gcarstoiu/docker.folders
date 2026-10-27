@@ -72,6 +72,39 @@
     mount.appendChild(tip());
   };
 
+  /* Patch only the CPU and memory cells.
+   *
+   * The dockerload channel republishes roughly once a second. Redrawing the
+   * whole table that often discards the card's horizontal scroll offset and
+   * any focus in the filter box - on a phone, where the table must be
+   * scrolled sideways to read it, that meant it snapped back to the left
+   * every second. Nothing else in the row depends on these two numbers, so
+   * they are written straight into the existing cells. */
+  R.updateLive = function (mount) {
+    var S = DF.store;
+    if (!mount || S.state.classic || !S.state.loaded) return;
+
+    mount.querySelectorAll('.df-row-ct[data-container]').forEach(function (row) {
+      var ct = S.container(row.dataset.container);
+      if (!ct) return;
+      setCell(row, '.df-cell-cpu', U.cpu(S.cpu(ct)));
+      setCell(row, '.df-cell-mem', U.memory(S.mem(ct)));
+    });
+
+    mount.querySelectorAll('.df-row-folder[data-folder]').forEach(function (row) {
+      var folder = S.folder(row.dataset.folder);
+      if (!folder) return;
+      var sum = S.summary(folder);
+      setCell(row, '.df-cell-cpu', U.cpu(sum.cpu));
+      setCell(row, '.df-cell-mem', U.memory(sum.mem));
+    });
+  };
+
+  function setCell(row, selector, value) {
+    var cell = row.querySelector(selector);
+    if (cell && cell.textContent !== value) cell.textContent = value;
+  }
+
   /* ---------------------------------------------------------------------
    * Header
    * ------------------------------------------------------------------- */
@@ -246,8 +279,8 @@
 
     /* 5-7 - port, cpu, memory */
     row.appendChild(U.el('div.df-cell.df-mono.df-muted', { text: '—' }));
-    row.appendChild(U.el('div.df-cell.df-mono', { text: U.cpu(sum.cpu) }));
-    row.appendChild(U.el('div.df-cell.df-mono', { text: U.memory(sum.mem) }));
+    row.appendChild(U.el('div.df-cell.df-mono.df-cell-cpu', { text: U.cpu(sum.cpu) }));
+    row.appendChild(U.el('div.df-cell.df-mono.df-cell-mem', { text: U.memory(sum.mem) }));
 
     /* 8 - tri-state autostart */
     row.appendChild(U.el('div.df-cell', null, [
@@ -364,8 +397,8 @@
 
     /* 5-7 */
     row.appendChild(U.el('div.df-cell.df-mono', { text: ct.port ? ':' + ct.port : '—' }));
-    row.appendChild(U.el('div.df-cell.df-mono', { text: U.cpu(S.cpu(ct)) }));
-    row.appendChild(U.el('div.df-cell.df-mono', { text: U.memory(S.mem(ct)) }));
+    row.appendChild(U.el('div.df-cell.df-mono.df-cell-cpu', { text: U.cpu(S.cpu(ct)) }));
+    row.appendChild(U.el('div.df-cell.df-mono.df-cell-mem', { text: U.memory(S.mem(ct)) }));
 
     /* 8 */
     row.appendChild(U.el('div.df-cell', null, [

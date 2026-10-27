@@ -17,6 +17,7 @@
   var U = DF.util;
 
   var listeners = [];
+  var liveListeners = [];
 
   var state = {
     folders: [],
@@ -41,6 +42,15 @@
 
     on: function (fn) { listeners.push(fn); },
     emit: function () { listeners.forEach(function (fn) { fn(state); }); },
+
+    /* CPU and memory arrive about once a second. Rebuilding the table that
+     * often threw away the card's horizontal scroll position (and any focus
+     * in the filter box) roughly once a second, which on a phone - where the
+     * table has to be scrolled sideways - made it snap back to the left
+     * constantly. Live figures therefore get their own channel, and the
+     * renderer patches just those cells in place. */
+    onLive: function (fn) { liveListeners.push(fn); },
+    emitLive: function () { liveListeners.forEach(function (fn) { fn(state); }); },
 
     /* ------------------------------------------------------------------
      * Ingest
@@ -93,7 +103,7 @@
         if (!seen[name]) delete state.live[name];
       });
 
-      S.emit();
+      S.emitLive();
     },
 
     /* ------------------------------------------------------------------

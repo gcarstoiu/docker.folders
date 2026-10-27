@@ -376,6 +376,89 @@ const TESTS = [
     ok(/containers/.test(summary), `summary was: ${summary}`);
   }),
 
+  /* The live CPU/memory stream republishes about once a second. It used to
+   * trigger a full redraw, which reset the card's horizontal scroll - on a
+   * phone the table snapped back to the left every second. */
+  t('a live stats update does not reset the horizontal scroll', async () => {
+    await page.setViewport({ width: 420, height: 820, isMobile: true });
+    /* Note: no nostream here - the live channel has to be running. */
+    await page.goto(`${BASE}/_reset`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/?folded=all`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.df-card');
+
+    await page.$eval('.df-card', (n) => { n.scrollLeft = 400; });
+    const before = await page.$eval('.df-card', (n) => n.scrollLeft);
+    ok(before > 0, 'could not scroll the card sideways to begin with');
+
+    /* Count table rebuilds. Scroll position alone is not enough of a test:
+     * app.js also restores scrollLeft around a redraw, so the symptom is
+     * masked even when the table IS being thrown away every second. What
+     * must be true is that a live tick does not rebuild the table at all. */
+    await page.evaluate(() => {
+      window.__rebuilds = 0;
+      const root = document.getElementById('df-root');
+      new MutationObserver((records) => {
+        for (const r of records) {
+          for (const node of r.removedNodes) {
+            if (node.nodeType === 1 && node.classList.contains('df-card')) window.__rebuilds++;
+          }
+        }
+      }).observe(root, { childList: true });
+    });
+
+    /* Long enough for several dockerload ticks and one data poll. */
+    await new Promise((r) => setTimeout(r, 6500));
+
+    const rebuilds = await page.evaluate(() => window.__rebuilds);
+    /* ~6 live ticks happen in that window. Only the 5s data poll may redraw,
+     * so anything above a couple means live updates are redrawing again. */
+    ok(rebuilds <= 2, `the table was rebuilt ${rebuilds} times in 6.5s`);
+
+    const after = await page.$eval('.df-card', (n) => n.scrollLeft);
+    ok(after === before, `scroll moved from ${before} to ${after}`);
+
+    /* And the live figures must actually still be arriving. */
+    const cpu = await page.$$eval('.df-cell-cpu', (n) => n.map((x) => x.textContent));
+    ok(cpu.some((v) => v !== '\u2014'), 'no live CPU values arrived at all');
+
+    await page.setViewport({ width: 1440, height: 1000, isMobile: false });
+  }),
+
+  t('typing in the filter survives a background refresh', async () => {
+    await fresh();
+    await page.focus('.df-filter-input');
+    await page.type('.df-filter-input', 'son');
+    await new Promise((r) => setTimeout(r, 5600));   // past one poll
+    const focused = await page.evaluate(() =>
+      document.activeElement && document.activeElement.className);
+    ok(/df-filter-input/.test(focused || ''), `focus moved to "${focused}"`);
+    ok(await page.$eval('.df-filter-input', (n) => n.value) === 'son', 'the typed text was lost');
+  }),
+
+  t('the table reaches both screen edges on a phone', async () => {
+    await page.setViewport({ width: 420, height: 820, isMobile: true });
+    await fresh('&folded=all');
+
+    const box = await page.$eval('.df-card', (n) => {
+      const r = n.getBoundingClientRect();
+      return { left: r.left, right: r.right, width: r.width };
+    });
+    ok(Math.abs(box.left) <= 1, `card starts ${box.left}px from the left edge`);
+    ok(Math.abs(box.right - 420) <= 1, `card ends at ${box.right}px, viewport is 420px`);
+
+    /* The table itself stays wide and scrollable - that is the design. */
+    const scrollable = await page.$eval('.df-card', (n) => n.scrollWidth > n.clientWidth);
+    ok(scrollable, 'the card should scroll horizontally on a phone');
+
+    /* ...and the page itself must not scroll sideways. */
+    const bodyOverflow = await page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    ok(bodyOverflow <= 1, `the page itself scrolls sideways by ${bodyOverflow}px`);
+
+    await shot('15-mobile');
+    await page.setViewport({ width: 1440, height: 1000, isMobile: false });
+  }),
+
   t('every control is reachable by keyboard', async () => {
     await fresh('&folded=all');
     const reached = await page.evaluate(() => {

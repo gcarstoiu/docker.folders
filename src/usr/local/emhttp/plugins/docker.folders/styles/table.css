@@ -477,6 +477,46 @@
 /* ---------------------------------------------------------------------------
  * Reduced motion
  * ------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------
+ * Phones
+ *
+ * The table is deliberately wider than a phone (min-width 1100px, spec 3.1)
+ * and scrolls sideways inside its card. Every pixel of width therefore
+ * counts, and a 16px gutter on each side - plus whatever padding Unraid's
+ * own page container adds - wastes a visible slice of a narrow screen.
+ *
+ * margin-inline: calc(50% - 50vw) pulls the card out to the viewport edges
+ * whatever the ancestors' padding happens to be, without this code having to
+ * know what that padding is. It is confined to this media query: on desktop
+ * 100vw includes the scrollbar, which would overhang.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .df-root { padding-bottom: 16px; }
+
+  .df-root .df-head {
+    padding: 4px 12px 12px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .df-root .df-head-actions { gap: 8px; }
+  .df-root .df-filter { flex: 1 1 auto; }
+  .df-root .df-filter-input { width: 100%; }
+
+  .df-root .df-card {
+    margin-inline: calc(50% - 50vw);
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    /* Momentum scrolling, and keep the sideways scroll from turning into a
+       browser back-gesture on the first swipe. */
+    overscroll-behavior-x: contain;
+  }
+
+  .df-root .df-notice { margin-inline: 12px; }
+  .df-root .df-tip { padding: 12px 12px 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .df-root *,
 .df-root *::before,
