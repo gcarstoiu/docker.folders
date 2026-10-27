@@ -580,7 +580,7 @@
       if (!extra.length) return;
 
       box.appendChild(U.el('span.df-ed-chips-label', { text: 'Will also add:' }));
-      extra.forEach(function (n) { box.appendChild(U.el('span.df-chip', { text: n })); });
+      extra.forEach(function (n) { box.appendChild(U.el('span.df-matchchip', { text: n })); });
     }
 
     function behaviourSection() {

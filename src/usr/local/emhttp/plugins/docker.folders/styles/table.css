@@ -207,12 +207,6 @@
 }
 .df-root .df-notice-error { color: var(--df-danger-fg); border-color: var(--df-danger-border); }
 
-.df-root .df-tip {
-  padding: 14px 16px 0;
-  font-family: var(--df-font-mono);
-  font-size: var(--df-fs-caption);
-  color: var(--df-text-faint);
-}
 
 /* ---------------------------------------------------------------------------
  * Folder row
@@ -478,6 +472,105 @@
  * Reduced motion
  * ------------------------------------------------------------------------- */
 /* ---------------------------------------------------------------------------
+ * Global action bar
+ *
+ * The classic Docker view's eight actions, in a card of its own under the
+ * table. The four lifecycle buttons are a joined segmented control so they
+ * read as one set acting on everything, under a label that says so.
+ * ------------------------------------------------------------------------- */
+.df-root .df-actionbar {
+  margin: 14px 16px 0;
+  padding: 10px 12px 11px;
+  border: 1px solid var(--df-border-card);
+  border-radius: var(--df-r-card);
+  background: var(--df-bg-card);
+}
+
+.df-root .df-grouplbl {
+  font-family: var(--df-font-mono);
+  font-size: var(--df-fs-eyebrow);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--df-text-faint);
+  padding: 0 0 8px 2px;
+}
+
+.df-root .df-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.df-root .df-act-grow { flex: 1 1 auto; }
+
+/* ---- icon-only button (the overflow) ---- */
+.df-root .df-act {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: var(--df-r-control);
+  color: var(--df-text-muted);
+}
+.df-root .df-act:hover { background: var(--df-bg-hover-ghost); color: var(--df-text); }
+.df-root .df-act svg { width: 18px; height: 18px; }
+
+/* ---- icon + label chip ---- */
+.df-root .df-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px; padding: 0 12px;
+  border: 1px solid var(--df-border-control);
+  border-radius: var(--df-r-control);
+  color: var(--df-text);
+  font-size: var(--df-fs-small);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.df-root .df-chip:hover:not(:disabled) { background: var(--df-bg-hover-ghost); }
+.df-root .df-chip:disabled { opacity: .4; cursor: not-allowed; }
+.df-root .df-chip svg { width: 16px; height: 16px; color: var(--df-text-muted); }
+
+/* Add container, in Unraid's brand orange. The label is near-black, not
+   white: white on this orange measures 2.32:1. */
+.df-root .df-chip-brand {
+  background: var(--df-brand);
+  border-color: var(--df-brand-border);
+  color: var(--df-on-brand);
+  font-weight: 600;
+}
+.df-root .df-chip-brand svg { color: var(--df-on-brand); }
+.df-root .df-chip-brand:hover:not(:disabled) {
+  background: var(--df-brand-hover);
+  border-color: var(--df-brand-hover);
+}
+
+.df-root .df-chip-warn { border-color: var(--df-warn-border); color: var(--df-warn-fg); }
+.df-root .df-chip-warn svg { color: var(--df-warn-fg); }
+.df-root .df-chip-warn:hover:not(:disabled) { background: var(--df-warn-bg); }
+
+/* ---- the joined lifecycle group ---- */
+.df-root .df-seggroup { display: inline-flex; }
+
+.df-root .df-seg {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 36px; padding: 0 12px;
+  border: 1px solid var(--df-border-control);
+  border-left-width: 0;
+  color: var(--df-text);
+  font-size: var(--df-fs-small);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.df-root .df-seg:first-child {
+  border-left-width: 1px;
+  border-radius: var(--df-r-control) 0 0 var(--df-r-control);
+}
+.df-root .df-seg:last-child { border-radius: 0 var(--df-r-control) var(--df-r-control) 0; }
+.df-root .df-seg:hover:not(:disabled) { background: var(--df-bg-hover-ghost); }
+.df-root .df-seg:disabled { opacity: .4; cursor: not-allowed; }
+.df-root .df-seg svg { width: 16px; height: 16px; color: var(--df-text-muted); }
+/* The outline must not be swallowed by the neighbouring segment's border. */
+.df-root .df-seg:focus-visible { position: relative; z-index: 1; }
+
+/* ---------------------------------------------------------------------------
  * Phones
  *
  * The table is deliberately wider than a phone (min-width 1100px, spec 3.1)
@@ -514,8 +607,15 @@
   }
 
   .df-root .df-notice { margin-inline: 12px; }
-  .df-root .df-tip { padding: 12px 12px 0; }
-}
+
+  .df-root .df-actionbar { margin: 12px 12px 0; }
+  /* The segmented group would otherwise force the bar wider than the
+     screen; let it take a line of its own and share it evenly. */
+  .df-root .df-seggroup { display: flex; width: 100%; }
+  .df-root .df-seg { flex: 1 1 0; justify-content: center; padding: 0 6px; }
+  .df-root .df-chip { flex: 1 1 auto; justify-content: center; }
+  .df-root .df-act-grow { display: none; }
+  }
 
 @media (prefers-reduced-motion: reduce) {
   .df-root *,

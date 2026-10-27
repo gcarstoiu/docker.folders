@@ -459,6 +459,89 @@ const TESTS = [
     await page.setViewport({ width: 1440, height: 1000, isMobile: false });
   }),
 
+  t('the action bar carries every classic Docker action', async () => {
+    await fresh();
+    ok(await count('.df-tip') === 0, 'the old tip line should be gone');
+    ok(await count('.df-actionbar') === 1, 'the action bar should be present');
+
+    ok((await text('.df-grouplbl')) === 'All containers',
+       'the lifecycle group must state its scope');
+
+    const labels = await page.$$eval('.df-actionbar button',
+      (n) => n.map((b) => (b.textContent || b.getAttribute('aria-label') || '').trim()));
+
+    for (const want of ['Add container', 'Start', 'Stop', 'Pause', 'Resume', 'Check']) {
+      ok(labels.some((l) => l === want), `action bar is missing "${want}" (had ${JSON.stringify(labels)})`);
+    }
+    ok(labels.some((l) => /^Update/.test(l)), 'action bar is missing Update');
+
+    /* Container size is the one classic action kept in the overflow. */
+    await page.click('.df-actionbar .df-act');
+    await page.waitForSelector('.df-menu', { timeout: 3000 });
+    const items = await page.$$eval('.df-menu-item .df-menu-label', (n) => n.map((x) => x.textContent));
+    ok(items.some((i) => /Container size/.test(i)), `overflow was ${JSON.stringify(items)}`);
+    await page.keyboard.press('Escape');
+
+    await shot('16-action-bar');
+  }),
+
+  t('Add container uses Unraid\'s brand orange', async () => {
+    await fresh();
+    const style = await page.$eval('.df-chip-brand', (n) => {
+      const s = getComputedStyle(n);
+      return { bg: s.backgroundColor, color: s.color };
+    });
+    /* #ff8c2f - --orange-500 in the webGUI palette. */
+    ok(style.bg === 'rgb(255, 140, 47)', `background was ${style.bg}`);
+    /* Near-black, not white: white on this orange is 2.32:1. */
+    ok(style.color !== 'rgb(255, 255, 255)', 'the label must not be white on orange');
+  }),
+
+  t('Stop all and Pause all confirm before acting', async () => {
+    await fresh();
+    const before = await page.evaluate(async () => {
+      const d = await (await fetch('/plugins/docker.folders/include/Data.php')).json();
+      return d.stats.running;
+    });
+
+    await clickButton('.df-seggroup', 'Stop');
+    await page.waitForSelector('.df-dialog', { timeout: 3000 });
+    const title = await text('.df-dialog-title');
+    ok(/every container/i.test(title), `confirmation title was: ${title}`);
+
+    /* Cancelling must change nothing. */
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('.df-dialog'), { timeout: 3000 });
+    const after = await page.evaluate(async () => {
+      const d = await (await fetch('/plugins/docker.folders/include/Data.php')).json();
+      return d.stats.running;
+    });
+    ok(after === before, `cancelling stopped containers anyway (${before} -> ${after})`);
+    await shot('17-stop-all-confirm');
+  }),
+
+  t('a global stop runs in reverse boot order', async () => {
+    await fresh();
+    await clickButton('.df-seggroup', 'Stop');
+    await page.waitForSelector('.df-dialog');
+    await page.evaluate(() => {
+      [...document.querySelectorAll('.df-dialog-foot button')]
+        .find((b) => /^Stop all/.test(b.textContent.trim())).click();
+    });
+
+    await page.waitForSelector('.df-panel', { timeout: 3000 });
+    const listed = await page.$$eval('.df-panel-name', (n) => n.map((x) => x.textContent));
+    ok(listed.length > 1, 'expected several containers in the job');
+
+    await page.waitForFunction(() => document.querySelector('.df-panel-foot') !== null,
+                               { timeout: 60000 });
+    const running = await page.evaluate(async () => {
+      const d = await (await fetch('/plugins/docker.folders/include/Data.php')).json();
+      return d.stats.running;
+    });
+    ok(running === 0, `${running} containers still running after Stop all`);
+  }),
+
   t('every control is reachable by keyboard', async () => {
     await fresh('&folded=all');
     const reached = await page.evaluate(() => {

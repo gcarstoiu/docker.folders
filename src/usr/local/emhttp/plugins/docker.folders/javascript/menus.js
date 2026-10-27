@@ -201,6 +201,25 @@
   };
 
   /* ---------------------------------------------------------------------
+   * The action bar's overflow
+   *
+   * Container Size is the one classic action with no place in the bar: it is
+   * rarely used and opens a view of its own. It lives here rather than being
+   * dropped, so nothing from the classic row is lost.
+   * ------------------------------------------------------------------- */
+  M.globalMore = function (trigger) {
+    return show(trigger, 'right', 'All containers', [
+      { text: 'Container size\u2026',
+        hint: 'disk usage',
+        action: function () { DF.actions.containerSize(); } },
+      { divider: true },
+      { text: 'Classic view',
+        hint: DF.store.state.classic ? 'on' : 'off',
+        action: function () { DF.store.setClassic(!DF.store.state.classic); } }
+    ]);
+  };
+
+  /* ---------------------------------------------------------------------
    * Container menu (spec 6.2)
    *
    * Reachable from the row's kebab AND from a folded folder's icon strip.

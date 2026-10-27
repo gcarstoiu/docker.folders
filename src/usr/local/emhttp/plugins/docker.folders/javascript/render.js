@@ -69,7 +69,7 @@
 
     card.appendChild(body);
     mount.appendChild(card);
-    mount.appendChild(tip());
+    mount.appendChild(actionBar());
   };
 
   /* Patch only the CPU and memory cells.
@@ -195,10 +195,79 @@
     return U.el('div.df-notice' + (cls ? '.' + cls : ''), { text: text });
   }
 
-  function tip() {
-    return U.el('div.df-tip', {
-      text: "Tip: a folder's icon opens its commands · each container icon opens that container's menu · the folder name unfolds it"
-    });
+
+  /* ---------------------------------------------------------------------
+   * Global action bar
+   *
+   * The eight actions from Unraid's classic Docker view, which our table
+   * otherwise hides along with the native button row.
+   *
+   * The four lifecycle actions are one joined segmented control under an
+   * "All containers" label. That label is not decoration: the buttons say
+   * "Stop", not "Stop All", and without it a bar sitting under a table of
+   * folders reads as if it acts on a folder. Stop and Pause also confirm
+   * first, because they hit every container on the server.
+   * ------------------------------------------------------------------- */
+  function actionBar() {
+    var S = DF.store;
+    var busy = DF.jobs.running();
+    var cts = S.state.containers;
+
+    var running = cts.filter(function (c) { return c.state === 'running'; }).length;
+    var paused  = cts.filter(function (c) { return c.state === 'paused'; }).length;
+    var stopped = cts.filter(function (c) { return c.state === 'stopped'; }).length;
+    var updates = cts.filter(function (c) { return c.update === 1; }).length;
+
+    var segs = U.el('div.df-seggroup', { role: 'group', 'aria-label': 'All containers' }, [
+      seg('play',   'Start',  'Start every stopped container', busy || !stopped,
+          function () { DF.actions.globalLifecycle('start'); }),
+      seg('stop',   'Stop',   'Stop every running container',  busy || !(running + paused),
+          function () { DF.actions.globalLifecycle('stop'); }),
+      seg('pause',  'Pause',  'Pause every running container', busy || !running,
+          function () { DF.actions.globalLifecycle('pause'); }),
+      seg('resume', 'Resume', 'Resume every paused container', busy || !paused,
+          function () { DF.actions.globalLifecycle('resume'); })
+    ]);
+
+    var row = U.el('div.df-actions', null, [
+      chip('plus', 'Add container', 'brand', false, function () { DF.actions.addContainer(); }),
+      segs,
+      U.el('span.df-act-grow'),
+      chip('check', 'Check', null, busy, function () { DF.actions.checkUpdates(null); }),
+      updates
+        ? chip('download', 'Update ' + updates, 'warn', busy,
+               function () { DF.actions.globalUpdate(); })
+        : chip('download', 'Update', null, true, function () {}),
+      U.el('button.df-act', {
+        type: 'button',
+        'aria-label': 'More actions',
+        'aria-haspopup': 'menu',
+        onClick: function (e) { DF.menus.globalMore(e.currentTarget); }
+      }, [U.glyph('more')])
+    ]);
+
+    return U.el('div.df-actionbar', null, [
+      U.el('div.df-grouplbl', { text: 'All containers' }),
+      row
+    ]);
+  }
+
+  function chip(icon, label, tone, disabled, onClick) {
+    return U.el('button.df-chip' + (tone ? '.df-chip-' + tone : ''), {
+      type: 'button',
+      disabled: disabled || false,
+      onClick: onClick
+    }, [U.glyph(icon), U.el('span', { text: label })]);
+  }
+
+  function seg(icon, label, title, disabled, onClick) {
+    return U.el('button.df-seg', {
+      type: 'button',
+      title: title,
+      'aria-label': title,
+      disabled: disabled || false,
+      onClick: onClick
+    }, [U.glyph(icon), U.el('span', { text: label })]);
   }
 
   /* ---------------------------------------------------------------------

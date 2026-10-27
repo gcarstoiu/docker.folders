@@ -71,6 +71,11 @@ df_ok([
     'folders'    => count($outFolders),
     'updates'    => $updates,
   ],
+  /* Unraid's own container start order, as recorded in the autostart file.
+   * Global Start/Stop from the action bar follow it, so a manual "start
+   * everything" matches what happens at boot. */
+  'order'      => df_autostart_order(),
+
   /* Lets the client notice a server-side change it did not make. */
   'revision'   => is_file(DF_FOLDERS) ? (int)@filemtime(DF_FOLDERS) : 0,
 ]);

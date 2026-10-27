@@ -72,6 +72,17 @@
   --df-danger-border:  #5A2A2A;
   --df-on-danger:      #2A0A0A;
 
+  /* ---- Unraid brand orange ----
+     --orange-500 / --orange-800 from the webGUI's own palette
+     (plugins/dynamix/styles/default-color-palette.css).
+     White on this fill measures 2.32:1, so the label is near-black instead;
+     the darker orange supplies the edge, which the fill alone cannot give
+     on a white card (2.32:1, below the 3:1 a control boundary needs). */
+  --df-brand:        #ff8c2f;
+  --df-brand-hover:  #f15a2c;
+  --df-brand-border: #f15a2c;
+  --df-on-brand:     #1D1006;
+
   /* ---- switch ---- */
   --df-switch-on:      #3D7BE0;
   --df-switch-off:     #6B717A;

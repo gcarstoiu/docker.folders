@@ -65,6 +65,9 @@ PAIRS = [
     ("--df-accent-soft-fg", "--df-accent-soft-bg", TEXT, "accent chip"),
     ("--df-on-accent",      "--df-accent",     TEXT, "primary button label"),
     ("--df-accent-chip-fg", "--df-bg-card",    TEXT, "chip text on the card"),
+    ("--df-on-brand",       "--df-brand",      TEXT, "'Add container' label"),
+    ("--df-on-brand",       "--df-brand-hover",TEXT, "'Add container' label, hovered"),
+    ("--df-brand-border",   "--df-bg-card",    UI,   "'Add container' edge"),
     # Non-text indicators: shape also carries the meaning, so 3:1 applies.
     ("--df-running",        "--df-bg-folder",  UI,   "running dot"),
     ("--df-paused",         "--df-bg-folder",  UI,   "paused bars"),

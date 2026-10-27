@@ -141,6 +141,98 @@
   };
 
   /* ---------------------------------------------------------------------
+   * Global actions - the classic Docker view's button row
+   *
+   * These go through the same job engine as the folder commands, so the
+   * one-job-at-a-time rule, the progress panel and the per-container error
+   * reporting all behave identically. The alternative, Unraid's own
+   * ContainerManager.php, acts on everything in one opaque request with no
+   * progress and no way to report which container failed.
+   *
+   * Order comes from Unraid's autostart file, which is the real boot order
+   * and which this plugin already writes folder order into. Containers not
+   * listed there follow, name-sorted.
+   * ------------------------------------------------------------------- */
+
+  /* Stop and Pause hit every container on the server, and the buttons are
+   * labelled with one word. Confirm before doing it. */
+  var NEEDS_CONFIRM = {
+    stop:  { title: 'Stop every container?',
+             body: 'Every running and paused container on this server will be stopped, '
+                 + 'in reverse start order. Nothing is removed, and autostart settings '
+                 + 'are unchanged.',
+             confirm: 'Stop all' },
+    pause: { title: 'Pause every container?',
+             body: 'Every running container on this server will be paused. '
+                 + 'Paused containers keep their memory and can be resumed.',
+             confirm: 'Pause all' }
+  };
+
+  A.globalLifecycle = function (action) {
+    var targets = orderedTargets(action);
+
+    if (!targets.length) {
+      DF.jobs.toast('Nothing to ' + action);
+      return;
+    }
+
+    var ask = NEEDS_CONFIRM[action];
+    if (!ask) { runGlobal(action, targets); return; }
+
+    DF.dialog.confirm({
+      title: ask.title,
+      body: ask.body,
+      list: targets.map(function (ct) { return { text: ct.name, note: ct.state }; }),
+      confirmText: ask.confirm + ' (' + targets.length + ')',
+      tone: 'danger',
+      onConfirm: function () { runGlobal(action, targets); }
+    });
+  };
+
+  function runGlobal(action, targets) {
+    var steps = targets.map(function (ct) { return step(ct, action); });
+    DF.jobs.run(TITLES[action] + ' all containers', targets.map(nameOf), steps);
+  }
+
+  /* Targets for a global action, in boot order. Stop runs in reverse, the
+   * same rule a folder uses. */
+  function orderedTargets(action) {
+    var all = DF.store.state.containers.slice();
+    var order = DF.store.state.order || [];
+
+    all.sort(function (a, b) {
+      var ia = order.indexOf(a.name), ib = order.indexOf(b.name);
+      if (ia === -1 && ib === -1) return strcmp(a.name, b.name);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+
+    var targets = targetsFor(all, action);
+    return action === 'stop' ? targets.reverse() : targets;
+  }
+
+  function strcmp(a, b) { return a < b ? -1 : (a > b ? 1 : 0); }
+
+  /* Update every container that has one waiting. */
+  A.globalUpdate = function () {
+    var targets = DF.store.state.containers.filter(function (c) { return c.update === 1; });
+    if (!targets.length) { DF.jobs.toast('Everything is up to date'); return; }
+    DF.jobs.update('Updating all containers', targets);
+  };
+
+  /* Unraid owns these two screens; there is nothing to reimplement. */
+  A.addContainer = function () {
+    if (typeof root.addContainer === 'function') { root.addContainer(); return; }
+    DF.jobs.toast('Unraid\'s Add Container page is unavailable', 'error');
+  };
+
+  A.containerSize = function () {
+    if (typeof root.contSizes === 'function') { root.contSizes(); return; }
+    DF.jobs.toast('Unraid\'s Container Size view is unavailable', 'error');
+  };
+
+  /* ---------------------------------------------------------------------
    * Confirmations (spec 8)
    * ------------------------------------------------------------------- */
   A.confirmForceUpdate = function (folder) {

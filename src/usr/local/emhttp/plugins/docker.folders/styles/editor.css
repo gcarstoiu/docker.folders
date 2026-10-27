@@ -316,7 +316,10 @@
 /* ---- rule feedback ---- */
 .df-root .df-ed-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .df-root .df-ed-chips-label { font-size: var(--df-fs-caption); color: var(--df-text-dim); }
-.df-root .df-chip {
+/* A pill listing a container the auto-add rule also matches. Named apart
+   from the action bar's .df-chip button: this stylesheet loads last, so a
+   shared name repainted every button in that bar. */
+.df-root .df-matchchip {
   padding: 3px 9px;
   border-radius: var(--df-r-pill);
   background: var(--df-accent-soft-bg);

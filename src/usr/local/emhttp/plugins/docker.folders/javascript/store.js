@@ -23,6 +23,9 @@
     folders: [],
     containers: [],
     loose: [],
+    /* Unraid's autostart order - the real boot order, and what a global
+     * Start/Stop follows. */
+    order: [],
     stats: { containers: 0, running: 0, folders: 0, updates: 0 },
 
     byName: {},          // name -> container
@@ -59,6 +62,7 @@
       state.folders    = payload.folders || [];
       state.containers = payload.containers || [];
       state.loose      = payload.loose || [];
+      state.order      = payload.order || [];
       state.stats      = payload.stats || state.stats;
       state.loaded     = true;
       state.error      = null;
