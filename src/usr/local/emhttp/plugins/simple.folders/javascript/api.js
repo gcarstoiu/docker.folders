@@ -87,6 +87,18 @@
   API.moveFolder   = function (id, d)  { return post(PLUGIN + '/Folders.php', { action: 'move',   id: id, direction: d }); };
   API.assign       = function (ct, id) { return post(PLUGIN + '/Folders.php', { action: 'assign', container: ct, folder: id || '' }); };
 
+  /* Dragging needs to express an arbitrary order, which move-up/move-down
+   * cannot, so these post the whole list or an explicit position. */
+  API.reorderMembers = function (id, names) {
+    return post(PLUGIN + '/Folders.php', { action: 'reorder', id: id, members: names.join(',') });
+  };
+  API.sortFolders = function (ids) {
+    return post(PLUGIN + '/Folders.php', { action: 'sort', ids: ids.join(',') });
+  };
+  API.insert = function (ct, id, index) {
+    return post(PLUGIN + '/Folders.php', { action: 'insert', container: ct, folder: id, index: index });
+  };
+
   API.applyAutostart = function (id)   { return post(PLUGIN + '/Autostart.php', { action: 'apply', id: id }); };
 
   API.searchIcons    = function (q)    { return post(PLUGIN + '/Icons.php', { action: 'search',   query: q }); };

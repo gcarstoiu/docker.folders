@@ -35,6 +35,8 @@
 
     A folder's icon opens its commands: start, stop, restart, pause, resume, check for updates, update, force update, and open every WebUI. Each runs across the whole folder, one container at a time, honouring the folder's start order, its delay between starts, and reverse-order stop. Only one job runs at a time. Clicking any icon in a folded folder opens that single container's menu instead.
 
+    Rearrange by dragging: a grip at the left of each row moves a container into a folder, sets where it starts, or takes it out again, and drags folders into the order you want. It works by touch too, and everything it does is also in the menus.
+
     Folders can fill themselves: give one a name pattern, or label a container simple.folders=&lt;folder&gt;, and matching containers join automatically, including ones created later.
 
     Folder start order drives Unraid's own autostart order rather than shadowing it, so containers come up at boot in the same order the folder uses. Folder icons come from a built-in set, from one of the member containers, or downloaded and stored locally so they still render with no internet.
@@ -45,6 +47,10 @@
   </Overview>
 
   <Changes>
+### 2026.10.28b
+- Drag and drop containers between folders, and drag folders to reorder them.
+- Fix: no more flash of the stock Docker table on load.
+
 ### 2026.10.28a
 - Fix: 2026.10.28 would not install due to a malformed plugin manifest.
 

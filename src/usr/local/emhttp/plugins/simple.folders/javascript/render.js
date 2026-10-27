@@ -292,7 +292,10 @@
       disabled: !!S.state.filter,
       onClick: function () { S.toggle(folder.id); }
     }, [U.el('span.sf-chevron-mark', { 'aria-hidden': 'true' })]);
-    row.appendChild(U.el('div.sf-cell.sf-cell-tree', null, [chevron]));
+    row.appendChild(U.el('div.sf-cell.sf-cell-tree', null, [
+      chevron,
+      grip('folder', folder.id, 'Drag to reorder folder ' + folder.name)
+    ]));
 
     /* 2 - icon, name, count, and either the icon strip or the sub-line */
     var icon = U.el('button.sf-folder-icon', {
@@ -426,9 +429,11 @@
       'data-container': ct.name
     });
 
-    /* 1 - tree line when nested */
+    /* 1 - tree line when nested, plus the drag grip */
     row.appendChild(U.el('div.sf-cell.sf-cell-tree', null, [
-      inFolder ? U.el('span.sf-tree', { 'aria-hidden': 'true' }) : null
+      inFolder ? U.el('span.sf-tree', { 'aria-hidden': 'true' }) : null,
+      grip('container', ct.name,
+           'Drag to move ' + ct.name + ' between folders')
     ]));
 
     /* 2 - start-order number, icon, name, image */
@@ -552,6 +557,25 @@
       track,
       U.el('span.sf-switch-label', { text: opts.label })
     ]);
+  }
+
+  /* The drag handle. A real button so it is focusable and announced, but it
+   * does nothing on click: dragging has no keyboard equivalent, and the same
+   * moves are all available from the menus, which is the route that works
+   * without a pointer. */
+  function grip(kind, key, label) {
+    var node = U.el('button.sf-grip', {
+      type: 'button',
+      tabindex: '-1',
+      'aria-hidden': 'true',
+      title: label,
+      /* Stop the browser's own text/image dragging from interfering. */
+      draggable: 'false',
+      onClick: function (e) { e.preventDefault(); }
+    }, [U.el('span.sf-grip-dots', { 'aria-hidden': 'true' })]);
+
+    if (SF.dnd) SF.dnd.attach(node, kind, key);
+    return node;
   }
 
   function kebab(label, onClick) {

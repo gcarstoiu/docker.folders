@@ -155,6 +155,85 @@ try {
       sf_ok();
       break;
 
+    /* ------------------------------------------------------------------
+     * Set a folder's member order outright.
+     *
+     * "move up / move down" can express any reordering one step at a time;
+     * a drag cannot, so it needs to post the whole list. Only containers
+     * already explicitly in this folder are accepted - a drag must not be
+     * able to pull in a container that is only here because of a rule or a
+     * label, since the order of those is derived, not stored.
+     * ------------------------------------------------------------------ */
+    case 'reorder':
+      $index = sf_find_folder($folders, (string)($_POST['id'] ?? ''));
+      if ($index === null) sf_fail('That folder no longer exists');
+
+      $wanted = [];
+      foreach (explode(',', (string)($_POST['members'] ?? '')) as $raw) {
+        $raw = trim($raw);
+        if ($raw === '') continue;
+        $wanted[] = sf_clean_container_name($raw);
+      }
+
+      $current = $folders[$index]['members'];
+      $ordered = [];
+      foreach ($wanted as $name) {
+        if (in_array($name, $current, true) && !in_array($name, $ordered, true)) $ordered[] = $name;
+      }
+      /* Anything the client did not mention keeps its place at the end,
+       * so a stale page cannot silently drop members. */
+      foreach ($current as $name) {
+        if (!in_array($name, $ordered, true)) $ordered[] = $name;
+      }
+
+      $folders[$index]['members'] = $ordered;
+      if (!sf_store_save($folders)) sf_fail('Could not write to '.SF_FOLDERS, 500);
+      sf_ok(['members' => $ordered]);
+      break;
+
+    /* ------------------------------------------------------------------
+     * Set the order of the folders themselves.
+     * ------------------------------------------------------------------ */
+    case 'sort':
+      $wanted = array_filter(array_map('trim', explode(',', (string)($_POST['ids'] ?? ''))));
+
+      $byId = [];
+      foreach ($folders as $f) $byId[$f['id']] = $f;
+
+      $sorted = [];
+      foreach ($wanted as $id) {
+        if (isset($byId[$id])) { $sorted[] = $byId[$id]; unset($byId[$id]); }
+      }
+      foreach ($byId as $f) $sorted[] = $f;        // anything unmentioned, in place
+
+      if (!sf_store_save($sorted)) sf_fail('Could not write to '.SF_FOLDERS, 500);
+      sf_ok(['count' => count($sorted)]);
+      break;
+
+    /* ------------------------------------------------------------------
+     * Move a container into a folder AT a position - what a drop onto a
+     * particular row means, as opposed to "assign", which appends.
+     * ------------------------------------------------------------------ */
+    case 'insert':
+      $container = sf_clean_container_name((string)($_POST['container'] ?? ''));
+      $target    = (string)($_POST['folder'] ?? '');
+      $at        = max(0, (int)($_POST['index'] ?? 0));
+
+      if ($target === '') sf_fail('No destination folder given');
+      if (sf_find_folder($folders, $target) === null) sf_fail('That folder no longer exists');
+
+      $folders = sf_detach_members($folders, [$container], '');
+      $index = sf_find_folder($folders, $target);
+
+      $members = $folders[$index]['members'];
+      $at = min($at, count($members));
+      array_splice($members, $at, 0, [$container]);
+      $folders[$index]['members'] = $members;
+
+      if (!sf_store_save($folders)) sf_fail('Could not write to '.SF_FOLDERS, 500);
+      sf_ok();
+      break;
+
     /* ------------------------------------------------------------------ */
     default:
       sf_fail('Unknown action');

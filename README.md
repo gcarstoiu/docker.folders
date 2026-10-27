@@ -34,6 +34,12 @@ Supports **Unraid 7.2 – 7.4**.
   searched across Dashboard Icons and selfh.st — both libraries' published
   indexes, so results are real files rather than guessed names — and stored
   locally so they still render with no internet.
+- **Drag to rearrange.** A grip at the left of each row: drag a container onto
+  a folder to move it there, between two members to set where it starts in the
+  folder, or down to "Not in a folder" to take it out. Drag a folder to reorder
+  the folders. Pointer Events, so touch works as well as a mouse — and every
+  one of those moves is also in the menus and the editor, which is what
+  keyboard users have.
 - **The classic Docker actions** at the foot of the table: add a container,
   start/stop/pause/resume everything, check for and apply updates, container
   size. Stop and Pause confirm first.

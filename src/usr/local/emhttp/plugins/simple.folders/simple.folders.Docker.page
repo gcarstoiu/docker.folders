@@ -46,6 +46,50 @@ $dfTheme = $display['theme'] ?? 'black';
 
 <!-- Mount point. The app renders here; the native table above is hidden
      (not removed) so "Classic view" can bring it straight back. -->
+<!-- ---------------------------------------------------------------------
+     Take the page over before it paints.
+
+     Unraid's own table is filled by its loadlist() AJAX call, and this
+     plugin only hid it once its own first render had finished - one more
+     request later. That left the stock table visible for a moment on every
+     page load.
+
+     Hiding it from an inline <style> instead means it is never painted: this
+     block is part of the same HTML response, so it is parsed before the
+     browser paints anything. It is keyed on a class set by the inline script
+     below rather than applied unconditionally, so that:
+
+       - with scripting off, nothing is hidden and the stock page works;
+       - "Classic view" is honoured from the very first frame, with no flash
+         of OUR table either;
+       - a watchdog hands the page back if this plugin fails to render, so a
+         broken release can never leave someone with no Docker page at all.
+     --------------------------------------------------------------------- -->
+<style>
+  html.sf-takeover #docker_containers,
+  html.sf-takeover .js-actions,
+  html.sf-takeover .ToggleViewMode { display: none !important; }
+</style>
+<script>
+(function () {
+  var html = document.documentElement;
+  try {
+    /* Same key util.js uses, read before any of our scripts load. */
+    if (localStorage.getItem('simple.folders:classic') === 'true') return;
+  } catch (e) { /* private window, blocked storage - carry on */ }
+
+  html.classList.add('sf-takeover');
+
+  window.setTimeout(function () {
+    var root = document.getElementById('sf-root');
+    if (!root || root.hidden || !root.firstChild) {
+      html.classList.remove('sf-takeover');
+      if (window.console) console.warn('simple.folders did not render; restored the stock Docker table');
+    }
+  }, 8000);
+})();
+</script>
+
 <!-- "unapi" is Unraid's own opt-out: its base stylesheet guards every
      element rule with :where(:not(.unapi *)), so everything inside here is
      exempt from the webGUI styling of button, input, select, textarea,
@@ -72,7 +116,7 @@ window.SimpleFolders.config = {
 <?PHP
 /* defer preserves this order and runs them after the document parses, so the
    native table and csrf_token are already in place when app.js starts. */
-foreach (['util','api','store','render','menus','dialog','jobs','actions','editor','app'] as $dfJs):
+foreach (['util','api','store','dnd','render','menus','dialog','jobs','actions','editor','app'] as $dfJs):
 ?>
 <script defer src="<?=autov("$dfBase/javascript/$dfJs.js")?>"></script>
 <?PHP endforeach; ?>

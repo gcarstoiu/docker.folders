@@ -97,6 +97,48 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Drag feedback
+ *
+ * In the overlay layer, so neither is clipped by the card's overflow. Both
+ * are positioned with transform, which keeps a drag off the layout path.
+ * ------------------------------------------------------------------------- */
+.sf-root .sf-drag-ghost {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 10080;
+  pointer-events: none;
+  padding: 6px 11px;
+  border: 1px solid var(--sf-accent);
+  border-radius: var(--sf-r-control);
+  background: var(--sf-bg-popover);
+  color: var(--sf-text);
+  font-size: var(--sf-fs-caption);
+  font-weight: 600;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .4);
+  white-space: nowrap;
+}
+
+.sf-root .sf-drop-line {
+  position: absolute;
+  top: 0; left: 0;
+  z-index: 10079;
+  height: 2px;
+  pointer-events: none;
+  background: var(--sf-accent);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--sf-bg-card);
+}
+/* A dot at the left end, so a 2px line still reads as an insertion point. */
+.sf-root .sf-drop-line::before {
+  content: "";
+  position: absolute;
+  left: -3px; top: -3px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--sf-accent);
+}
+
+/* ---------------------------------------------------------------------------
  * Toasts (spec 7.2) - bottom-left, auto-dismiss after 4.2s
  * ------------------------------------------------------------------------- */
 /* Clear of a bottom URL bar and of a home indicator. */

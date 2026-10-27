@@ -18,17 +18,13 @@
   var refreshTimer = null;
   var spriteLoaded = false;
 
-  /* Unraid's table and its button row. Hidden, never removed, so Classic
-   * view is a single style change away and uninstalling leaves no trace. */
-  var NATIVE = '#docker_containers, .js-actions, .ToggleViewMode';
-
+  /* Unraid's table and its button row are hidden by the html.sf-takeover
+   * class, which the page sets inline before anything paints - see the note
+   * in simple.folders.Docker.page. Toggling the same class here keeps one
+   * mechanism in charge; the stock markup is never modified, so Classic view
+   * and uninstalling both leave it exactly as it was. */
   function setNativeHidden(hidden) {
-    document.querySelectorAll(NATIVE).forEach(function (node) {
-      /* Remember what the page had, so Classic view restores it rather than
-       * guessing at "" and overriding a theme that set something else. */
-      if (node.dataset.dfDisplay === undefined) node.dataset.dfDisplay = node.style.display || '';
-      node.style.display = hidden ? 'none' : node.dataset.dfDisplay;
-    });
+    document.documentElement.classList.toggle('sf-takeover', hidden);
   }
 
   /* The glyph sprite is fetched once and inlined, so <use href="#sf-g-..">
@@ -61,8 +57,10 @@
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(function () {
       if (document.hidden) { scheduleRefresh(ms); return; }
-      /* A running job drives its own updates; stay out of its way. */
+      /* A running job drives its own updates; stay out of its way. And a
+       * redraw mid-drag would pull the rows out from under the pointer. */
       if (SF.jobs && SF.jobs.running()) { scheduleRefresh(ms); return; }
+      if (SF.dnd && SF.dnd.active()) { scheduleRefresh(ms); return; }
       refresh().then(function () { scheduleRefresh(ms); });
     }, ms);
   }
@@ -123,7 +121,7 @@
      * view may be stale - pick up the change without waiting for the poll. */
     if (root.jQuery) {
       root.jQuery(document).on('simple.folders:loadlist', function () {
-        if (!SF.jobs || !SF.jobs.running()) refresh();
+        if ((!SF.jobs || !SF.jobs.running()) && (!SF.dnd || !SF.dnd.active())) refresh();
       });
     }
   }

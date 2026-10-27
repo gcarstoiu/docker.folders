@@ -653,6 +653,123 @@ const TESTS = [
     ok(owner2 === 'Media', `immich landed in ${owner2}, expected Media`);
   }),
 
+  t('dragging a container onto a folder row moves it there', async () => {
+    await fresh('&folded=all');
+
+    const before = await foldersNow();
+    ok(before.find((f) => f.id === 'f-ai').members.length === 2, 'AI should start with 2');
+
+    /* immich is loose; drop it on the AI folder row. */
+    await dragGrip('.sf-row-ct[data-container="immich"]', '.sf-row-folder[data-folder="f-ai"]');
+    await page.waitForFunction(() => !document.querySelector('.sf-drag-ghost'), { timeout: 3000 });
+
+    await page.waitForFunction(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      return d.folders.find((f) => f.id === 'f-ai').resolved.includes('immich');
+    }, { timeout: 5000 });
+
+    const after = await foldersNow();
+    ok(after.find((f) => f.id === 'f-ai').members.includes('immich'), 'immich did not join AI');
+    await shot('20-drag-into-folder');
+  }),
+
+  t('dragging a member out drops it back to "Not in a folder"', async () => {
+    await fresh();   // expanded, so member rows are on screen
+
+    await dragGrip('.sf-row-ct[data-container="ollama"]', '.sf-section');
+    await page.waitForFunction(() => !document.querySelector('.sf-drag-ghost'), { timeout: 3000 });
+
+    await page.waitForFunction(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      return d.loose.includes('ollama');
+    }, { timeout: 5000 });
+
+    const after = await foldersNow();
+    ok(!after.find((f) => f.id === 'f-ai').members.includes('ollama'), 'ollama is still in AI');
+  }),
+
+  t('dragging a member within its folder changes the start order', async () => {
+    await fresh();
+
+    const before = await foldersNow();
+    const media = before.find((f) => f.id === 'f-media').members;
+    ok(media[0] === 'plex', `expected plex first, got ${media[0]}`);
+
+    /* Drag plex down past radarr, the last member. */
+    await dragGrip('.sf-row-ct[data-container="plex"]',
+                   '.sf-row-ct[data-container="radarr"]', 'bottom');
+    await page.waitForFunction(() => !document.querySelector('.sf-drag-ghost'), { timeout: 3000 });
+
+    await page.waitForFunction(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      return d.folders.find((f) => f.id === 'f-media').resolved[0] !== 'plex';
+    }, { timeout: 5000 });
+
+    const after = (await foldersNow()).find((f) => f.id === 'f-media').members;
+    ok(after.length === 5, `lost a member: ${JSON.stringify(after)}`);
+    ok(after[after.length - 1] === 'plex', `plex should now be last, order is ${JSON.stringify(after)}`);
+  }),
+
+  t('dragging a folder reorders the folders', async () => {
+    await fresh('&folded=all');
+
+    const before = (await foldersNow()).map((f) => f.id);
+    ok(before[0] === 'f-media', `expected Media first, got ${before[0]}`);
+
+    /* Drag Media below AI, the last folder. */
+    await dragGrip('.sf-row-folder[data-folder="f-media"]',
+                   '.sf-row-folder[data-folder="f-ai"]', 'bottom');
+    await page.waitForFunction(() => !document.querySelector('.sf-drag-ghost'), { timeout: 3000 });
+
+    await page.waitForFunction(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      return d.folders[0].id !== 'f-media';
+    }, { timeout: 5000 });
+
+    const after = (await foldersNow()).map((f) => f.id);
+    ok(after.length === 3, `lost a folder: ${JSON.stringify(after)}`);
+    ok(after[after.length - 1] === 'f-media', `Media should be last, order is ${JSON.stringify(after)}`);
+  }),
+
+  t('the stock Docker table is hidden before it can be seen', async () => {
+    await page.goto(`${BASE}/_reset`, { waitUntil: 'domcontentloaded' });
+    await page.evaluateOnNewDocument(() => { try { localStorage.clear(); } catch (e) {} });
+
+    /* Check at the earliest moment scripts can observe: the stock table must
+     * already be hidden, before our first render - which is a fetch away. */
+    await page.goto(`${BASE}/?nostream=1`, { waitUntil: 'domcontentloaded' });
+    const early = await page.evaluate(() => ({
+      taken: document.documentElement.classList.contains('sf-takeover'),
+      display: getComputedStyle(document.querySelector('#docker_containers')).display,
+      rendered: !!document.querySelector('.sf-card')
+    }));
+    ok(early.taken, 'html.sf-takeover was not set during parsing');
+    ok(early.display === 'none', `the stock table was ${early.display} before our render`);
+
+    await page.waitForSelector('.sf-card');
+
+    /* And with Classic view on, it must NOT be hidden at any point.
+     *
+     * The flag has to be written from an init script, not with a plain
+     * evaluate(): fresh() registers a localStorage.clear() via
+     * evaluateOnNewDocument, those handlers persist for the rest of the
+     * session and run on every navigation, so anything written beforehand
+     * is wiped before the page's inline script can read it. Init scripts
+     * run in registration order, so this one lands after the clears. */
+    await page.evaluateOnNewDocument(() => {
+      try { localStorage.setItem('simple.folders:classic', 'true'); } catch (e) {}
+    });
+    await page.goto(`${BASE}/?nostream=1`, { waitUntil: 'domcontentloaded' });
+    const classic = await page.evaluate(() =>
+      document.documentElement.classList.contains('sf-takeover'));
+    ok(!classic, 'Classic view still hid the stock table on load');
+
+    /* Leave the session clean for the tests that follow. */
+    await page.evaluateOnNewDocument(() => {
+      try { localStorage.removeItem('simple.folders:classic'); } catch (e) {}
+    });
+  }),
+
   t('every control is reachable by keyboard', async () => {
     await fresh('&folded=all');
     const reached = await page.evaluate(() => {
@@ -697,6 +814,32 @@ async function tickMembers(names) {
     if (!found) throw new Error(`container "${name}" not in the checklist`);
   }
 }
+
+/* Drive a real pointer drag from one element's grip to a point on another
+ * row. CDP's mouse API dispatches genuine pointer events, so this exercises
+ * the same path a person does - not a synthetic shortcut. */
+async function dragGrip(fromSelector, toSelector, where = 'middle') {
+  const grip = await page.$(`${fromSelector} .sf-grip`);
+  if (!grip) throw new Error(`no grip on ${fromSelector}`);
+  const g = await grip.boundingBox();
+
+  const target = await page.$(toSelector);
+  if (!target) throw new Error(`no drop target ${toSelector}`);
+  const t = await target.boundingBox();
+  const y = where === 'top' ? t.y + 2 : where === 'bottom' ? t.y + t.height - 2 : t.y + t.height / 2;
+
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+  await page.mouse.down();
+  /* Several steps: one jump would skip the movement threshold. */
+  await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2 + 10, { steps: 4 });
+  await page.mouse.move(t.x + 120, y, { steps: 12 });
+  await page.mouse.up();
+}
+
+const foldersNow = () => page.evaluate(async () => {
+  const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+  return d.folders.map((f) => ({ id: f.id, name: f.name, members: f.resolved }));
+});
 
 async function clickButton(scope, label) {
   const clicked = await page.evaluate((s, want) => {

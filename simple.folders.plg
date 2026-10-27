@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.28a">
-<!ENTITY md5       "53e8703f40907b85bb45a134a82cbd96">
+<!ENTITY version   "2026.10.28b">
+<!ENTITY md5       "a85dde4f02e34060a1464ba9078b3326">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +21,17 @@
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.28b
+- Drag and drop. A grip appears at the left of each row: drag a container
+  onto a folder to move it there, between two members to set where it starts,
+  or down to "Not in a folder" to take it out; drag a folder to reorder the
+  folders. Works with touch as well as a mouse. The menus and the editor
+  still do all of it, so nothing depends on being able to drag.
+- Fix: the stock Docker table no longer flashes up before this plugin takes
+  over. It is hidden while the page is still being parsed rather than after
+  the first render. With scripting off, or if the plugin fails to render
+  within eight seconds, the stock table is left in place.
+
 ###2026.10.28a
 - Fix: 2026.10.28 would not install - "XML file doesn't exist or xml parse
   error". Its changelog contained an unescaped angle bracket, which made the

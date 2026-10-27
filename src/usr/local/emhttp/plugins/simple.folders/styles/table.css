@@ -472,6 +472,65 @@
  * Reduced motion
  * ------------------------------------------------------------------------- */
 /* ---------------------------------------------------------------------------
+ * Dragging
+ *
+ * The grip sits in the tree column and only appears on hover, so it does not
+ * add noise to a table that is mostly read, not rearranged. On touch there
+ * is no hover, so it is always visible there.
+ * ------------------------------------------------------------------------- */
+.sf-root .sf-cell-tree { position: relative; }
+
+.sf-root .sf-grip {
+  position: absolute;
+  left: -2px;
+  width: 18px; height: 28px;
+  display: grid; place-items: center;
+  border-radius: 5px;
+  color: var(--sf-text-faint);
+  opacity: 0;
+  cursor: grab;
+  /* The browser must not pan the page or start its own drag from here. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity 120ms ease;
+}
+.sf-root .sf-row:hover .sf-grip,
+.sf-root .sf-grip:focus-visible { opacity: 1; }
+.sf-root .sf-grip:hover { color: var(--sf-text); background: var(--sf-bg-hover-ghost); }
+.sf-root .sf-grip:active { cursor: grabbing; }
+
+/* Two columns of dots - the usual "grab me" mark, drawn rather than fetched. */
+.sf-root .sf-grip-dots {
+  width: 8px; height: 14px;
+  background-image: radial-gradient(currentColor 1px, transparent 1.2px);
+  background-size: 4px 4px;
+  background-position: 0 1px;
+  opacity: .85;
+}
+
+/* A folder row's grip shares the column with the chevron, so it sits above. */
+.sf-root .sf-row-folder .sf-grip { left: -4px; top: 4px; height: 24px; }
+
+/* No hover on a touch screen, so the grip has to be permanently visible. */
+@media (hover: none) {
+  .sf-root .sf-grip { opacity: .55; }
+}
+
+.sf-root .sf-row.is-dragging { opacity: .4; }
+
+/* A folder row lit up as "drop into this folder". */
+.sf-root .sf-row.is-drop-target {
+  background: var(--sf-accent-soft-bg);
+  box-shadow: inset 0 0 0 1px var(--sf-accent);
+}
+
+/* While a drag is in flight nothing else should respond to the pointer, and
+   text must not start selecting under it. */
+body.sf-dragging { cursor: grabbing; -webkit-user-select: none; user-select: none; }
+body.sf-dragging .sf-root .sf-row * { pointer-events: none; }
+
+/* ---------------------------------------------------------------------------
  * Global action bar
  *
  * The classic Docker view's eight actions, in a card of its own under the
