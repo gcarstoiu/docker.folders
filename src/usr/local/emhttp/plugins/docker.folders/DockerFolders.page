@@ -1,0 +1,146 @@
+Menu="OtherSettings"
+Title="Docker Folders"
+Icon="folder-open-o"
+Tag="folder-open-o"
+---
+<?PHP
+/* docker.folders - settings page.
+ * Copyright (C) 2026  george
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2, as published
+ * by the Free Software Foundation.
+ *
+ * Reached from Settings -> Docker Folders, and from the plugin's entry on the
+ * Plugins page (the .plg's launch= attribute points here).
+ *
+ * The folders themselves are managed on the Docker page; this page is for
+ * the things that do not belong in a row menu - backing the definitions up,
+ * restoring them, and seeing where everything is stored.
+ */
+require_once "$docroot/plugins/docker.folders/include/lib/Paths.php";
+require_once "$docroot/plugins/docker.folders/include/lib/Store.php";
+
+$dfFolders = df_store_load();
+$dfCount   = count($dfFolders);
+$dfMembers = 0;
+foreach ($dfFolders as $f) $dfMembers += count($f['members']);
+
+$dfVersion = trim((string)@file_get_contents(DF_CONFIG_DIR.'/version')) ?: 'unknown';
+$dfIcons   = is_dir(DF_ICON_DIR) ? count(glob(DF_ICON_DIR.'/*') ?: []) : 0;
+?>
+
+<link rel="stylesheet" href="<?autov('/plugins/docker.folders/styles/tokens.css')?>">
+<link rel="stylesheet" href="<?autov('/plugins/docker.folders/styles/editor.css')?>">
+
+<div class="df-root df-settings" data-theme="<?=htmlspecialchars($display['theme'] ?? 'black')?>">
+
+<table class="tablesorter shift">
+<thead><tr><th colspan="2">_(Status)_</th></tr></thead>
+<tbody>
+  <tr>
+    <td>_(Version)_:</td>
+    <td><?=htmlspecialchars($dfVersion)?></td>
+  </tr>
+  <tr>
+    <td>_(Folders)_:</td>
+    <td>
+      <?=$dfCount?> <?=$dfCount === 1 ? _('folder') : _('folders')?>,
+      <?=$dfMembers?> <?=$dfMembers === 1 ? _('assigned container') : _('assigned containers')?>
+    </td>
+  </tr>
+  <tr>
+    <td>_(Stored in)_:</td>
+    <td><code><?=htmlspecialchars(DF_FOLDERS)?></code></td>
+  </tr>
+  <tr>
+    <td>_(Downloaded icons)_:</td>
+    <td><?=$dfIcons?> <?=_('in')?> <code><?=htmlspecialchars(DF_ICON_DIR)?></code></td>
+  </tr>
+  <tr>
+    <td>_(Auto-add label)_:</td>
+    <td>
+      <code><?=htmlspecialchars(DF_LABEL)?>=&lt;folder&gt;</code>
+      <span class="df-ed-hint">
+        _(Add this label to a container template and it joins that folder automatically, including containers created later)_.
+      </span>
+    </td>
+  </tr>
+</tbody>
+</table>
+
+<table class="tablesorter shift">
+<thead><tr><th colspan="2">_(Backup and restore)_</th></tr></thead>
+<tbody>
+  <tr>
+    <td>_(Export folders)_:</td>
+    <td>
+      <a class="df-link" href="/plugins/docker.folders/include/Backup.php?action=export" download>
+        _(Download)_ folders.json
+      </a>
+      <span class="df-ed-hint">_(A copy of every folder definition. Containers are referenced by name)_.</span>
+    </td>
+  </tr>
+  <tr>
+    <td>_(Import folders)_:</td>
+    <td>
+      <input type="file" id="df-import" accept="application/json,.json">
+      <input type="button" id="df-import-go" value="_(Import)_">
+      <span class="df-ed-hint">
+        _(Replaces every folder definition. Containers are never started, stopped or removed by an import)_.
+      </span>
+      <div id="df-import-result" class="df-ed-error" role="alert"></div>
+    </td>
+  </tr>
+</tbody>
+</table>
+
+<table class="tablesorter shift">
+<thead><tr><th colspan="2">_(Removing the plugin)_</th></tr></thead>
+<tbody>
+  <tr>
+    <td colspan="2" style="padding:10px 0">
+      <span class="df-ed-hint">
+        _(Uninstalling restores the standard Unraid Docker page and leaves every container untouched)_.
+        _(Folder definitions are kept in)_ <code><?=htmlspecialchars(DF_CONFIG_DIR)?></code>
+        _(so a reinstall picks them up again; delete that directory to erase them)_.
+      </span>
+    </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+<script>
+/* jQuery's $.post is patched by the webGUI to carry csrf_token; a raw fetch
+   is not, so the token goes in the header (see include/lib/Guard.php). */
+document.getElementById('df-import-go').addEventListener('click', function () {
+  var input  = document.getElementById('df-import');
+  var result = document.getElementById('df-import-result');
+  result.textContent = '';
+
+  if (!input.files || !input.files[0]) { result.textContent = "_(Choose a file first)_"; return; }
+
+  var reader = new FileReader();
+  reader.onload = function () {
+    var body = new URLSearchParams({ action: 'import', payload: reader.result });
+    fetch('/plugins/docker.folders/include/Backup.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-CSRF-Token': csrf_token
+      },
+      body: body.toString()
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || d.ok !== true) throw new Error((d && d.error) || "_(Import failed)_");
+        location.reload();
+      })
+      .catch(function (err) { result.textContent = err.message; });
+  };
+  reader.readAsText(input.files[0]);
+});
+</script>

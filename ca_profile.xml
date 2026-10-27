@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Community Applications repository profile.
+
+  Required in the repository root for a CA submission; it supplies the
+  overview and support links moderators use to review provenance.
+  See https://ca.unraid.net/submit/help/repository-xml
+-->
+<Profile>
+  <Repo>docker.folders</Repo>
+  <DisplayName>Docker Folders</DisplayName>
+
+  <Comment>
+    Group Docker containers into folders on the Unraid Docker page. Fold a
+    folder away behind a single row that still shows every member's icon,
+    unfold it to see the full container rows, and run start, stop, restart,
+    pause, resume, update and force update across a whole folder in a
+    defined order.
+  </Comment>
+
+  <Support>https://github.com/george/docker.folders/issues</Support>
+  <Project>https://github.com/george/docker.folders</Project>
+
+  <Language>en_US</Language>
+  <Category>Tools:Utilities Productivity:</Category>
+</Profile>

@@ -1,0 +1,10 @@
+# Harness runtime state (containers, folders, update jobs, nchan log)
+harness/state/
+
+# Test artefacts
+harness/test/node_modules/
+harness/test/shots/
+
+# Editor noise
+*.swp
+.DS_Store

@@ -1,0 +1,7 @@
+{
+  "name": "docker-folders-harness-tests",
+  "private": true,
+  "type": "module",
+  "description": "UI tests driven against the local harness. Not part of the plugin package.",
+  "dependencies": { "puppeteer-core": "^23.0.0" }
+}

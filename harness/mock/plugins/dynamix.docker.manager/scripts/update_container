@@ -1,0 +1,88 @@
+#!/usr/bin/env php
+<?PHP
+/* docker.folders harness - mock of Unraid's
+ * /usr/local/emhttp/plugins/dynamix.docker.manager/scripts/update_container
+ *
+ * Real usage:  update_container <name>*<name>*<name>
+ *
+ * The real script pulls each image, stops and removes the container, recreates
+ * it from its user template, and puts it back into its previous running state.
+ * It reports progress by publishing to the nchan channel "docker" - NOT to
+ * stdout - and ends with the sentinel "_DONE_".
+ *
+ * This mock reproduces that message shape and timing, publishing through the
+ * harness' own channel file so /sub/docker can replay it.
+ *
+ * Note: "update" and "force update" are the same script. The real UI differs
+ * only in which containers it passes.
+ *
+ * NOT part of the plugin package. Never shipped.
+ */
+require_once dirname(__DIR__, 3).'/state.php';
+
+$channel = HARNESS_ROOT.'/state/nchan-docker.log';
+
+function write_msg(string $msg): void {
+  global $channel;
+  @mkdir(dirname($channel), 0755, true);
+  file_put_contents($channel, $msg."\n\x1e", FILE_APPEND | LOCK_EX);
+}
+
+/* Mirrors the real script's fieldset/legend wrapper. The plugin keys off the
+ * <legend> boundary (a new phase) and the _DONE_ sentinel, never off the
+ * English text - those strings are translated on a real server. */
+function phase(string $legend): void {
+  write_msg("addLog\x00<fieldset class='docker'><legend>".htmlspecialchars($legend)."</legend><p class='logLine'></p></fieldset>");
+}
+function log_line(string $text): void {
+  write_msg("addLog\x00".htmlspecialchars($text));
+}
+
+$names = explode('*', rawurldecode($argv[1] ?? ''));
+$slow  = harness_latency();
+
+foreach ($names as $name) {
+  if ($name === '') continue;
+  $ct = harness_find($name);
+  if (!$ct) {
+    log_line("Configuration not found. Was this container created using this plugin?");
+    continue;
+  }
+
+  if (harness_should_fail($name, 'update')) {
+    phase("Pulling image: {$ct['image']}:latest");
+    log_line("Error: simulated pull failure for {$name}");
+    continue;
+  }
+
+  $wasRunning = $ct['state'] === 'running' || $ct['state'] === 'paused';
+
+  phase("Pulling image: {$ct['image']}:latest");
+  foreach (['Pulling fs layer', 'Downloading', 'Extracting', 'Pull complete'] as $step) {
+    usleep((int)($slow * 400_000));
+    log_line($step);
+  }
+
+  if ($wasRunning) {
+    phase("Stopping container: {$name}");
+    usleep((int)($slow * 600_000));
+    log_line("Successfully stopped container: {$name}");
+  }
+
+  phase("Removing container: {$name}");
+  usleep((int)($slow * 400_000));
+  log_line("Successfully removed container: {$name}");
+
+  phase("Command execution");
+  usleep((int)($slow * 800_000));
+  log_line("The command finished successfully!");
+
+  /* Back to the state it was in, and no longer flagged as needing an update. */
+  harness_mutate($name, function ($c) use ($wasRunning) {
+    $c['update'] = 0;
+    $c['state']  = $wasRunning ? 'running' : 'stopped';
+    return $c;
+  });
+}
+
+write_msg('_DONE_');

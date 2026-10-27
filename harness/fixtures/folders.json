@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "folders": [
+    {
+      "id": "f-media",
+      "name": "Media",
+      "color": "amber",
+      "icon": { "type": "glyph", "key": "media" },
+      "members": ["plex", "qbittorrent", "prowlarr", "sonarr", "radarr"],
+      "delay": 5,
+      "reverseStop": true,
+      "preview": "status",
+      "rule": "",
+      "dashboard": true
+    },
+    {
+      "id": "f-home",
+      "name": "Smart home",
+      "color": "teal",
+      "icon": { "type": "glyph", "key": "home" },
+      "members": ["mosquitto", "zigbee2mqtt", "homeassistant"],
+      "delay": 10,
+      "reverseStop": true,
+      "preview": "status",
+      "rule": "",
+      "dashboard": true
+    },
+    {
+      "id": "f-ai",
+      "name": "AI",
+      "color": "violet",
+      "icon": { "type": "glyph", "key": "ai" },
+      "members": ["ollama", "open-webui"],
+      "delay": 0,
+      "reverseStop": true,
+      "preview": "status",
+      "rule": "",
+      "dashboard": false
+    }
+  ]
+}

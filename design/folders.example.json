@@ -1,0 +1,58 @@
+{
+  "$description": "Example folder definitions in the prototype's shape. 'members' is ordered and is the start order. See DESIGN_SPEC.md §11 for the proposed production shape of web icons and member keys.",
+  "version": 1,
+  "folders": [
+    {
+      "id": "f-media",
+      "name": "Media",
+      "color": "amber",
+      "icon": { "type": "glyph", "key": "media" },
+      "members": ["plex", "qbittorrent", "prowlarr", "sonarr", "radarr"],
+      "expanded": true,
+      "delay": 5,
+      "reverseStop": true,
+      "preview": "status",
+      "rule": "",
+      "dashboard": true
+    },
+    {
+      "id": "f-home",
+      "name": "Smart home",
+      "color": "teal",
+      "icon": { "type": "glyph", "key": "home" },
+      "members": ["mosquitto", "zigbee2mqtt", "homeassistant"],
+      "expanded": false,
+      "delay": 10,
+      "reverseStop": true,
+      "preview": "status",
+      "rule": "",
+      "dashboard": true
+    },
+    {
+      "id": "f-cloud",
+      "name": "Cloud",
+      "color": "blue",
+      "icon": { "type": "web", "source": "dashboard-icons", "query": "cloud", "url": "[resolved by the icon lookup]", "localFile": "[path chosen by the implementation]" },
+      "members": ["mariadb", "redis", "nextcloud"],
+      "expanded": false,
+      "delay": 5,
+      "reverseStop": true,
+      "preview": "icons",
+      "rule": "^(nextcloud|mariadb|redis)$",
+      "dashboard": true
+    },
+    {
+      "id": "f-ai",
+      "name": "AI",
+      "color": "violet",
+      "icon": { "type": "container", "cid": "ollama" },
+      "members": ["ollama", "openwebui"],
+      "expanded": false,
+      "delay": 0,
+      "reverseStop": true,
+      "preview": "count",
+      "rule": "",
+      "dashboard": false
+    }
+  ]
+}

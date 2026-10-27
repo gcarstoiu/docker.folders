@@ -1,0 +1,24 @@
+{
+  "$description": "Fake container set for the local harness. Mirrors design/screenshots/01-overview.png: 16 containers, 13 running, 4 updates ready. 'letter'/'tint' stand in for real app icons, exactly as the prototype does - the real plugin uses each container's own icon from Unraid.",
+  "containers": [
+    { "id": "ct0000000001", "name": "plex",                "image": "plexinc/pms-docker",        "state": "running", "update": 0, "port": 32400, "cpu": 3.4, "mem": 671088640,  "autostart": true,  "wait": 0, "webui": "http://tower:32400/web", "letter": "P", "tint": "amber"  },
+    { "id": "ct0000000002", "name": "qbittorrent",         "image": "linuxserver/qbittorrent",   "state": "running", "update": 0, "port": 8080,  "cpu": 2.1, "mem": 429916160,  "autostart": true,  "wait": 0, "webui": "http://tower:8080",      "letter": "Q", "tint": "slate"  },
+    { "id": "ct0000000003", "name": "prowlarr",            "image": "linuxserver/prowlarr",      "state": "stopped", "update": 0, "port": 9696,  "cpu": 0,   "mem": 0,          "autostart": false, "wait": 0, "webui": "http://tower:9696",      "letter": "P", "tint": "rose"   },
+    { "id": "ct0000000004", "name": "sonarr",              "image": "linuxserver/sonarr",        "state": "running", "update": 1, "port": 8989,  "cpu": 0.8, "mem": 325058560,  "autostart": true,  "wait": 0, "webui": "http://tower:8989",      "letter": "S", "tint": "blue"   },
+    { "id": "ct0000000005", "name": "radarr",              "image": "linuxserver/radarr",        "state": "running", "update": 1, "port": 7878,  "cpu": 0.6, "mem": 298844160,  "autostart": true,  "wait": 0, "webui": "http://tower:7878",      "letter": "R", "tint": "orange" },
+
+    { "id": "ct0000000006", "name": "mosquitto",           "image": "eclipse-mosquitto",         "state": "running", "update": 0, "port": 1883,  "cpu": 0.1, "mem": 12582912,   "autostart": true,  "wait": 0, "webui": "",                       "letter": "M", "tint": "violet" },
+    { "id": "ct0000000007", "name": "zigbee2mqtt",         "image": "koenkk/zigbee2mqtt",        "state": "paused",  "update": 0, "port": 8081,  "cpu": 0,   "mem": 54525952,   "autostart": true,  "wait": 0, "webui": "http://tower:8081",      "letter": "Z", "tint": "amber"  },
+    { "id": "ct0000000008", "name": "homeassistant",       "image": "homeassistant/home-assistant", "state": "running", "update": 1, "port": 8123, "cpu": 1.9, "mem": 700448768, "autostart": true, "wait": 0, "webui": "http://tower:8123",   "letter": "H", "tint": "teal"   },
+
+    { "id": "ct0000000009", "name": "ollama",              "image": "ollama/ollama",             "state": "running", "update": 0, "port": 11434, "cpu": 5.2, "mem": 2254857830, "autostart": true,  "wait": 0, "webui": "",                       "letter": "O", "tint": "slate"  },
+    { "id": "ct0000000010", "name": "open-webui",          "image": "ghcr.io/open-webui/open-webui", "state": "running", "update": 0, "port": 3000, "cpu": 1.9, "mem": 751619276, "autostart": true, "wait": 0, "webui": "http://tower:3000", "letter": "W", "tint": "blue"   },
+
+    { "id": "ct0000000011", "name": "nextcloud",           "image": "linuxserver/nextcloud",     "state": "running", "update": 1, "port": 443,   "cpu": 0.7, "mem": 408944640,  "autostart": true,  "wait": 0, "webui": "https://tower:443",      "letter": "N", "tint": "blue"   },
+    { "id": "ct0000000012", "name": "mariadb",             "image": "linuxserver/mariadb",       "state": "running", "update": 0, "port": 3306,  "cpu": 0.5, "mem": 272629760,  "autostart": true,  "wait": 0, "webui": "",                       "letter": "M", "tint": "teal"   },
+    { "id": "ct0000000013", "name": "redis",               "image": "redis",                     "state": "running", "update": 0, "port": 6379,  "cpu": 0.2, "mem": 41943040,   "autostart": true,  "wait": 0, "webui": "",                       "letter": "R", "tint": "rose"   },
+    { "id": "ct0000000014", "name": "nginx-proxy-manager", "image": "jc21/nginx-proxy-manager",  "state": "running", "update": 0, "port": 81,    "cpu": 0.3, "mem": 157286400,  "autostart": true,  "wait": 0, "webui": "http://tower:81",        "letter": "N", "tint": "green"  },
+    { "id": "ct0000000015", "name": "vaultwarden",         "image": "vaultwarden/server",        "state": "running", "update": 0, "port": 8000,  "cpu": 0.1, "mem": 36700160,   "autostart": true,  "wait": 0, "webui": "http://tower:8000",      "letter": "V", "tint": "slate"  },
+    { "id": "ct0000000016", "name": "immich",              "image": "immich-app/immich-server",  "state": "stopped", "update": 0, "port": 2283,  "cpu": 0,   "mem": 0,          "autostart": false, "wait": 0, "webui": "http://tower:2283",      "letter": "I", "tint": "violet" }
+  ]
+}

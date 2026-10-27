@@ -1,0 +1,106 @@
+{
+  "$description": "Design tokens for the Docker Folders prototype (dark theme). Values are taken from prototype/index.html.",
+  "color": {
+    "background": {
+      "page": "#101215",
+      "tableCard": "#16191D",
+      "folderRow": "#191D22",
+      "popover": "#1F2328",
+      "dialog": "#1B1F24",
+      "input": "#121418",
+      "well": "#15181C",
+      "hoverRow": "#1C2026",
+      "hoverGhost": "#262B32",
+      "hoverMenu": "#2A3038",
+      "scrim": "rgba(5, 6, 8, 0.66)"
+    },
+    "border": {
+      "card": "#262B31",
+      "control": "#2E333A",
+      "popover": "#343A42",
+      "rowDivider": "#23272D",
+      "softDivider": "#1F2328"
+    },
+    "text": {
+      "primary": "#E6E8EB",
+      "secondary": "#C9CED4",
+      "muted": "#9AA1AB",
+      "dim": "#8B929C",
+      "faint": "#7D8590"
+    },
+    "accent": {
+      "base": "#6EA8FE",
+      "hover": "#8AB8FF",
+      "onAccent": "#0B1320",
+      "softBackground": "#1E3354",
+      "softForeground": "#CFE0FF",
+      "chipForeground": "#A9C9FF"
+    },
+    "status": {
+      "running": "#3FB97A",
+      "runningText": "#8FDCB1",
+      "stoppedRing": "#6B727C",
+      "stoppedSegment": "#3A4049",
+      "stoppedDot": "#5C636D",
+      "paused": "#E0A43A",
+      "pausedText": "#F0C06A",
+      "busy": "#6EA8FE",
+      "busyText": "#9CC2FF"
+    },
+    "warning": { "background": "#3A2312", "foreground": "#FFB27A", "border": "#66391A", "onWarning": "#1D1006" },
+    "danger": { "foreground": "#FF9B9B", "border": "#5A2A2A", "onDanger": "#2A0A0A" },
+    "switch": { "on": "#3D7BE0", "off": "#30353C", "mixed": "#4A5260", "knob": "#F2F4F7" },
+    "folderPalette": {
+      "slate":  { "tile": "#2A323E", "glyph": "#CDD6E2" },
+      "blue":   { "tile": "#1C365F", "glyph": "#A6C8FF" },
+      "teal":   { "tile": "#0F3B3E", "glyph": "#86DAD4" },
+      "green":  { "tile": "#173D29", "glyph": "#8EDCAB" },
+      "amber":  { "tile": "#46320F", "glyph": "#F4C870" },
+      "orange": { "tile": "#4A2414", "glyph": "#FFAD84" },
+      "rose":   { "tile": "#471C2B", "glyph": "#F7A6BE" },
+      "violet": { "tile": "#30235A", "glyph": "#C9B1FF" }
+    },
+    "webIconSourcesPreview": {
+      "dashboardIcons": { "tile": "#F1F3F5", "letter": "#14181D" },
+      "selfhst": { "tile": "#0B0D10", "letter": "#EEF1F4", "border": "#3A414B" },
+      "imageUrl": { "tile": "#E4E9EF", "letter": "#0F1720" }
+    }
+  },
+  "font": {
+    "sans": "'IBM Plex Sans', system-ui, sans-serif",
+    "mono": "'IBM Plex Mono', ui-monospace, monospace",
+    "size": { "pageTitle": 28, "dialogTitle": 18, "folderName": 15, "body": 14, "small": 13, "caption": 12, "eyebrow": 11 },
+    "weight": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 }
+  },
+  "radius": { "control": 8, "tile": 10, "card": 12, "dialog": 14, "pill": 999 },
+  "size": {
+    "tableMinWidth": 1100,
+    "gridColumns": "40px minmax(280px, 1fr) 150px 124px 84px 72px 92px 104px 44px",
+    "gridColumnGap": 10,
+    "folderRowMinHeight": 64,
+    "folderRowPaddingY": 10,
+    "containerRowMinHeight": 52,
+    "folderIcon": 40,
+    "stripButton": 38,
+    "stripTile": 30,
+    "statusDotOnTile": 11,
+    "containerTile": 32,
+    "iconButton": 36,
+    "controlHeight": 40,
+    "menuWidth": 260,
+    "menuItemMinHeight": 38,
+    "progressPanelWidth": 340,
+    "confirmMaxWidth": 480,
+    "editorMaxWidth": 1000,
+    "segmentBar": { "width": 100, "height": 4, "gap": 2 }
+  },
+  "motion": {
+    "popoverIn": "140ms ease-out (fade + 6px rise)",
+    "chevronRotate": "150ms",
+    "switchKnob": "150ms",
+    "progressBar": "300ms",
+    "spinner": "800ms linear infinite",
+    "toastDismissAfter": 4200,
+    "progressPanelDismissAfter": 6500
+  }
+}

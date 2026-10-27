@@ -1,0 +1,1253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Docker folders</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101215}
+a{color:#8AB8FF}a:hover{color:#B5D1FF}
+.dk *{box-sizing:border-box}
+.dk button{font:inherit;color:inherit;cursor:pointer}
+.dk button:disabled{cursor:not-allowed;opacity:.4}
+.dk button:focus-visible,.dk input:focus-visible{outline:2px solid #6EA8FE;outline-offset:2px}
+.dk .g{display:grid;grid-template-columns:40px minmax(280px,1fr) 150px 124px 84px 72px 92px 104px 44px;column-gap:10px;align-items:center;padding:0 12px}
+.dk .row:hover{background:#1C2026}
+.dk .ghost:hover:not(:disabled){background:#262B32}
+.dk .mi:hover:not(:disabled){background:#2A3038}
+.dk .tile:hover{box-shadow:0 0 0 2px #6EA8FE}
+.dk .pick:hover{border-color:#5A6370}
+.dk .primary:hover{background:#8AB8FF}
+.dk input::placeholder{color:#7D8590}
+@keyframes dkspin{to{transform:rotate(360deg)}}
+.dk .spin{animation:dkspin .8s linear infinite}
+@keyframes dkin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.dk .pop{animation:dkin .14s ease-out}
+</style>
+</helmet>
+<div class="dk" style="min-height: 100vh; background: #101215; color: #E6E8EB; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+<div style="max-width: 1360px; margin: 0 auto; padding: 32px 24px 140px; display: flex; flex-direction: column; gap: 20px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #8B929C">Unraid · Docker</div>
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.01em">Containers</h1>
+<div style="color: #9AA1AB; font-size: 13px">{{summary}}</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<label style="position: relative; display: flex; align-items: center">
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">Filter containers</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B929C" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 12px"><path d="M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4.2-4.2"></path></svg>
+<input type="search" value="{{query}}" onChange="{{onQuery}}" placeholder="Filter containers or folders" style="height: 40px; width: 260px; padding: 0 12px 0 36px; background: #181B1F; border: 1px solid #2E333A; border-radius: 8px; color: #E6E8EB; font: inherit">
+</label>
+<button class="ghost" onClick="{{toggleAll}}" style="height: 40px; padding: 0 14px; background: transparent; border: 1px solid #2E333A; border-radius: 8px; font-weight: 500">{{toggleAllLabel}}</button>
+<button class="primary" onClick="{{newFolder}}" style="height: 40px; padding: 0 16px; background: #6EA8FE; color: #0B1320; border: 0; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+<span>New folder</span>
+</button>
+</div>
+</header>
+
+<section style="background: #16191D; border: 1px solid #262B31; border-radius: 12px; overflow: hidden">
+<div style="overflow-x: auto">
+<div style="min-width: 1100px">
+
+<div class="g" style="height: 40px; border-bottom: 1px solid #262B31; color: #8B929C; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; font-family: 'IBM Plex Mono', ui-monospace, monospace">
+<span></span><span>Container</span><span>Status</span><span>Version</span><span>Port</span><span>CPU</span><span>Memory</span><span>Autostart</span><span></span>
+</div>
+
+<sc-for list="{{folders}}" as="f" hint-placeholder-count="3">
+<div style="border-bottom: 1px solid #23272D">
+<div class="g row" style="min-height: 64px; padding-top: 10px; padding-bottom: 10px; background: #191D22">
+<button class="ghost" aria-label="{{f.toggleLabel}}" aria-expanded="{{f.expandedStr}}" onClick="{{f.toggle}}" style="width: 32px; height: 32px; border: 0; background: transparent; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #9AA1AB">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transition: transform 0.15s; {{f.chevStyle}}"><path d="M9 6l6 6-6 6"></path></svg>
+</button>
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+<button class="tile" aria-label="{{f.iconLabel}}" title="Folder actions" onClick="{{f.openIconMenu}}" style="width: 40px; height: 40px; flex: none; padding: 0; border: 1px solid {{f.icon.ring}}; border-radius: 10px; background: {{f.icon.bg}}; color: {{f.icon.fg}}; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{f.icon.isGlyph}}" hint-placeholder-val="{{true}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.icon.d}}"></path></svg></sc-if>
+<sc-if value="{{f.icon.isMono}}" hint-placeholder-val="{{false}}"><span style="font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 18px">{{f.icon.letter}}</span></sc-if>
+</button>
+<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<button tabindex="-1" onClick="{{f.toggle}}" style="background: transparent; border: 0; padding: 0; text-align: left; display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 100%; align-self: flex-start">
+<span style="display: flex; align-items: baseline; gap: 8px; min-width: 0">
+<span style="font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0">{{f.name}}</span>
+<sc-if value="{{f.showStack}}" hint-placeholder-val="{{true}}"><span style="color: #9AA1AB; font-size: 12px; white-space: nowrap; flex: none">{{f.count}}</span></sc-if>
+</span>
+<sc-if value="{{f.showSub}}" hint-placeholder-val="{{false}}"><span style="color: #9AA1AB; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{f.sub}}</span></sc-if>
+</button>
+<sc-if value="{{f.showStack}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; margin-left: -4px">
+<sc-for list="{{f.stack}}" as="s" hint-placeholder-count="4">
+<button class="ghost" aria-label="{{s.label}}" title="{{s.title}}" onClick="{{s.openMenu}}" style="width: 38px; height: 38px; flex: none; padding: 0; border: 0; background: transparent; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center">
+<span style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: {{s.bg}}; color: {{s.fg}}; font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 13px">{{s.letter}}<sc-if value="{{s.showDot}}" hint-placeholder-val="{{true}}"><span style="position: absolute; right: -4px; bottom: -4px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid #191D22; background: {{s.dot}}"></span></sc-if></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; color: {{f.runColor}}">{{f.runText}}</span>
+<span aria-hidden="true" style="display: flex; gap: 2px; width: 100px; height: 4px">
+<sc-for list="{{f.seg}}" as="sg" hint-placeholder-count="4"><span style="flex: 1; border-radius: 2px; background: {{sg.c}}"></span></sc-for>
+</span>
+</div>
+<div><span style="{{f.updStyle}}">{{f.updText}}</span></div>
+<div style="color: #6F7782; font-family: 'IBM Plex Mono', monospace; font-size: 13px">—</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C9CED4">{{f.cpu}}</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C9CED4">{{f.mem}}</div>
+<button aria-label="{{f.autoLabel}}" aria-pressed="{{f.autoPressed}}" onClick="{{f.toggleAuto}}" style="display: flex; align-items: center; gap: 8px; background: transparent; border: 0; padding: 6px 0">
+<span style="position: relative; display: block; width: 34px; height: 20px; border-radius: 999px; {{f.autoTrack}}"><span style="position: absolute; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #F2F4F7; transition: left 0.15s; {{f.autoKnob}}"></span></span>
+<span style="font-size: 12px; color: #9AA1AB">{{f.autoText}}</span>
+</button>
+<button class="ghost" aria-label="{{f.menuLabel}}" onClick="{{f.openMenu}}" style="width: 36px; height: 36px; border: 0; background: transparent; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #C9CED4">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5h.01M12 12h.01M12 19h.01"></path></svg>
+</button>
+</div>
+
+<sc-if value="{{f.expanded}}" hint-placeholder-val="{{false}}">
+<div style="padding-bottom: 6px">
+<sc-for list="{{f.kids}}" as="c" hint-placeholder-count="3">
+<div class="g row" style="min-height: 52px">
+<span aria-hidden="true" style="align-self: stretch; justify-self: center; width: 1px; background: #2E333A"></span>
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0; padding-left: 8px">
+<span title="Start order" style="width: 18px; flex: none; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7D8590">{{c.order}}</span>
+<span aria-hidden="true" style="width: 32px; height: 32px; flex: none; border-radius: 8px; background: {{c.bg}}; color: {{c.fg}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">{{c.letter}}</span>
+<span style="display: flex; flex-direction: column; min-width: 0">
+<span style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.name}}</span>
+<span style="font-size: 12px; color: #8B929C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.image}}</span>
+</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px">
+<span class="{{c.dotClass}}" style="display: block; flex: none; {{c.dotStyle}}"></span>
+<span style="font-size: 13px; color: {{c.statusColor}}">{{c.statusText}}</span>
+</div>
+<div><span style="{{c.updStyle}}">{{c.updText}}</span></div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #9AA1AB">{{c.port}}</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C9CED4">{{c.cpu}}</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C9CED4">{{c.mem}}</div>
+<button aria-label="{{c.autoLabel}}" aria-pressed="{{c.autoPressed}}" onClick="{{c.toggleAuto}}" style="display: flex; align-items: center; gap: 8px; background: transparent; border: 0; padding: 6px 0">
+<span style="position: relative; display: block; width: 34px; height: 20px; border-radius: 999px; {{c.autoTrack}}"><span style="position: absolute; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #F2F4F7; transition: left 0.15s; {{c.autoKnob}}"></span></span>
+<span style="font-size: 12px; color: #9AA1AB">{{c.autoText}}</span>
+</button>
+<button class="ghost" aria-label="{{c.menuLabel}}" onClick="{{c.openMenu}}" style="width: 36px; height: 36px; border: 0; background: transparent; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9AA1AB">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5h.01M12 12h.01M12 19h.01"></path></svg>
+</button>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+
+<sc-if value="{{hasLoose}}" hint-placeholder-val="{{true}}">
+<div style="padding: 20px 12px 10px 74px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: #8B929C; border-bottom: 1px solid #23272D">{{looseLabel}}</div>
+<sc-for list="{{loose}}" as="c" hint-placeholder-count="4">
+<div class="g row" style="min-height: 52px; border-bottom: 1px solid #1F2328">
+<span></span>
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0; padding-left: 8px">
+<span style="width: 18px; flex: none"></span>
+<span aria-hidden="true" style="width: 32px; height: 32px; flex: none; border-radius: 8px; background: {{c.bg}}; color: {{c.fg}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">{{c.letter}}</span>
+<span style="display: flex; flex-direction: column; min-width: 0">
+<span style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.name}}</span>
+<span style="font-size: 12px; color: #8B929C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.image}}</span>
+</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px">
+<span class="{{c.dotClass}}" style="display: block; flex: none; {{c.dotStyle}}"></span>
+<span style="font-size: 13px; color: {{c.statusColor}}">{{c.statusText}}</span>
+</div>
+<div><span style="{{c.updStyle}}">{{c.updText}}</span></div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #9AA1AB">{{c.port}}</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C9CED4">{{c.cpu}}</div>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C9CED4">{{c.mem}}</div>
+<button aria-label="{{c.autoLabel}}" aria-pressed="{{c.autoPressed}}" onClick="{{c.toggleAuto}}" style="display: flex; align-items: center; gap: 8px; background: transparent; border: 0; padding: 6px 0">
+<span style="position: relative; display: block; width: 34px; height: 20px; border-radius: 999px; {{c.autoTrack}}"><span style="position: absolute; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #F2F4F7; transition: left 0.15s; {{c.autoKnob}}"></span></span>
+<span style="font-size: 12px; color: #9AA1AB">{{c.autoText}}</span>
+</button>
+<button class="ghost" aria-label="{{c.menuLabel}}" onClick="{{c.openMenu}}" style="width: 36px; height: 36px; border: 0; background: transparent; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9AA1AB">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5h.01M12 12h.01M12 19h.01"></path></svg>
+</button>
+</div>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{noResults}}" hint-placeholder-val="{{false}}">
+<div style="padding: 48px 24px; text-align: center; color: #9AA1AB">{{noResultsText}}</div>
+</sc-if>
+
+</div>
+</div>
+</section>
+
+<p style="margin: 0; color: #8B929C; font-size: 12px; font-family: 'IBM Plex Mono', monospace">Tip: a folder's icon opens its commands · each container icon opens that container's menu · the folder name unfolds it</p>
+</div>
+
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+<button aria-label="Close menu" onClick="{{closeMenu}}" style="position: fixed; inset: 0; z-index: 40; background: transparent; border: 0; cursor: default"></button>
+<div class="pop" style="position: fixed; z-index: 50; width: 260px; max-height: 76vh; overflow-y: auto; background: #1F2328; border: 1px solid #343A42; border-radius: 10px; box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5); padding: 6px; display: flex; flex-direction: column; {{menuPos}}">
+<sc-for list="{{menuItems}}" as="m" hint-placeholder-count="6">
+<sc-if value="{{m.isHeading}}" hint-placeholder-val="{{false}}"><div style="padding: 8px 10px 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #8B929C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{m.label}}</div></sc-if>
+<sc-if value="{{m.isSep}}" hint-placeholder-val="{{false}}"><div style="height: 1px; background: #2E333A; margin: 6px 4px"></div></sc-if>
+<sc-if value="{{m.isItem}}" hint-placeholder-val="{{true}}">
+<button class="mi" disabled="{{m.disabled}}" onClick="{{m.run}}" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 38px; padding: 0 10px; border: 0; background: transparent; border-radius: 6px; text-align: left; color: {{m.color}}">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{m.d}}"></path></svg>
+<span style="flex: 1">{{m.label}}</span>
+<span style="font-size: 12px; color: #8B929C">{{m.hint}}</span>
+</button>
+</sc-if>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 60; background: rgba(5, 6, 8, 0.66); display: flex; align-items: center; justify-content: center; padding: 16px">
+<dialog open="{{true}}" aria-labelledby="dk-confirm-title" class="pop" style="position: relative; inset: auto; margin: 0; width: 100%; max-width: 480px; background: #1B1F24; color: #E6E8EB; border: 1px solid #343A42; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5)">
+<h2 id="dk-confirm-title" style="margin: 0; font-size: 18px; font-weight: 600">{{cf.title}}</h2>
+<p style="margin: 0; color: #B4BAC2; font-size: 14px; text-wrap: pretty">{{cf.body}}</p>
+<sc-if value="{{cf.hasList}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding: 10px 12px; background: #15181C; border: 1px solid #2A2F36; border-radius: 10px">
+<sc-for list="{{cf.list}}" as="it" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13px">
+<span aria-hidden="true" style="width: 24px; height: 24px; flex: none; border-radius: 6px; background: {{it.bg}}; color: {{it.fg}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px">{{it.letter}}</span>
+<span style="flex: 1">{{it.name}}</span>
+<span style="font-size: 12px; color: {{it.noteColor}}">{{it.note}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<div style="display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap">
+<button class="ghost" onClick="{{closeConfirm}}" style="height: 40px; padding: 0 16px; background: transparent; border: 1px solid #343A42; border-radius: 8px; font-weight: 500">Cancel</button>
+<button onClick="{{doConfirm}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 8px; font-weight: 600; {{cf.btnStyle}}">{{cf.confirmLabel}}</button>
+</div>
+</dialog>
+</div>
+</sc-if>
+
+<sc-if value="{{edOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 55; background: rgba(5, 6, 8, 0.66); display: flex; align-items: center; justify-content: center; padding: 16px">
+<dialog open="{{true}}" aria-labelledby="dk-ed-title" class="pop" style="position: relative; inset: auto; margin: 0; width: 100%; max-width: 1000px; max-height: calc(100vh - 32px); background: #1B1F24; color: #E6E8EB; border: 1px solid #343A42; border-radius: 14px; padding: 0; display: flex; flex-direction: column; box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5); overflow: hidden">
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 18px 24px; border-bottom: 1px solid #2A2F36">
+<h2 id="dk-ed-title" style="margin: 0; font-size: 18px; font-weight: 600; flex: 1">{{ed.heading}}</h2>
+<button class="ghost" aria-label="Close" onClick="{{ed.cancel}}" style="width: 36px; height: 36px; border: 0; background: transparent; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9AA1AB">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+</button>
+</div>
+
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #16191D; border: 1px solid #2A2F36; border-radius: 10px; flex-wrap: wrap">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: #8B929C; width: 100%">Preview</span>
+<span aria-hidden="true" style="width: 40px; height: 40px; flex: none; border: 1px solid {{ed.icon.ring}}; border-radius: 10px; background: {{ed.icon.bg}}; color: {{ed.icon.fg}}; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{ed.icon.isGlyph}}" hint-placeholder-val="{{true}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ed.icon.d}}"></path></svg></sc-if>
+<sc-if value="{{ed.icon.isMono}}" hint-placeholder-val="{{false}}"><span style="font-weight: 700; font-size: 18px">{{ed.icon.letter}}</span></sc-if>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-weight: 600; font-size: 15px">{{ed.previewName}}</span>
+<span style="font-size: 12px; color: #9AA1AB">{{ed.previewSub}}</span>
+</span>
+<span aria-hidden="true" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-left: 10px">
+<sc-for list="{{ed.stack}}" as="s" hint-placeholder-count="3">
+<span style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; border: 2px solid #16191D; background: {{s.bg}}; color: {{s.fg}}; font-weight: 700; font-size: 12px">{{s.letter}}<sc-if value="{{s.showDot}}" hint-placeholder-val="{{true}}"><span style="position: absolute; right: -4px; bottom: -4px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid #16191D; background: {{s.dot}}"></span></sc-if></span>
+</sc-for>
+</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 28px">
+
+<div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 22px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="dk-name" style="font-weight: 600; font-size: 13px">Folder name</label>
+<input id="dk-name" value="{{ed.name}}" onChange="{{ed.onName}}" maxlength="32" placeholder="e.g. Media, Cloud, Home automation" style="height: 44px; padding: 0 12px; background: #121418; border: 1px solid {{ed.nameBorder}}; border-radius: 8px; color: #E6E8EB; font: inherit; font-size: 15px">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 12px">
+<span style="color: #FF9B9B">{{ed.error}}</span>
+<span style="color: #8B929C; font-family: 'IBM Plex Mono', monospace">{{ed.nameCount}}</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-weight: 600; font-size: 13px">Icon</span>
+<div style="display: flex; gap: 4px; padding: 4px; background: #121418; border: 1px solid #2A2F36; border-radius: 10px">
+<sc-for list="{{ed.tabs}}" as="t" hint-placeholder-count="3">
+<button aria-pressed="{{t.pressed}}" onClick="{{t.pick}}" style="flex: 1; height: 36px; border: 0; border-radius: 7px; font-size: 13px; font-weight: 500; {{t.style}}">{{t.label}}</button>
+</sc-for>
+</div>
+
+<sc-if value="{{ed.tabBuiltin}}" hint-placeholder-val="{{true}}">
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{ed.glyphs}}" as="gl" hint-placeholder-count="14">
+<button class="pick" aria-label="{{gl.label}}" aria-pressed="{{gl.pressed}}" title="{{gl.label}}" onClick="{{gl.pick}}" style="height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0; {{gl.style}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{gl.d}}"></path></svg>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ed.tabWeb}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<label style="display: flex; align-items: center; gap: 10px; font-size: 13px; min-height: 32px">
+<input type="checkbox" checked="{{ed.iconAuto}}" onChange="{{ed.toggleAuto}}" style="width: 18px; height: 18px; accent-color: #6EA8FE; margin: 0">
+<span>Fetch automatically from the folder name</span>
+</label>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="dk-webq" style="font-size: 12px; color: #9AA1AB">Search icon libraries</label>
+<input id="dk-webq" type="search" value="{{ed.webQuery}}" onChange="{{ed.onWebQuery}}" placeholder="App or topic name" style="height: 40px; padding: 0 12px; background: #121418; border: 1px solid #2E333A; border-radius: 8px; color: #E6E8EB; font: inherit">
+</div>
+<sc-if value="{{ed.hasWeb}}" hint-placeholder-val="{{true}}">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{ed.web}}" as="w" hint-placeholder-count="3">
+<button class="pick" aria-pressed="{{w.pressed}}" onClick="{{w.pick}}" style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 8px; border-radius: 10px; {{w.style}}">
+<span aria-hidden="true" style="width: 44px; height: 44px; border-radius: 10px; background: {{w.bg}}; color: {{w.fg}}; border: 1px solid {{w.ring}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px">{{w.letter}}</span>
+<span style="font-size: 12px; font-weight: 500">{{w.source}}</span>
+<span style="font-size: 11px; color: #8B929C; font-family: 'IBM Plex Mono', monospace; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{w.file}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ed.noWeb}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; color: #8B929C">Type a folder name or a search term to look up icons.</div></sc-if>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="dk-weburl" style="font-size: 12px; color: #9AA1AB">Or paste an image URL</label>
+<div style="display: flex; gap: 8px">
+<input id="dk-weburl" value="{{ed.webUrl}}" onChange="{{ed.onWebUrl}}" placeholder="https://…/icon.png" style="flex: 1; min-width: 0; height: 40px; padding: 0 12px; background: #121418; border: 1px solid #2E333A; border-radius: 8px; color: #E6E8EB; font: inherit; font-family: 'IBM Plex Mono', monospace; font-size: 12px">
+<button class="ghost" onClick="{{ed.download}}" style="height: 40px; padding: 0 14px; background: transparent; border: 1px solid #343A42; border-radius: 8px; font-weight: 500">Download</button>
+</div>
+<span style="font-size: 12px; color: {{ed.webMsgColor}}">{{ed.webMsg}}</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ed.tabContainer}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{ed.hasMembers}}" hint-placeholder-val="{{true}}">
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px">
+<sc-for list="{{ed.ctiles}}" as="ct" hint-placeholder-count="4">
+<button class="pick" aria-pressed="{{ct.pressed}}" onClick="{{ct.pick}}" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border-radius: 10px; {{ct.style}}">
+<span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 8px; background: {{ct.bg}}; color: {{ct.fg}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px">{{ct.letter}}</span>
+<span style="font-size: 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ct.name}}</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ed.noMembers}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; color: #8B929C">Add containers to the folder first, then reuse one of their icons.</div></sc-if>
+</sc-if>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-weight: 600; font-size: 13px">Colour</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{ed.colors}}" as="co" hint-placeholder-count="8">
+<button aria-label="{{co.label}}" aria-pressed="{{co.pressed}}" title="{{co.label}}" onClick="{{co.pick}}" style="width: 36px; height: 36px; border-radius: 50%; padding: 0; background: {{co.bg}}; {{co.style}}"></button>
+</sc-for>
+</div>
+</div>
+
+</div>
+
+<div style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 22px">
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<span style="font-weight: 600; font-size: 13px">Containers in this folder</span>
+<span style="font-size: 12px; color: #8B929C">{{ed.memberCount}}</span>
+</div>
+<label style="position: relative; display: flex; align-items: center">
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">Search containers</span>
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B929C" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 12px"><path d="M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4.2-4.2"></path></svg>
+<input type="search" value="{{ed.search}}" onChange="{{ed.onSearch}}" placeholder="Search containers" style="width: 100%; height: 38px; padding: 0 12px 0 34px; background: #121418; border: 1px solid #2E333A; border-radius: 8px; color: #E6E8EB; font: inherit">
+</label>
+<div style="max-height: 228px; overflow-y: auto; border: 1px solid #2A2F36; border-radius: 10px; background: #15181C; padding: 4px">
+<sc-for list="{{ed.pickRows}}" as="pr" hint-placeholder-count="6">
+<label class="mi" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border-radius: 6px; cursor: pointer">
+<input type="checkbox" checked="{{pr.checked}}" onChange="{{pr.toggle}}" style="width: 18px; height: 18px; accent-color: #6EA8FE; margin: 0; flex: none">
+<span aria-hidden="true" style="width: 24px; height: 24px; flex: none; border-radius: 6px; background: {{pr.bg}}; color: {{pr.fg}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px">{{pr.letter}}</span>
+<span style="flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{pr.name}}</span>
+<span style="font-size: 11px; color: {{pr.tagColor}}; white-space: nowrap">{{pr.tag}}</span>
+</label>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<span style="font-weight: 600; font-size: 13px">Start order</span>
+<span style="font-size: 12px; color: #8B929C">{{ed.orderHint}}</span>
+</div>
+<sc-if value="{{ed.hasMembers}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{ed.orderRows}}" as="o" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 6px 0 10px; background: #15181C; border: 1px solid #2A2F36; border-radius: 8px">
+<span style="width: 18px; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8B929C">{{o.n}}</span>
+<span aria-hidden="true" style="width: 22px; height: 22px; flex: none; border-radius: 6px; background: {{o.bg}}; color: {{o.fg}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 10px">{{o.letter}}</span>
+<span style="flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{o.name}}</span>
+<button class="ghost" aria-label="{{o.upLabel}}" disabled="{{o.upDis}}" onClick="{{o.up}}" style="width: 32px; height: 32px; border: 0; background: transparent; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #B4BAC2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"></path></svg></button>
+<button class="ghost" aria-label="{{o.downLabel}}" disabled="{{o.downDis}}" onClick="{{o.down}}" style="width: 32px; height: 32px; border: 0; background: transparent; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #B4BAC2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ed.noMembers}}" hint-placeholder-val="{{false}}"><div style="font-size: 13px; color: #8B929C">Tick containers above to set their order.</div></sc-if>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="dk-rule" style="font-weight: 600; font-size: 13px">Auto-add containers whose name matches</label>
+<input id="dk-rule" value="{{ed.rule}}" onChange="{{ed.onRule}}" placeholder="e.g. ^(sonarr|radarr|lidarr)$" style="height: 40px; padding: 0 12px; background: #121418; border: 1px solid #2E333A; border-radius: 8px; color: #E6E8EB; font-family: 'IBM Plex Mono', monospace; font-size: 13px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px">
+<span style="color: {{ed.ruleColor}}">{{ed.ruleText}}</span>
+<sc-for list="{{ed.ruleChips}}" as="rc" hint-placeholder-count="2"><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: #1E3354; color: #A9C9FF; font-size: 12px">{{rc.name}}</span></sc-for>
+</div>
+<div style="font-size: 12px; color: #8B929C">Containers carrying the Docker label <span style="font-family: 'IBM Plex Mono', monospace; color: #C9CED4">{{ed.labelHint}}</span> also join, including ones created later.</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<span style="font-weight: 600; font-size: 13px">Behaviour</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<label for="dk-delay" style="font-size: 13px">Wait between container starts</label>
+<span style="display: flex; align-items: center; gap: 8px">
+<input id="dk-delay" type="number" min="0" max="300" value="{{ed.delay}}" onChange="{{ed.onDelay}}" style="width: 72px; height: 36px; padding: 0 10px; background: #121418; border: 1px solid #2E333A; border-radius: 8px; color: #E6E8EB; font-family: 'IBM Plex Mono', monospace; font-size: 13px">
+<span style="font-size: 13px; color: #9AA1AB">seconds</span>
+</span>
+</div>
+<button aria-pressed="{{ed.revPressed}}" onClick="{{ed.toggleRev}}" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: transparent; border: 0; padding: 4px 0; text-align: left">
+<span style="font-size: 13px">Stop in reverse order</span>
+<span style="position: relative; display: block; width: 34px; height: 20px; flex: none; border-radius: 999px; {{ed.revTrack}}"><span style="position: absolute; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #F2F4F7; transition: left 0.15s; {{ed.revKnob}}"></span></span>
+</button>
+<button aria-pressed="{{ed.dashPressed}}" onClick="{{ed.toggleDash}}" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: transparent; border: 0; padding: 4px 0; text-align: left">
+<span style="font-size: 13px">Show folder on the Dashboard</span>
+<span style="position: relative; display: block; width: 34px; height: 20px; flex: none; border-radius: 999px; {{ed.dashTrack}}"><span style="position: absolute; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #F2F4F7; transition: left 0.15s; {{ed.dashKnob}}"></span></span>
+</button>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px">When folded, show</span>
+<div style="display: flex; gap: 4px; padding: 4px; background: #121418; border: 1px solid #2A2F36; border-radius: 10px">
+<sc-for list="{{ed.previews}}" as="pv" hint-placeholder-count="3">
+<button aria-pressed="{{pv.pressed}}" onClick="{{pv.pick}}" style="flex: 1; height: 34px; border: 0; border-radius: 7px; font-size: 12px; font-weight: 500; {{pv.style}}">{{pv.label}}</button>
+</sc-for>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 8px; padding: 14px 24px; border-top: 1px solid #2A2F36; flex-wrap: wrap">
+<sc-if value="{{ed.canDelete}}" hint-placeholder-val="{{false}}">
+<button class="ghost" onClick="{{ed.del}}" style="height: 40px; padding: 0 14px; background: transparent; border: 1px solid #5A2A2A; color: #FF9B9B; border-radius: 8px; font-weight: 500">Delete folder</button>
+</sc-if>
+<span style="flex: 1"></span>
+<button class="ghost" onClick="{{ed.cancel}}" style="height: 40px; padding: 0 16px; background: transparent; border: 1px solid #343A42; border-radius: 8px; font-weight: 500">Cancel</button>
+<button class="primary" onClick="{{ed.save}}" style="height: 40px; padding: 0 18px; background: #6EA8FE; color: #0B1320; border: 0; border-radius: 8px; font-weight: 600">{{ed.saveLabel}}</button>
+</div>
+
+</dialog>
+</div>
+</sc-if>
+
+<sc-if value="{{hasJob}}" hint-placeholder-val="{{false}}">
+<aside aria-live="polite" class="pop" style="position: fixed; right: 24px; bottom: 24px; z-index: 45; width: 340px; max-width: calc(100% - 32px); background: #1F2328; border: 1px solid #343A42; border-radius: 12px; box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 10px">
+<sc-if value="{{job.running}}" hint-placeholder-val="{{true}}"><span class="spin" style="display: block; width: 16px; height: 16px; flex: none; border-radius: 50%; border: 2px solid #6EA8FE; border-right-color: transparent"></span></sc-if>
+<sc-if value="{{job.done}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3FB97A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-weight: 600; font-size: 14px">{{job.title}}</span>
+<span style="font-size: 12px; color: #9AA1AB">{{job.sub}}</span>
+</div>
+<sc-if value="{{job.done}}" hint-placeholder-val="{{false}}">
+<button class="ghost" aria-label="Dismiss" onClick="{{job.dismiss}}" style="width: 32px; height: 32px; border: 0; background: transparent; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #9AA1AB"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</sc-if>
+</div>
+<div style="height: 4px; background: #2E333A; border-radius: 2px; overflow: hidden"><div style="height: 100%; background: #6EA8FE; border-radius: 2px; transition: width 0.3s; width: {{job.pct}}"></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto">
+<sc-for list="{{job.rows}}" as="r" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13px">
+<span class="{{r.dotClass}}" style="display: block; flex: none; {{r.dotStyle}}"></span>
+<span style="flex: 1; color: {{r.color}}">{{r.name}}</span>
+<span style="font-size: 12px; color: #9AA1AB; font-family: 'IBM Plex Mono', monospace">{{r.note}}</span>
+</div>
+</sc-for>
+</div>
+</aside>
+</sc-if>
+
+<div aria-live="polite" style="position: fixed; left: 24px; bottom: 24px; z-index: 46; display: flex; flex-direction: column; gap: 8px; max-width: calc(100% - 48px)">
+<sc-for list="{{toasts}}" as="ts" hint-placeholder-count="0">
+<div class="pop" style="background: #E6E8EB; color: #121418; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 500; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45); max-width: 420px">{{ts.msg}}</div>
+</sc-for>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  constructor(...args) {
+    super(...args);
+    const K = {};
+    K.colors = {
+      slate: { bg: '#2A323E', fg: '#CDD6E2', label: 'Slate' },
+      blue: { bg: '#1C365F', fg: '#A6C8FF', label: 'Blue' },
+      teal: { bg: '#0F3B3E', fg: '#86DAD4', label: 'Teal' },
+      green: { bg: '#173D29', fg: '#8EDCAB', label: 'Green' },
+      amber: { bg: '#46320F', fg: '#F4C870', label: 'Amber' },
+      orange: { bg: '#4A2414', fg: '#FFAD84', label: 'Orange' },
+      rose: { bg: '#471C2B', fg: '#F7A6BE', label: 'Rose' },
+      violet: { bg: '#30235A', fg: '#C9B1FF', label: 'Violet' }
+    };
+    K.glyphs = [
+      { key: 'folder', label: 'Folder', d: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+      { key: 'media', label: 'Media', d: 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM10 9l5 3-5 3z' },
+      { key: 'download', label: 'Downloads', d: 'M12 3v12M7 10l5 5 5-5M4 20h16' },
+      { key: 'home', label: 'Home', d: 'M3 11l9-7 9 7M5 9.5V20h14V9.5M10 20v-6h4v6' },
+      { key: 'cpu', label: 'AI / compute', d: 'M7 7h10v10H7zM10 10h4v4h-4zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4' },
+      { key: 'database', label: 'Databases', d: 'M4 6c0-1.66 3.58-3 8-3s8 1.34 8 3-3.58 3-8 3-8-1.34-8-3zM4 6v12c0 1.66 3.58 3 8 3s8-1.34 8-3V6M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3' },
+      { key: 'cloud', label: 'Cloud', d: 'M7 18.5h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.1 12 3.3 3.3 0 0 0 7 18.5z' },
+      { key: 'shield', label: 'Security', d: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z' },
+      { key: 'globe', label: 'Network', d: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM3 12h18M12 3c2.5 2.6 3.6 5.6 3.6 9s-1.1 6.4-3.6 9M12 3c-2.5 2.6-3.6 5.6-3.6 9s1.1 6.4 3.6 9' },
+      { key: 'camera', label: 'Photos', d: 'M4 8h3l2-3h6l2 3h3v11H4zM12 10.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7z' },
+      { key: 'music', label: 'Music', d: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0zM20 16a3 3 0 1 1-6 0a3 3 0 1 1 6 0z' },
+      { key: 'chart', label: 'Monitoring', d: 'M4 4v16h16M8 15l4-5 3 3 5-6' },
+      { key: 'lock', label: 'Passwords', d: 'M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3' },
+      { key: 'game', label: 'Games', d: 'M6 9h12a3 3 0 0 1 3 3v2.5a2.5 2.5 0 0 1-4.6 1.3L15 14H9l-1.4 1.8A2.5 2.5 0 0 1 3 14.5V12a3 3 0 0 1 3-3zM8 10.5v3M6.5 12h3M15.5 12h.01M17.5 13h.01' }
+    ];
+    K.gl = {};
+    K.glyphs.forEach(function (g) { K.gl[g.key] = g; });
+    K.web = [
+      { name: 'Dashboard Icons', bg: '#F1F3F5', fg: '#14181D', ring: '#F1F3F5', ext: 'svg' },
+      { name: 'selfh.st icons', bg: '#0B0D10', fg: '#EEF1F4', ring: '#3A414B', ext: 'svg' },
+      { name: 'Generated', bg: null, fg: null, ring: null, ext: 'png' },
+      { name: 'Image URL', bg: '#E4E9EF', fg: '#0F1720', ring: '#E4E9EF', ext: 'png' }
+    ];
+    const folderD = K.gl.folder.d;
+    K.p = {
+      play: 'M7 4.5v15l12-7.5z',
+      stop: 'M6.5 6.5h11v11h-11z',
+      restart: 'M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5',
+      pause: 'M9 5v14M15 5v14',
+      search: 'M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4.2-4.2',
+      down: 'M12 4v11M7 10l5 5 5-5M5 20h14',
+      bolt: 'M13 3L5 13.5h6L10 21l8-10.5h-6z',
+      ext: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
+      edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
+      up: 'M12 19V5M6 11l6-6 6 6',
+      dn: 'M12 5v14M6 13l6 6 6-6',
+      trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
+      folder: folderD,
+      folderMinus: folderD + 'M9.5 13h5',
+      plus: 'M12 5v14M5 12h14'
+    };
+    this.K = K;
+    const list = [
+      { id: 'plex', name: 'plex', letter: 'P', color: 'amber', image: 'plexinc/pms-docker', port: '32400', cpu: 3.4, mem: 640, status: 'running', update: false, autostart: true },
+      { id: 'qbittorrent', name: 'qbittorrent', letter: 'Q', color: 'slate', image: 'linuxserver/qbittorrent', port: '8080', cpu: 2.1, mem: 410, status: 'running', update: false, latent: true, autostart: true },
+      { id: 'prowlarr', name: 'prowlarr', letter: 'P', color: 'rose', image: 'linuxserver/prowlarr', port: '9696', cpu: 0.3, mem: 180, status: 'stopped', update: false, autostart: false },
+      { id: 'sonarr', name: 'sonarr', letter: 'S', color: 'blue', image: 'linuxserver/sonarr', port: '8989', cpu: 0.8, mem: 310, status: 'running', update: true, autostart: true },
+      { id: 'radarr', name: 'radarr', letter: 'R', color: 'orange', image: 'linuxserver/radarr', port: '7878', cpu: 0.6, mem: 285, status: 'running', update: true, autostart: true },
+      { id: 'mosquitto', name: 'mosquitto', letter: 'M', color: 'violet', image: 'eclipse-mosquitto', port: '1883', cpu: 0.1, mem: 12, status: 'running', update: false, autostart: true },
+      { id: 'zigbee2mqtt', name: 'zigbee2mqtt', letter: 'Z', color: 'amber', image: 'koenkk/zigbee2mqtt', port: '8099', cpu: 0.4, mem: 140, status: 'paused', update: false, autostart: true },
+      { id: 'homeassistant', name: 'homeassistant', letter: 'H', color: 'teal', image: 'home-assistant/home-assistant', port: '8123', cpu: 1.9, mem: 720, status: 'running', update: true, autostart: true },
+      { id: 'ollama', name: 'ollama', letter: 'O', color: 'slate', image: 'ollama/ollama', port: '11434', cpu: 6.2, mem: 2300, status: 'running', update: false, autostart: true },
+      { id: 'openwebui', name: 'open-webui', letter: 'W', color: 'blue', image: 'open-webui/open-webui', port: '3000', cpu: 0.9, mem: 520, status: 'running', update: false, latent: true, autostart: true },
+      { id: 'nextcloud', name: 'nextcloud', letter: 'N', color: 'blue', image: 'linuxserver/nextcloud', port: '443', cpu: 0.7, mem: 390, status: 'running', update: true, autostart: true },
+      { id: 'mariadb', name: 'mariadb', letter: 'M', color: 'teal', image: 'linuxserver/mariadb', port: '3306', cpu: 0.5, mem: 260, status: 'running', update: false, autostart: true },
+      { id: 'redis', name: 'redis', letter: 'R', color: 'rose', image: 'redis', port: '6379', cpu: 0.2, mem: 40, status: 'running', update: false, autostart: true },
+      { id: 'npm', name: 'nginx-proxy-manager', letter: 'N', color: 'green', image: 'jc21/nginx-proxy-manager', port: '81', cpu: 0.3, mem: 150, status: 'running', update: false, autostart: true },
+      { id: 'vaultwarden', name: 'vaultwarden', letter: 'V', color: 'slate', image: 'vaultwarden/server', port: '8000', cpu: 0.1, mem: 35, status: 'running', update: false, autostart: true },
+      { id: 'immich', name: 'immich', letter: 'I', color: 'violet', image: 'immich-app/immich-server', port: '2283', cpu: 1.2, mem: 860, status: 'stopped', update: false, autostart: false }
+    ];
+    const cs = {};
+    const order = [];
+    list.forEach(function (c) { cs[c.id] = c; order.push(c.id); });
+    this.timers = [];
+    this.seq = 1;
+    this.state = {
+      cs: cs,
+      order: order,
+      folders: [
+        { id: 'f-media', name: 'Media', color: 'amber', icon: { type: 'glyph', key: 'media' }, members: ['plex', 'qbittorrent', 'prowlarr', 'sonarr', 'radarr'], expanded: true, delay: 5, reverseStop: true, preview: 'status', rule: '', dashboard: true },
+        { id: 'f-home', name: 'Smart home', color: 'teal', icon: { type: 'glyph', key: 'home' }, members: ['mosquitto', 'zigbee2mqtt', 'homeassistant'], expanded: false, delay: 10, reverseStop: true, preview: 'status', rule: '', dashboard: true },
+        { id: 'f-ai', name: 'AI', color: 'violet', icon: { type: 'glyph', key: 'cpu' }, members: ['ollama', 'openwebui'], expanded: false, delay: 0, reverseStop: true, preview: 'icons', rule: '', dashboard: false }
+      ],
+      query: '',
+      menu: null,
+      confirm: null,
+      ed: null,
+      job: null,
+      toasts: []
+    };
+  }
+
+  componentWillUnmount() {
+    (this.timers || []).forEach(function (t) { clearTimeout(t); });
+  }
+
+  later(fn, ms) {
+    const t = setTimeout(fn, ms);
+    this.timers.push(t);
+    return t;
+  }
+
+  // ---------- small helpers
+  col(k) { return this.K.colors[k] || this.K.colors.slate; }
+  slug(s) { return String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+  firstLetter(s) { const m = String(s || '').match(/[a-z0-9]/i); return m ? m[0].toUpperCase() : '?'; }
+  fmtMem(mb) { return mb >= 1000 ? (mb / 1024).toFixed(1) + ' GB' : Math.round(mb) + ' MB'; }
+  plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  busyNow() { return !!(this.state.job && !this.state.job.done); }
+  folderOf(cid) {
+    const f = this.state.folders.find(function (x) { return x.members.indexOf(cid) >= 0; });
+    return f || null;
+  }
+  toast(msg) {
+    const id = this.seq++;
+    this.setState({ toasts: this.state.toasts.concat([{ id: id, msg: msg }]) });
+    this.later(() => { this.setState({ toasts: this.state.toasts.filter(function (t) { return t.id !== id; }) }); }, 4200);
+  }
+  setC(id, patch) {
+    const cs = Object.assign({}, this.state.cs);
+    cs[id] = Object.assign({}, cs[id], patch);
+    this.setState({ cs: cs });
+  }
+  sw(on, mixed) {
+    return {
+      track: 'background: ' + (mixed ? '#4A5260' : on ? '#3D7BE0' : '#30353C'),
+      knob: 'left: ' + (mixed ? '9px' : on ? '16px' : '2px'),
+      pressed: mixed ? 'mixed' : String(!!on)
+    };
+  }
+  stat(c) {
+    if (c.status === 'busy') return { text: c.busy || 'Working…', color: '#9CC2FF', dotClass: 'spin', dot: 'width: 12px; height: 12px; border-radius: 50%; border: 2px solid #6EA8FE; border-right-color: transparent', seg: '#6EA8FE' };
+    if (c.status === 'running') return { text: 'Running', color: '#8FDCB1', dotClass: '', dot: 'width: 10px; height: 10px; border-radius: 50%; background: #3FB97A', seg: '#3FB97A' };
+    if (c.status === 'paused') return { text: 'Paused', color: '#F0C06A', dotClass: '', dot: 'width: 10px; height: 10px; border-left: 3px solid #E0A43A; border-right: 3px solid #E0A43A', seg: '#E0A43A' };
+    return { text: 'Stopped', color: '#9AA1AB', dotClass: '', dot: 'width: 10px; height: 10px; border-radius: 50%; border: 2px solid #6B727C', seg: '#3A4049' };
+  }
+  badge(on) {
+    return on
+      ? 'display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: #3A2312; color: #FFB27A; border: 1px solid #66391A; font-size: 12px; font-weight: 500; white-space: nowrap'
+      : 'color: #8B929C; font-size: 13px';
+  }
+  iconView(icon, colorKey) {
+    const col = this.col(colorKey);
+    const base = { isGlyph: false, isMono: false, d: '', letter: '', bg: col.bg, fg: col.fg, ring: 'transparent' };
+    if (icon && icon.type === 'container') {
+      const c = this.state.cs[icon.cid];
+      if (c) { const cc = this.col(c.color); return Object.assign(base, { isMono: true, letter: c.letter, bg: cc.bg, fg: cc.fg }); }
+    }
+    if (icon && icon.type === 'web') {
+      const w = this.K.web[icon.src] || this.K.web[0];
+      return Object.assign(base, { isMono: true, letter: icon.letter || '?', bg: w.bg || col.bg, fg: w.fg || col.fg, ring: w.ring || 'transparent' });
+    }
+    const g = this.K.gl[(icon && icon.key) || 'folder'] || this.K.gl.folder;
+    return Object.assign(base, { isGlyph: true, d: g.d });
+  }
+  stackOf(ids, preview) {
+    const cs = this.state.cs;
+    const showDot = preview !== 'icons';
+    return ids.map((id) => {
+      const c = cs[id];
+      const t = this.col(c.color);
+      const st = this.stat(c);
+      return {
+        letter: c.letter, bg: t.bg, fg: t.fg, dot: st.seg === '#3A4049' ? '#5C636D' : st.seg, showDot: showDot,
+        title: c.name + ' · ' + st.text,
+        label: 'Actions for ' + c.name + ', ' + st.text.toLowerCase(),
+        openMenu: (e) => this.openMenu(e, 'container', id, 'left')
+      };
+    });
+  }
+
+  // ---------- menu
+  openMenu(e, kind, id, align) {
+    let pos = 'top: 120px; right: 24px';
+    try {
+      const r = e.currentTarget.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const vert = (r.bottom + 420 > vh && r.top > vh - r.bottom) ? 'bottom: ' + Math.round(vh - r.top + 6) + 'px' : 'top: ' + Math.round(r.bottom + 6) + 'px';
+      const horiz = (align === 'left' && r.left + 268 < vw) ? 'left: ' + Math.round(r.left) + 'px' : 'right: ' + Math.round(Math.max(8, vw - r.right)) + 'px';
+      pos = vert + '; ' + horiz;
+    } catch (err) {}
+    this.setState({ menu: { kind: kind, id: id, pos: pos } });
+  }
+  mHead(label) { return { isHeading: true, isSep: false, isItem: false, label: label }; }
+  mSep() { return { isHeading: false, isSep: true, isItem: false }; }
+  mItem(label, d, hint, disabled, fn, color) {
+    return {
+      isHeading: false, isSep: false, isItem: true, label: label, d: d, hint: hint || '', disabled: !!disabled,
+      color: color || '#E6E8EB',
+      run: () => { this.setState({ menu: null }); fn(); }
+    };
+  }
+  folderMenu(f) {
+    const cs = this.state.cs;
+    const P = this.K.p;
+    const busy = this.busyNow();
+    const ms = f.members.map(function (id) { return cs[id]; }).filter(Boolean);
+    const count = function (s) { return ms.filter(function (c) { return c.status === s; }).length; };
+    const stopped = count('stopped');
+    const running = count('running');
+    const paused = count('paused');
+    const upd = ms.filter(function (c) { return c.update; }).length;
+    const idx = this.state.folders.findIndex(function (x) { return x.id === f.id; });
+    const last = this.state.folders.length - 1;
+    const items = [
+      this.mHead(f.name),
+      this.mItem('Start all', P.play, stopped ? stopped + ' stopped' : 'all up', busy || !stopped, () => this.run(f, 'start')),
+      this.mItem('Stop all', P.stop, f.reverseStop ? 'reverse order' : '', busy || !(running + paused), () => this.run(f, 'stop')),
+      this.mItem('Restart all', P.restart, running ? running + ' running' : '', busy || !running, () => this.run(f, 'restart')),
+      paused
+        ? this.mItem('Resume all', P.play, paused + ' paused', busy, () => this.run(f, 'resume'))
+        : this.mItem('Pause all', P.pause, '', busy || !running, () => this.run(f, 'pause')),
+      this.mSep(),
+      this.mItem('Check for updates', P.search, '', busy || !ms.length, () => this.run(f, 'check'))
+    ];
+    if (upd) items.push(this.mItem('Update ' + this.plural(upd, 'container'), P.down, 'ready', busy, () => this.run(f, 'update')));
+    items.push(this.mItem('Force update all', P.bolt, String(ms.length), busy || !ms.length, () => this.setState({ confirm: { kind: 'force', fid: f.id } }), '#FFB27A'));
+    items.push(this.mSep());
+    items.push(this.mItem('Open WebUIs', P.ext, running ? String(running) : '', !running, () => this.toast('Opening ' + this.plural(running, 'WebUI') + ' from “' + f.name + '” in new tabs')));
+    items.push(this.mItem('Edit folder…', P.edit, '', false, () => this.openEditor(f)));
+    items.push(this.mItem('Move folder up', P.up, '', idx <= 0, () => this.moveFolder(f.id, -1)));
+    items.push(this.mItem('Move folder down', P.dn, '', idx >= last, () => this.moveFolder(f.id, 1)));
+    items.push(this.mSep());
+    items.push(this.mItem('Delete folder', P.trash, '', busy, () => this.setState({ confirm: { kind: 'delete', fid: f.id } }), '#FF9B9B'));
+    return items;
+  }
+  containerMenu(c) {
+    const P = this.K.p;
+    const busy = this.busyNow();
+    const f = this.folderOf(c.id);
+    const items = [this.mHead(c.name)];
+    if (c.status === 'running') items.push(this.mItem('Stop', P.stop, '', busy, () => this.runOne(c, 'stop')));
+    else if (c.status === 'paused') items.push(this.mItem('Resume', P.play, '', busy, () => this.runOne(c, 'resume')));
+    else items.push(this.mItem('Start', P.play, '', busy || c.status === 'busy', () => this.runOne(c, 'start')));
+    items.push(this.mItem('Restart', P.restart, '', busy || c.status !== 'running', () => this.runOne(c, 'restart')));
+    items.push(c.update
+      ? this.mItem('Update', P.down, 'ready', busy, () => this.runOne(c, 'update'))
+      : this.mItem('Force update', P.bolt, '', busy, () => this.runOne(c, 'force')));
+    items.push(this.mSep());
+    items.push(this.mHead(f ? 'Move to folder' : 'Add to folder'));
+    this.state.folders.forEach((o) => {
+      if (f && o.id === f.id) return;
+      items.push(this.mItem(o.name, P.folder, this.plural(o.members.length, 'item'), false, () => this.moveTo(c.id, o.id)));
+    });
+    items.push(this.mItem('New folder…', P.plus, '', false, () => this.openEditor(null, [c.id])));
+    if (f) items.push(this.mItem('Remove from ' + f.name, P.folderMinus, '', false, () => this.moveTo(c.id, null)));
+    return items;
+  }
+  moveTo(cid, fid) {
+    const folders = this.state.folders.map(function (f) {
+      const members = f.members.filter(function (m) { return m !== cid; });
+      if (f.id === fid) members.push(cid);
+      return Object.assign({}, f, { members: members });
+    });
+    this.setState({ folders: folders });
+    const name = this.state.cs[cid].name;
+    const target = folders.find(function (f) { return f.id === fid; });
+    this.toast(target ? name + ' moved to “' + target.name + '”' : name + ' removed from its folder');
+  }
+  moveFolder(fid, dir) {
+    const folders = this.state.folders.slice();
+    const i = folders.findIndex(function (f) { return f.id === fid; });
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= folders.length) return;
+    const t = folders[i]; folders[i] = folders[j]; folders[j] = t;
+    this.setState({ folders: folders });
+  }
+  patchFolder(fid, patch) {
+    this.setState({ folders: this.state.folders.map(function (f) { return f.id === fid ? Object.assign({}, f, patch) : f; }) });
+  }
+
+  // ---------- jobs (simulated docker operations)
+  runOne(c, kind) {
+    this.run({ id: null, name: c.name, members: [c.id], delay: 0, reverseStop: false }, kind);
+  }
+  run(f, kind) {
+    if (this.busyNow()) { this.toast('Another job is still running'); return; }
+    const cs = this.state.cs;
+    const ids = f.members.filter(function (id) { return cs[id]; });
+    const rev = f.reverseStop ? ids.slice().reverse() : ids.slice();
+    const steps = [];
+    const S = function (cid, busy, ms, then, note, doneNote, last) { steps.push({ cid: cid, busy: busy, ms: ms, then: then, note: note, doneNote: doneNote, last: last }); };
+    const W = function (cid, sec) { steps.push({ cid: cid, busy: null, ms: 650, then: null, note: 'wait ' + sec + ' s', doneNote: null, last: false }); };
+    let targets = [];
+    let title = '';
+    let done = '';
+    const has = function (id, list) { return list.indexOf(id) >= 0; };
+    if (kind === 'start') {
+      targets = ids.filter(function (id) { return cs[id].status === 'stopped'; });
+      targets.forEach(function (id, k) { if (k > 0 && f.delay > 0) W(id, f.delay); S(id, 'Starting…', 900, { status: 'running' }, 'starting', 'started', true); });
+      title = 'Starting ' + f.name; done = this.plural(targets.length, 'container') + ' started';
+    } else if (kind === 'stop') {
+      targets = rev.filter(function (id) { return cs[id].status === 'running' || cs[id].status === 'paused'; });
+      targets.forEach(function (id) { S(id, 'Stopping…', 800, { status: 'stopped' }, 'stopping', 'stopped', true); });
+      title = 'Stopping ' + f.name; done = this.plural(targets.length, 'container') + ' stopped' + (f.reverseStop && targets.length > 1 ? ', last-started first' : '');
+    } else if (kind === 'restart') {
+      const runIds = ids.filter(function (id) { return cs[id].status === 'running'; });
+      rev.filter(function (id) { return has(id, runIds); }).forEach(function (id) { S(id, 'Stopping…', 650, { status: 'stopped' }, 'stopping', null, false); });
+      targets = runIds;
+      targets.forEach(function (id, k) { if (k > 0 && f.delay > 0) W(id, f.delay); S(id, 'Starting…', 850, { status: 'running' }, 'starting', 'restarted', true); });
+      title = 'Restarting ' + f.name; done = this.plural(targets.length, 'container') + ' restarted';
+    } else if (kind === 'pause') {
+      targets = ids.filter(function (id) { return cs[id].status === 'running'; });
+      targets.forEach(function (id) { S(id, 'Pausing…', 420, { status: 'paused' }, 'pausing', 'paused', true); });
+      title = 'Pausing ' + f.name; done = this.plural(targets.length, 'container') + ' paused';
+    } else if (kind === 'resume') {
+      targets = ids.filter(function (id) { return cs[id].status === 'paused'; });
+      targets.forEach(function (id) { S(id, 'Resuming…', 420, { status: 'running' }, 'resuming', 'running', true); });
+      title = 'Resuming ' + f.name; done = this.plural(targets.length, 'container') + ' resumed';
+    } else if (kind === 'check') {
+      targets = ids;
+      let found = 0;
+      targets.forEach(function (id) {
+        const c = cs[id];
+        const u = !!(c.update || c.latent);
+        if (u) found++;
+        S(id, 'Checking…', 380, { status: c.status, update: u, latent: false }, 'checking', u ? 'update ready' : 'up to date', true);
+      });
+      title = 'Checking ' + f.name + ' for updates'; done = found ? this.plural(found, 'update') + ' ready' : 'Everything is up to date';
+    } else if (kind === 'update' || kind === 'force') {
+      targets = kind === 'update' ? ids.filter(function (id) { return cs[id].update; }) : ids;
+      targets.forEach(function (id) {
+        const c = cs[id];
+        const back = c.status === 'stopped' ? 'stopped' : 'running';
+        S(id, 'Pulling image…', 950, null, 'pulling', null, false);
+        S(id, 'Recreating…', 750, { status: back, update: false, latent: false }, 'recreating', back === 'stopped' ? 'updated, left stopped' : 'updated', true);
+      });
+      title = (kind === 'force' ? 'Force updating ' : 'Updating ') + f.name; done = this.plural(targets.length, 'container') + ' updated';
+    }
+    if (!targets.length) { this.toast('Nothing to do in “' + f.name + '”'); return; }
+    const rows = targets.map(function (id) { return { cid: id, name: cs[id].name, state: 'queued', note: 'queued' }; });
+    const job = { id: this.seq++, fid: f.id, title: title, steps: steps, rows: rows, i: 0, done: false, doneText: done };
+    this.setState({ job: job });
+    this.later(() => this.step(job.id, 0), 250);
+  }
+  step(jobId, i) {
+    const job = this.state.job;
+    if (!job || job.id !== jobId) return;
+    if (i >= job.steps.length) {
+      this.setState({ job: Object.assign({}, job, { done: true, i: i }) });
+      this.later(() => { if (this.state.job && this.state.job.id === jobId) this.setState({ job: null }); }, 6500);
+      return;
+    }
+    const st = job.steps[i];
+    const cs = Object.assign({}, this.state.cs);
+    if (st.busy) cs[st.cid] = Object.assign({}, cs[st.cid], { status: 'busy', busy: st.busy });
+    const rows = job.rows.map(function (r) { return r.cid === st.cid ? Object.assign({}, r, { state: 'active', note: st.note }) : r; });
+    this.setState({ cs: cs, job: Object.assign({}, job, { rows: rows, i: i }) });
+    this.later(() => {
+      const j2 = this.state.job;
+      if (!j2 || j2.id !== jobId) return;
+      const cs2 = Object.assign({}, this.state.cs);
+      if (st.then) cs2[st.cid] = Object.assign({}, cs2[st.cid], st.then, { busy: null });
+      const rows2 = j2.rows.map(function (r) { return (r.cid === st.cid && st.last) ? Object.assign({}, r, { state: 'done', note: st.doneNote }) : r; });
+      this.setState({ cs: cs2, job: Object.assign({}, j2, { rows: rows2, i: i + 1 }) });
+      this.later(() => this.step(jobId, i + 1), 70);
+    }, st.ms);
+  }
+
+  // ---------- confirm dialogs
+  confirmView() {
+    const cf = this.state.confirm;
+    if (!cf) return { list: [] };
+    const f = this.state.folders.find(function (x) { return x.id === cf.fid; });
+    if (!f) return { list: [] };
+    const cs = this.state.cs;
+    const list = f.members.map((id) => {
+      const c = cs[id];
+      const t = this.col(c.color);
+      return { name: c.name, letter: c.letter, bg: t.bg, fg: t.fg, note: c.update ? 'update ready' : 'already up to date', noteColor: c.update ? '#FFB27A' : '#8B929C' };
+    });
+    if (cf.kind === 'force') {
+      return {
+        title: 'Force update ' + this.plural(list.length, 'container') + ' in “' + f.name + '”?',
+        body: 'Every image is pulled again and each container is recreated, even when it is already up to date. Running containers come back up in start order; stopped ones stay stopped.',
+        list: list, hasList: true, confirmLabel: 'Force update',
+        btnStyle: 'background: #FFB27A; color: #1D1006'
+      };
+    }
+    return {
+      title: 'Delete folder “' + f.name + '”?',
+      body: 'Only the folder is removed. Its ' + this.plural(list.length, 'container') + ' keep running as they are and move to “Not in a folder”.',
+      list: [], hasList: false, confirmLabel: 'Delete folder',
+      btnStyle: 'background: #FF9B9B; color: #2A0A0A'
+    };
+  }
+  doConfirm() {
+    const cf = this.state.confirm;
+    if (!cf) return;
+    const f = this.state.folders.find(function (x) { return x.id === cf.fid; });
+    this.setState({ confirm: null });
+    if (!f) return;
+    if (cf.kind === 'force') { this.run(f, 'force'); return; }
+    this.setState({ folders: this.state.folders.filter(function (x) { return x.id !== f.id; }) });
+    this.toast('Folder “' + f.name + '” deleted · ' + this.plural(f.members.length, 'container') + ' moved to Not in a folder');
+  }
+
+  // ---------- folder editor
+  openEditor(f, preset) {
+    const ed = f
+      ? { id: f.id, name: f.name, color: f.color, icon: Object.assign({}, f.icon), members: f.members.slice(), delay: String(f.delay), reverseStop: f.reverseStop, preview: f.preview, rule: f.rule || '', dashboard: f.dashboard, iconAuto: false }
+      : { id: null, name: '', color: 'blue', icon: { type: 'glyph', key: 'folder' }, members: (preset || []).slice(), delay: '5', reverseStop: true, preview: 'status', rule: '', dashboard: true, iconAuto: true };
+    ed.tab = (!f || ed.icon.type === 'web') ? 'web' : ed.icon.type === 'container' ? 'container' : 'builtin';
+    ed.webQuery = null;
+    ed.webUrl = '';
+    ed.webMsg = '';
+    ed.webMsgOk = true;
+    ed.search = '';
+    ed.error = '';
+    this.setState({ ed: ed, menu: null });
+  }
+  patchEd(patch) { this.setState({ ed: Object.assign({}, this.state.ed, patch) }); }
+  edIcon(ed) {
+    if (ed.iconAuto) {
+      const n = ed.name.trim();
+      return n ? { type: 'web', src: 0, letter: this.firstLetter(n), query: n } : { type: 'glyph', key: 'folder' };
+    }
+    return ed.icon;
+  }
+  ruleMatches(ed) {
+    const r = (ed.rule || '').trim();
+    if (!r) return { ids: [], error: '' };
+    try {
+      const re = new RegExp(r, 'i');
+      const cs = this.state.cs;
+      return { ids: this.state.order.filter(function (id) { return re.test(cs[id].name) && ed.members.indexOf(id) < 0; }), error: '' };
+    } catch (e) {
+      return { ids: [], error: 'That is not a valid pattern' };
+    }
+  }
+  downloadUrl() {
+    const ed = this.state.ed;
+    const u = (ed.webUrl || '').trim();
+    if (!/^https?:\/\/[^\s/]+\/\S+\.(png|svg|jpe?g|webp|ico)(\?\S*)?$/i.test(u)) {
+      this.patchEd({ webMsg: 'Paste a direct link to a .png, .svg, .jpg or .webp image', webMsgOk: false });
+      return;
+    }
+    const file = u.split('?')[0].split('/').pop();
+    const host = u.replace(/^https?:\/\//i, '').split('/')[0];
+    this.patchEd({ icon: { type: 'web', src: 3, letter: this.firstLetter(file), query: file }, iconAuto: false, webMsg: 'Downloaded ' + file + ' from ' + host + ' · stored locally so it shows offline', webMsgOk: true });
+  }
+  saveEd() {
+    const ed = this.state.ed;
+    const name = ed.name.trim();
+    if (!name) { this.patchEd({ error: 'Give the folder a name' }); return; }
+    if (this.state.folders.some(function (f) { return f.id !== ed.id && f.name.toLowerCase() === name.toLowerCase(); })) {
+      this.patchEd({ error: 'Another folder already uses this name' });
+      return;
+    }
+    const extra = this.ruleMatches(ed).ids;
+    const members = ed.members.concat(extra);
+    const id = ed.id || ('f-' + this.seq++);
+    const rec = {
+      id: id, name: name, color: ed.color, icon: this.edIcon(ed), members: members,
+      delay: Math.max(0, Math.min(300, parseInt(ed.delay, 10) || 0)), reverseStop: ed.reverseStop,
+      preview: ed.preview, rule: (ed.rule || '').trim(), dashboard: ed.dashboard, expanded: true
+    };
+    let folders = this.state.folders.map(function (f) {
+      if (f.id === id) return Object.assign({}, f, rec, { expanded: f.expanded });
+      return Object.assign({}, f, { members: f.members.filter(function (m) { return members.indexOf(m) < 0; }) });
+    });
+    if (!ed.id) folders = folders.concat([rec]);
+    this.setState({ folders: folders, ed: null });
+    this.toast((ed.id ? 'Saved “' : 'Created “') + name + '” · ' + this.plural(members.length, 'container'));
+  }
+  editorView() {
+    const ed = this.state.ed;
+    if (!ed) return { stack: [], tabs: [], glyphs: [], web: [], ctiles: [], colors: [], pickRows: [], orderRows: [], ruleChips: [], previews: [], icon: {} };
+    const cs = this.state.cs;
+    const icon = this.edIcon(ed);
+    const sel = 'background: #1E3354; color: #CFE0FF; border: 1px solid #6EA8FE';
+    const unsel = 'background: #15181C; color: #C9CED4; border: 1px solid #2A2F36';
+    const tabSel = 'background: #2A3038; color: #E6E8EB';
+    const tabUn = 'background: transparent; color: #9AA1AB';
+    const tabs = [
+      { key: 'builtin', label: 'Built-in' },
+      { key: 'web', label: 'From the web' },
+      { key: 'container', label: 'From a container' }
+    ].map((t) => ({ label: t.label, pressed: String(ed.tab === t.key), style: ed.tab === t.key ? tabSel : tabUn, pick: () => this.patchEd({ tab: t.key }) }));
+    const glyphs = this.K.glyphs.map((g) => {
+      const on = icon.type === 'glyph' && icon.key === g.key;
+      return { label: g.label, d: g.d, pressed: String(on), style: on ? sel : unsel, pick: () => this.patchEd({ icon: { type: 'glyph', key: g.key }, iconAuto: false }) };
+    });
+    const q = ed.webQuery === null ? ed.name : ed.webQuery;
+    const col = this.col(ed.color);
+    const web = q.trim() ? [0, 1, 2].map((k) => {
+      const w = this.K.web[k];
+      const on = icon.type === 'web' && icon.src === k && icon.query === q.trim();
+      return {
+        source: w.name, file: (this.slug(q) || 'icon') + '.' + w.ext, letter: this.firstLetter(q),
+        bg: w.bg || col.bg, fg: w.fg || col.fg, ring: w.ring || col.bg,
+        pressed: String(on), style: on ? sel : unsel,
+        pick: () => this.patchEd({ icon: { type: 'web', src: k, letter: this.firstLetter(q), query: q.trim() }, iconAuto: false })
+      };
+    }) : [];
+    const ctiles = ed.members.filter(function (id) { return cs[id]; }).map((id) => {
+      const c = cs[id];
+      const t = this.col(c.color);
+      const on = icon.type === 'container' && icon.cid === id;
+      return { name: c.name, letter: c.letter, bg: t.bg, fg: t.fg, pressed: String(on), style: on ? sel : unsel, pick: () => this.patchEd({ icon: { type: 'container', cid: id }, iconAuto: false }) };
+    });
+    const colors = Object.keys(this.K.colors).map((k) => {
+      const c = this.K.colors[k];
+      const on = ed.color === k;
+      return { label: c.label, bg: c.bg, pressed: String(on), style: on ? 'border: 2px solid #E6E8EB; box-shadow: inset 0 0 0 3px #1B1F24' : 'border: 2px solid ' + c.fg + '55', pick: () => this.patchEd({ color: k }) };
+    });
+    const s2 = (ed.search || '').trim().toLowerCase();
+    const pickRows = this.state.order.filter(function (id) { return !s2 || cs[id].name.indexOf(s2) >= 0; }).map((id) => {
+      const c = cs[id];
+      const t = this.col(c.color);
+      const checked = ed.members.indexOf(id) >= 0;
+      const inF = this.folderOf(id);
+      const other = inF && inF.id !== ed.id ? inF : null;
+      return {
+        name: c.name, letter: c.letter, bg: t.bg, fg: t.fg, checked: checked,
+        tag: other ? (checked ? 'moves from ' + other.name : 'in ' + other.name) : '',
+        tagColor: other && checked ? '#FFB27A' : '#8B929C',
+        toggle: () => {
+          const e2 = this.state.ed;
+          const m = e2.members.indexOf(id) >= 0 ? e2.members.filter(function (x) { return x !== id; }) : e2.members.concat([id]);
+          this.patchEd({ members: m });
+        }
+      };
+    });
+    const n = ed.members.length;
+    const orderRows = ed.members.map((id, k) => {
+      const c = cs[id];
+      const t = this.col(c.color);
+      const mv = (dir) => () => {
+        const m = this.state.ed.members.slice();
+        const j = k + dir;
+        if (j < 0 || j >= m.length) return;
+        const tmp = m[k]; m[k] = m[j]; m[j] = tmp;
+        this.patchEd({ members: m });
+      };
+      return { n: String(k + 1), name: c.name, letter: c.letter, bg: t.bg, fg: t.fg, upDis: k === 0, downDis: k === n - 1, up: mv(-1), down: mv(1), upLabel: 'Start ' + c.name + ' earlier', downLabel: 'Start ' + c.name + ' later' };
+    });
+    const rm = this.ruleMatches(ed);
+    const ruleChips = rm.ids.map(function (id) { return { name: cs[id].name }; });
+    const ruleText = rm.error ? rm.error : (ed.rule.trim() ? (rm.ids.length ? 'Will also add:' : 'No other containers match right now') : 'Optional. A regular expression, matched case-insensitively.');
+    const rev = this.sw(ed.reverseStop, false);
+    const dash = this.sw(ed.dashboard, false);
+    const previews = [
+      { key: 'status', label: 'Icons + status' },
+      { key: 'icons', label: 'Icons only' },
+      { key: 'count', label: 'Count only' }
+    ].map((p) => ({ label: p.label, pressed: String(ed.preview === p.key), style: ed.preview === p.key ? tabSel : tabUn, pick: () => this.patchEd({ preview: p.key }) }));
+    const iv = this.iconView(icon, ed.color);
+    const delayN = parseInt(ed.delay, 10) || 0;
+    return {
+      heading: ed.id ? 'Edit folder' : 'New folder',
+      saveLabel: ed.id ? 'Save folder' : 'Create folder',
+      canDelete: !!ed.id,
+      name: ed.name,
+      nameCount: ed.name.length + ' / 32',
+      nameBorder: ed.error ? '#FF9B9B' : '#2E333A',
+      error: ed.error,
+      onName: (e) => this.patchEd({ name: e.target.value, error: '' }),
+      icon: iv,
+      previewName: ed.name.trim() || 'Untitled folder',
+      previewSub: this.plural(n + rm.ids.length, 'container') + (delayN ? ' · starts ' + delayN + ' s apart' : ''),
+      stack: ed.preview === 'count' ? [] : this.stackOf(ed.members.concat(rm.ids).filter(function (id) { return cs[id]; }), ed.preview),
+      tabs: tabs,
+      tabBuiltin: ed.tab === 'builtin', tabWeb: ed.tab === 'web', tabContainer: ed.tab === 'container',
+      glyphs: glyphs,
+      iconAuto: !!ed.iconAuto,
+      toggleAuto: () => this.patchEd({ iconAuto: !this.state.ed.iconAuto, webQuery: null }),
+      webQuery: q,
+      onWebQuery: (e) => this.patchEd({ webQuery: e.target.value }),
+      web: web, hasWeb: web.length > 0, noWeb: web.length === 0,
+      webUrl: ed.webUrl,
+      onWebUrl: (e) => this.patchEd({ webUrl: e.target.value, webMsg: '' }),
+      download: () => this.downloadUrl(),
+      webMsg: ed.webMsg || 'The icon is copied to the server, so it still shows when offline.',
+      webMsgColor: ed.webMsg ? (ed.webMsgOk ? '#8FDCB1' : '#FF9B9B') : '#8B929C',
+      ctiles: ctiles,
+      hasMembers: n > 0, noMembers: n === 0,
+      colors: colors,
+      memberCount: n ? n + ' selected' : 'none selected',
+      search: ed.search,
+      onSearch: (e) => this.patchEd({ search: e.target.value }),
+      pickRows: pickRows,
+      orderRows: orderRows,
+      orderHint: ed.reverseStop ? 'top starts first, stops last' : 'top starts first',
+      rule: ed.rule,
+      onRule: (e) => this.patchEd({ rule: e.target.value }),
+      ruleText: ruleText,
+      ruleColor: rm.error ? '#FF9B9B' : '#9AA1AB',
+      ruleChips: ruleChips,
+      labelHint: 'folder=' + (this.slug(ed.name) || 'name'),
+      delay: ed.delay,
+      onDelay: (e) => this.patchEd({ delay: e.target.value }),
+      revPressed: rev.pressed, revTrack: rev.track, revKnob: rev.knob,
+      toggleRev: () => this.patchEd({ reverseStop: !this.state.ed.reverseStop }),
+      dashPressed: dash.pressed, dashTrack: dash.track, dashKnob: dash.knob,
+      toggleDash: () => this.patchEd({ dashboard: !this.state.ed.dashboard }),
+      previews: previews,
+      cancel: () => this.setState({ ed: null }),
+      save: () => this.saveEd(),
+      del: () => this.setState({ ed: null, confirm: { kind: 'delete', fid: ed.id } })
+    };
+  }
+
+  // ---------- main view
+  renderVals() {
+    const s = this.state;
+    const cs = s.cs;
+    const q = s.query.trim().toLowerCase();
+    const searching = q.length > 0;
+    const job = s.job;
+    const crow = (c, k, inFolder) => {
+      const st = this.stat(c);
+      const t = this.col(c.color);
+      const run = c.status === 'running';
+      const sw = this.sw(c.autostart, false);
+      return {
+        name: c.name, image: c.image, order: inFolder ? String(k + 1) : '',
+        letter: c.letter, bg: t.bg, fg: t.fg,
+        statusText: st.text, statusColor: st.color, dotClass: st.dotClass, dotStyle: st.dot,
+        updText: c.update ? 'Update ready' : 'Up to date', updStyle: this.badge(c.update),
+        port: ':' + c.port,
+        cpu: run ? c.cpu.toFixed(1) + '%' : '—',
+        mem: run ? this.fmtMem(c.mem) : '—',
+        autoTrack: sw.track, autoKnob: sw.knob, autoPressed: sw.pressed, autoText: c.autostart ? 'On' : 'Off',
+        autoLabel: 'Autostart ' + c.name,
+        menuLabel: 'Actions for ' + c.name,
+        toggleAuto: () => this.setC(c.id, { autostart: !this.state.cs[c.id].autostart }),
+        openMenu: (e) => this.openMenu(e, 'container', c.id, 'right')
+      };
+    };
+
+    const folders = [];
+    s.folders.forEach((f) => {
+      const all = f.members.filter(function (id) { return cs[id]; });
+      const nameHit = searching && f.name.toLowerCase().indexOf(q) >= 0;
+      const shown = (!searching || nameHit) ? all : all.filter(function (id) { return cs[id].name.indexOf(q) >= 0; });
+      if (searching && !shown.length) return;
+      const ms = all.map(function (id) { return cs[id]; });
+      const running = ms.filter(function (c) { return c.status === 'running'; });
+      const busyN = ms.filter(function (c) { return c.status === 'busy'; }).length;
+      const upd = ms.filter(function (c) { return c.update; }).length;
+      const autoOn = ms.filter(function (c) { return c.autostart; }).length;
+      const mixed = autoOn > 0 && autoOn < ms.length;
+      const sw = this.sw(ms.length > 0 && autoOn === ms.length, mixed);
+      const expanded = searching ? true : !!f.expanded;
+      const cpu = running.reduce(function (a, c) { return a + c.cpu; }, 0);
+      const mem = running.reduce(function (a, c) { return a + c.mem; }, 0);
+      const stack = f.preview === 'count' ? [] : this.stackOf(all, f.preview);
+      folders.push({
+        name: f.name,
+        sub: this.plural(all.length, 'container') + (f.delay ? ' · starts ' + f.delay + ' s apart' : ''),
+        icon: this.iconView(f.icon, f.color),
+        iconLabel: 'Commands for folder ' + f.name,
+        menuLabel: 'More actions for folder ' + f.name,
+        toggleLabel: (expanded ? 'Fold ' : 'Unfold ') + f.name,
+        expanded: expanded,
+        expandedStr: String(expanded),
+        chevStyle: expanded ? 'transform: rotate(90deg)' : 'transform: none',
+        showStack: !expanded && stack.length > 0,
+        showSub: !(!expanded && stack.length > 0),
+        count: this.plural(all.length, 'container'),
+        stack: stack,
+        runText: busyN ? 'Working… ' + running.length + ' of ' + all.length + ' up' : (all.length ? running.length + ' of ' + all.length + ' running' : 'Empty folder'),
+        runColor: busyN ? '#9CC2FF' : (all.length && running.length === all.length ? '#8FDCB1' : '#C9CED4'),
+        seg: ms.map((c) => ({ c: this.stat(c).seg })),
+        updText: upd ? this.plural(upd, 'update') : 'Up to date',
+        updStyle: this.badge(upd > 0),
+        cpu: running.length ? cpu.toFixed(1) + '%' : '—',
+        mem: running.length ? this.fmtMem(mem) : '—',
+        autoTrack: sw.track, autoKnob: sw.knob, autoPressed: sw.pressed,
+        autoText: mixed ? 'Mixed' : (sw.pressed === 'true' ? 'All on' : 'All off'),
+        autoLabel: 'Autostart every container in ' + f.name,
+        toggleAuto: () => {
+          const target = !(ms.length > 0 && autoOn === ms.length);
+          const cs2 = Object.assign({}, this.state.cs);
+          all.forEach(function (id) { cs2[id] = Object.assign({}, cs2[id], { autostart: target }); });
+          this.setState({ cs: cs2 });
+        },
+        toggle: () => this.patchFolder(f.id, { expanded: !f.expanded }),
+        openMenu: (e) => this.openMenu(e, 'folder', f.id, 'right'),
+        openIconMenu: (e) => this.openMenu(e, 'folder', f.id, 'left'),
+        kids: shown.map(function (id) { return crow(cs[id], all.indexOf(id), true); })
+      });
+    });
+
+    const inAny = {};
+    s.folders.forEach(function (f) { f.members.forEach(function (id) { inAny[id] = true; }); });
+    const looseIds = s.order.filter(function (id) { return !inAny[id] && (!searching || cs[id].name.indexOf(q) >= 0); });
+    const loose = looseIds.map(function (id, k) { return crow(cs[id], k, false); });
+
+    const ids = s.order;
+    const total = ids.length;
+    const runningAll = ids.filter(function (id) { return cs[id].status === 'running'; }).length;
+    const updAll = ids.filter(function (id) { return cs[id].update; }).length;
+    const anyCollapsed = s.folders.some(function (f) { return !f.expanded; });
+
+    let menuItems = [];
+    if (s.menu) {
+      if (s.menu.kind === 'folder') {
+        const f = s.folders.find(function (x) { return x.id === s.menu.id; });
+        if (f) menuItems = this.folderMenu(f);
+      } else if (cs[s.menu.id]) {
+        menuItems = this.containerMenu(cs[s.menu.id]);
+      }
+    }
+
+    const jobV = job ? {
+      title: job.title,
+      sub: job.done ? job.doneText : 'Step ' + Math.min(job.i + 1, job.steps.length) + ' of ' + job.steps.length,
+      pct: Math.round((job.done ? 1 : job.i / Math.max(1, job.steps.length)) * 100) + '%',
+      done: !!job.done,
+      running: !job.done,
+      dismiss: () => this.setState({ job: null }),
+      rows: job.rows.map(function (r) {
+        return {
+          name: r.name, note: r.note,
+          color: r.state === 'queued' ? '#8B929C' : '#E6E8EB',
+          dotClass: r.state === 'active' ? 'spin' : '',
+          dotStyle: r.state === 'active'
+            ? 'width: 10px; height: 10px; border-radius: 50%; border: 2px solid #6EA8FE; border-right-color: transparent'
+            : r.state === 'done' ? 'width: 8px; height: 8px; margin: 1px; border-radius: 50%; background: #3FB97A' : 'width: 8px; height: 8px; margin: 1px; border-radius: 50%; border: 2px solid #4A515B'
+        };
+      })
+    } : { rows: [] };
+
+    const cf = this.confirmView();
+
+    return {
+      summary: this.plural(total, 'container') + ' · ' + runningAll + ' running · ' + this.plural(s.folders.length, 'folder') + (updAll ? ' · ' + this.plural(updAll, 'update') + ' ready' : ''),
+      query: s.query,
+      onQuery: (e) => this.setState({ query: e.target.value }),
+      toggleAllLabel: anyCollapsed ? 'Unfold all' : 'Fold all',
+      toggleAll: () => {
+        const open = this.state.folders.some(function (f) { return !f.expanded; });
+        this.setState({ folders: this.state.folders.map(function (f) { return Object.assign({}, f, { expanded: open }); }) });
+      },
+      newFolder: () => this.openEditor(null),
+      folders: folders,
+      hasLoose: loose.length > 0,
+      looseLabel: 'Not in a folder · ' + loose.length,
+      loose: loose,
+      noResults: searching && !folders.length && !loose.length,
+      noResultsText: 'Nothing matches “' + s.query.trim() + '”',
+      menuOpen: !!s.menu && menuItems.length > 0,
+      menuPos: s.menu ? s.menu.pos : '',
+      menuItems: menuItems,
+      closeMenu: () => this.setState({ menu: null }),
+      confirmOpen: !!s.confirm,
+      cf: cf,
+      closeConfirm: () => this.setState({ confirm: null }),
+      doConfirm: () => this.doConfirm(),
+      edOpen: !!s.ed,
+      ed: this.editorView(),
+      hasJob: !!job,
+      job: jobV,
+      toasts: s.toasts
+    };
+  }
+}
+</script>
+</body>
+</html>

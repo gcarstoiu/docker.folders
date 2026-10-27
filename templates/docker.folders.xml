@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Community Applications plugin template.
+
+  A plugin entry is identified by <PluginURL>; CA installs the .plg from
+  there. TemplateURL must point at the raw GitHub URL of this exact file.
+  See https://ca.unraid.net/submit/help/xml-field-reference
+-->
+<PluginEntry>
+  <Name>Docker Folders</Name>
+  <Author>george</Author>
+
+  <PluginURL>https://raw.githubusercontent.com/george/docker.folders/main/docker.folders.plg</PluginURL>
+  <TemplateURL>https://raw.githubusercontent.com/george/docker.folders/main/templates/docker.folders.xml</TemplateURL>
+
+  <Repository>docker.folders</Repository>
+  <Support>https://github.com/george/docker.folders/issues</Support>
+  <Project>https://github.com/george/docker.folders</Project>
+  <License>GPL-2.0</License>
+
+  <Icon>https://raw.githubusercontent.com/george/docker.folders/main/src/usr/local/emhttp/plugins/docker.folders/images/icon.png</Icon>
+
+  <Category>Tools:Utilities Productivity:</Category>
+  <MinVer>7.2.0</MinVer>
+
+  <Overview>
+    Adds folders to the Unraid Docker page.
+
+    Group related containers into a folder, fold it away behind a single row
+    that still shows every member's icon, and unfold it to see the full
+    container rows with their start order.
+
+    A folder's icon opens its commands: start, stop, restart, pause, resume,
+    check for updates, update and force update - each one running across the
+    whole folder, one container at a time, honouring the folder's start
+    order, its delay between starts, and reverse-order stop. Clicking any
+    icon in a folded folder opens that single container's menu.
+
+    Folders can fill themselves: give one a name pattern, or label a
+    container with docker.folders=&lt;folder&gt;, and matching containers join
+    automatically, including ones created later.
+
+    Folder start order drives Unraid's own autostart order rather than
+    shadowing it, so containers come up at boot in the same order the folder
+    uses. Deleting or editing a folder never stops, removes or recreates a
+    container. A "Classic view" switch restores the standard Unraid table at
+    any time.
+
+    Folder definitions and downloaded folder icons are stored on the flash
+    drive and survive reboots.
+  </Overview>
+
+  <Changes>
+### 2026.10.27
+- Initial release.
+  </Changes>
+</PluginEntry>

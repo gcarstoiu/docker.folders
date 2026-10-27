@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docker folders — interactive prototype</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<!--
+  Standalone, dependency-free reference prototype for the "Docker folders" design.
+  Everything Docker-related is SIMULATED (timers + fake data). See ../DESIGN_SPEC.md.
+  Rendering is a naive full re-render into #app on every state change; a real
+  implementation should use the host UI's own rendering approach.
+-->
+<style>
+:root {
+  --bg: #101215; --surface: #16191D; --surface-folder: #191D22; --raised: #1F2328; --dialog: #1B1F24; --input: #121418; --well: #15181C;
+  --border: #262B31; --border-strong: #2E333A; --border-pop: #343A42; --divider: #23272D; --divider-soft: #1F2328;
+  --hover-row: #1C2026; --hover-ghost: #262B32; --hover-menu: #2A3038;
+  --text: #E6E8EB; --text-2: #C9CED4; --text-muted: #9AA1AB; --text-dim: #8B929C; --text-faint: #7D8590; --text-disabled: #6F7782;
+  --accent: #6EA8FE; --accent-hover: #8AB8FF; --on-accent: #0B1320; --accent-soft-bg: #1E3354; --accent-soft-fg: #CFE0FF; --chip-fg: #A9C9FF;
+  --run: #3FB97A; --run-text: #8FDCB1; --stop-ring: #6B727C; --stop-seg: #3A4049; --stop-dot: #5C636D;
+  --paused: #E0A43A; --paused-text: #F0C06A; --busy: #6EA8FE; --busy-text: #9CC2FF;
+  --warn-bg: #3A2312; --warn-fg: #FFB27A; --warn-border: #66391A; --on-warn: #1D1006;
+  --danger: #FF9B9B; --danger-border: #5A2A2A; --on-danger: #2A0A0A;
+  --switch-on: #3D7BE0; --switch-off: #30353C; --switch-mixed: #4A5260; --knob: #F2F4F7;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif; --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --r-control: 8px; --r-tile: 10px; --r-card: 12px; --r-dialog: 14px;
+  --shadow-pop: 0 14px 36px rgba(0, 0, 0, .5);
+  --cols: 40px minmax(280px, 1fr) 150px 124px 84px 72px 92px 104px 44px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.4; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .4; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input::placeholder { color: var(--text-faint); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mono { font-family: var(--mono); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.pop { animation: pop .14s ease-out; }
+
+.page { max-width: 1360px; margin: 0 auto; padding: 32px 24px 140px; display: flex; flex-direction: column; gap: 20px; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
+.head h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -.01em; }
+.summary { color: var(--text-muted); font-size: 13px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search { position: relative; display: flex; align-items: center; }
+.search svg { position: absolute; left: 12px; }
+.input { height: 40px; padding: 0 12px; background: var(--input); border: 1px solid var(--border-strong); border-radius: var(--r-control); color: var(--text); font: inherit; }
+.search .input { width: 260px; padding-left: 36px; background: #181B1F; }
+.btn { height: 40px; padding: 0 14px; border-radius: var(--r-control); font-weight: 500; display: inline-flex; align-items: center; gap: 8px; }
+.btn-ghost { background: transparent; border: 1px solid var(--border-strong); }
+.btn-ghost:hover:not(:disabled) { background: var(--hover-ghost); }
+.btn-primary { background: var(--accent); color: var(--on-accent); border: 0; font-weight: 600; padding: 0 16px; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger-outline { background: transparent; border: 1px solid var(--danger-border); color: var(--danger); }
+.icon-btn { width: 36px; height: 36px; border: 0; background: transparent; border-radius: var(--r-control); display: flex; align-items: center; justify-content: center; color: var(--text-muted); padding: 0; }
+.icon-btn:hover:not(:disabled) { background: var(--hover-ghost); }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); overflow: hidden; }
+.hscroll { overflow-x: auto; }
+.table { min-width: 1100px; }
+.g { display: grid; grid-template-columns: var(--cols); column-gap: 10px; align-items: center; padding: 0 12px; }
+.thead { height: 40px; border-bottom: 1px solid var(--border); color: var(--text-dim); font-family: var(--mono); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; }
+.folder { border-bottom: 1px solid var(--divider); }
+.frow { min-height: 64px; padding-top: 10px; padding-bottom: 10px; background: var(--surface-folder); }
+.row:hover { background: var(--hover-row); }
+.chev svg { transition: transform .15s; }
+.chev[aria-expanded="true"] svg { transform: rotate(90deg); }
+.fcell { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.ficon { width: 40px; height: 40px; flex: none; padding: 0; border-radius: var(--r-tile); display: flex; align-items: center; justify-content: center; border: 1px solid transparent; }
+.ficon:hover { box-shadow: 0 0 0 2px var(--accent); }
+.fmeta { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.fname-btn { background: transparent; border: 0; padding: 0; text-align: left; display: flex; flex-direction: column; gap: 2px; min-width: 0; max-width: 100%; align-self: flex-start; }
+.fname-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.fname { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.fsub { color: var(--text-muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fcount { color: var(--text-muted); font-size: 12px; white-space: nowrap; flex: none; }
+.strip { display: flex; flex-wrap: wrap; align-items: center; margin-left: -4px; }
+.strip-btn { width: 38px; height: 38px; flex: none; padding: 0; border: 0; background: transparent; border-radius: var(--r-control); display: inline-flex; align-items: center; justify-content: center; }
+.strip-btn:hover { background: var(--hover-ghost); }
+.ctile { position: relative; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: 700; flex: none; }
+.ctile .sdot { position: absolute; right: -4px; bottom: -4px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--surface-folder); }
+.runcell { display: flex; flex-direction: column; gap: 6px; }
+.segbar { display: flex; gap: 2px; width: 100px; height: 4px; }
+.segbar span { flex: 1; border-radius: 2px; }
+.num { font-family: var(--mono); font-size: 13px; color: var(--text-2); }
+.port { font-family: var(--mono); font-size: 13px; color: var(--text-muted); }
+.dash { font-family: var(--mono); font-size: 13px; color: var(--text-dim); }
+.badge { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-fg); border: 1px solid var(--warn-border); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.muted { color: var(--text-dim); font-size: 13px; }
+.crow { min-height: 52px; }
+.tree { align-self: stretch; justify-self: center; width: 1px; background: var(--border-strong); }
+.ccell { display: flex; align-items: center; gap: 12px; min-width: 0; padding-left: 8px; }
+.order { width: 18px; flex: none; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--text-faint); }
+.cname { display: flex; flex-direction: column; min-width: 0; }
+.cname b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cname small { font-size: 12px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.dot { display: block; flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.dot-running { background: var(--run); }
+.dot-stopped { border: 2px solid var(--stop-ring); }
+.dot-paused { border-radius: 0; border-left: 3px solid var(--paused); border-right: 3px solid var(--paused); }
+.dot-busy { width: 12px; height: 12px; border: 2px solid var(--busy); border-right-color: transparent; animation: spin .8s linear infinite; }
+.t-running { color: var(--run-text); } .t-stopped { color: var(--text-muted); } .t-paused { color: var(--paused-text); } .t-busy { color: var(--busy-text); }
+.switch { display: flex; align-items: center; gap: 8px; background: transparent; border: 0; padding: 6px 0; }
+.track { position: relative; display: block; width: 34px; height: 20px; border-radius: 999px; background: var(--switch-off); flex: none; }
+.track i { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--knob); transition: left .15s; }
+.switch[aria-pressed="true"] .track { background: var(--switch-on); } .switch[aria-pressed="true"] .track i { left: 16px; }
+.switch[aria-pressed="mixed"] .track { background: var(--switch-mixed); } .switch[aria-pressed="mixed"] .track i { left: 9px; }
+.switch small { font-size: 12px; color: var(--text-muted); }
+.section-label { padding: 20px 12px 10px 74px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--divider); }
+.loose { border-bottom: 1px solid var(--divider-soft); }
+.empty { padding: 48px 24px; text-align: center; color: var(--text-muted); }
+.tip { margin: 0; color: var(--text-dim); font-size: 12px; font-family: var(--mono); }
+
+.scrim-btn { position: fixed; inset: 0; z-index: 40; background: transparent; border: 0; cursor: default; }
+.menu { position: fixed; z-index: 50; width: 260px; max-height: 76vh; overflow-y: auto; background: var(--raised); border: 1px solid var(--border-pop); border-radius: var(--r-tile); box-shadow: var(--shadow-pop); padding: 6px; display: flex; flex-direction: column; }
+.menu-head { padding: 8px 10px 6px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-sep { height: 1px; background: var(--border-strong); margin: 6px 4px; }
+.mi { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 38px; padding: 0 10px; border: 0; background: transparent; border-radius: 6px; text-align: left; }
+.mi:hover:not(:disabled) { background: var(--hover-menu); }
+.mi .lbl { flex: 1; } .mi .hint { font-size: 12px; color: var(--text-dim); }
+
+.overlay { position: fixed; inset: 0; z-index: 55; background: rgba(5, 6, 8, .66); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dialog { position: relative; width: 100%; background: var(--dialog); color: var(--text); border: 1px solid var(--border-pop); border-radius: var(--r-dialog); box-shadow: 0 20px 48px rgba(0, 0, 0, .5); }
+.confirm { max-width: 480px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.confirm h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.confirm p { margin: 0; color: #B4BAC2; text-wrap: pretty; }
+.well { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding: 10px 12px; background: var(--well); border: 1px solid #2A2F36; border-radius: var(--r-tile); }
+.well-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+
+.editor { max-width: 1000px; max-height: calc(100vh - 32px); display: flex; flex-direction: column; overflow: hidden; }
+.ed-head { display: flex; align-items: center; gap: 12px; padding: 18px 24px; border-bottom: 1px solid #2A2F36; }
+.ed-head h2 { margin: 0; font-size: 18px; font-weight: 600; flex: 1; }
+.ed-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 20px; }
+.ed-foot { display: flex; align-items: center; gap: 8px; padding: 14px 24px; border-top: 1px solid #2A2F36; flex-wrap: wrap; }
+.preview { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid #2A2F36; border-radius: var(--r-tile); flex-wrap: wrap; }
+.preview .eyebrow { font-size: 11px; width: 100%; }
+.preview .ctile .sdot { border-color: var(--surface); }
+.cols { display: flex; flex-wrap: wrap; gap: 28px; }
+.col { min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field > label, .field-title { font-weight: 600; font-size: 13px; }
+.field-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.small { font-size: 12px; color: var(--text-dim); }
+.seg { display: flex; gap: 4px; padding: 4px; background: var(--input); border: 1px solid #2A2F36; border-radius: var(--r-tile); }
+.seg button { flex: 1; height: 36px; border: 0; border-radius: 7px; font-size: 13px; font-weight: 500; background: transparent; color: var(--text-muted); }
+.seg button[aria-pressed="true"] { background: var(--hover-menu); color: var(--text); }
+.pick { border-radius: var(--r-tile); background: var(--well); color: var(--text-2); border: 1px solid #2A2F36; padding: 0; }
+.pick:hover { border-color: #5A6370; }
+.pick[aria-pressed="true"] { background: var(--accent-soft-bg); color: var(--accent-soft-fg); border-color: var(--accent); }
+.glyphs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.glyphs .pick { height: 48px; display: flex; align-items: center; justify-content: center; }
+.webgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.webgrid .pick, .ctgrid .pick { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 8px; }
+.ctgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.fname-cap { font-size: 11px; color: var(--text-dim); font-family: var(--mono); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 13px; min-height: 32px; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; flex: none; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch { width: 36px; height: 36px; border-radius: 50%; padding: 0; }
+.swatch[aria-pressed="true"] { border: 2px solid var(--text) !important; box-shadow: inset 0 0 0 3px var(--dialog); }
+.list { max-height: 228px; overflow-y: auto; border: 1px solid #2A2F36; border-radius: var(--r-tile); background: var(--well); padding: 4px; }
+.list label { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border-radius: 6px; cursor: pointer; }
+.list label:hover { background: var(--hover-menu); }
+.list .nm { flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list .tag { font-size: 11px; white-space: nowrap; color: var(--text-dim); }
+.list .tag.move { color: var(--warn-fg); }
+.olist { display: flex; flex-direction: column; gap: 4px; }
+.orow { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 6px 0 10px; background: var(--well); border: 1px solid #2A2F36; border-radius: var(--r-control); }
+.orow .n { width: 18px; text-align: right; font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
+.orow .nm { flex: 1; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.orow .icon-btn { width: 32px; height: 32px; color: #B4BAC2; }
+.chip { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--accent-soft-bg); color: var(--chip-fg); font-size: 12px; }
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: transparent; border: 0; padding: 4px 0; text-align: left; width: 100%; font-size: 13px; }
+.toggle-row[aria-pressed="true"] .track { background: var(--switch-on); } .toggle-row[aria-pressed="true"] .track i { left: 16px; }
+.err { color: var(--danger); } .ok { color: var(--run-text); }
+
+.jobs { position: fixed; right: 24px; bottom: 24px; z-index: 45; width: 340px; max-width: calc(100% - 32px); background: var(--raised); border: 1px solid var(--border-pop); border-radius: var(--r-card); box-shadow: var(--shadow-pop); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.jobs-head { display: flex; align-items: center; gap: 10px; }
+.jobs-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.jobs-title b { font-weight: 600; } .jobs-title small { font-size: 12px; color: var(--text-muted); }
+.prog { height: 4px; background: var(--border-strong); border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
+.jrows { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+.jrow { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.jrow .nm { flex: 1; } .jrow .nt { font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
+.jdot { display: block; flex: none; width: 8px; height: 8px; margin: 1px; border-radius: 50%; border: 2px solid #4A515B; }
+.jdot.done { border: 0; background: var(--run); }
+.jdot.active { width: 10px; height: 10px; margin: 0; border: 2px solid var(--busy); border-right-color: transparent; animation: spin .8s linear infinite; }
+.toasts { position: fixed; left: 24px; bottom: 24px; z-index: 46; display: flex; flex-direction: column; gap: 8px; max-width: calc(100% - 48px); }
+.toast { background: var(--text); color: var(--input); border-radius: var(--r-tile); padding: 10px 14px; font-size: 13px; font-weight: 500; box-shadow: 0 10px 28px rgba(0, 0, 0, .45); max-width: 420px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script>
+'use strict';
+
+/* ------------------------------------------------------------------ design data */
+const COLORS = {
+  slate:  { bg: '#2A323E', fg: '#CDD6E2', label: 'Slate' },
+  blue:   { bg: '#1C365F', fg: '#A6C8FF', label: 'Blue' },
+  teal:   { bg: '#0F3B3E', fg: '#86DAD4', label: 'Teal' },
+  green:  { bg: '#173D29', fg: '#8EDCAB', label: 'Green' },
+  amber:  { bg: '#46320F', fg: '#F4C870', label: 'Amber' },
+  orange: { bg: '#4A2414', fg: '#FFAD84', label: 'Orange' },
+  rose:   { bg: '#471C2B', fg: '#F7A6BE', label: 'Rose' },
+  violet: { bg: '#30235A', fg: '#C9B1FF', label: 'Violet' }
+};
+const GLYPHS = [
+  { key: 'folder', label: 'Folder', d: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+  { key: 'media', label: 'Media', d: 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM10 9l5 3-5 3z' },
+  { key: 'download', label: 'Downloads', d: 'M12 3v12M7 10l5 5 5-5M4 20h16' },
+  { key: 'home', label: 'Home', d: 'M3 11l9-7 9 7M5 9.5V20h14V9.5M10 20v-6h4v6' },
+  { key: 'cpu', label: 'AI / compute', d: 'M7 7h10v10H7zM10 10h4v4h-4zM9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4' },
+  { key: 'database', label: 'Databases', d: 'M4 6c0-1.66 3.58-3 8-3s8 1.34 8 3-3.58 3-8 3-8-1.34-8-3zM4 6v12c0 1.66 3.58 3 8 3s8-1.34 8-3V6M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3' },
+  { key: 'cloud', label: 'Cloud', d: 'M7 18.5h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.1 12 3.3 3.3 0 0 0 7 18.5z' },
+  { key: 'shield', label: 'Security', d: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z' },
+  { key: 'globe', label: 'Network', d: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM3 12h18M12 3c2.5 2.6 3.6 5.6 3.6 9s-1.1 6.4-3.6 9M12 3c-2.5 2.6-3.6 5.6-3.6 9s1.1 6.4 3.6 9' },
+  { key: 'camera', label: 'Photos', d: 'M4 8h3l2-3h6l2 3h3v11H4zM12 10.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7z' },
+  { key: 'music', label: 'Music', d: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0zM20 16a3 3 0 1 1-6 0a3 3 0 1 1 6 0z' },
+  { key: 'chart', label: 'Monitoring', d: 'M4 4v16h16M8 15l4-5 3 3 5-6' },
+  { key: 'lock', label: 'Passwords', d: 'M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3' },
+  { key: 'game', label: 'Games', d: 'M6 9h12a3 3 0 0 1 3 3v2.5a2.5 2.5 0 0 1-4.6 1.3L15 14H9l-1.4 1.8A2.5 2.5 0 0 1 3 14.5V12a3 3 0 0 1 3-3zM8 10.5v3M6.5 12h3M15.5 12h.01M17.5 13h.01' }
+];
+const GL = {}; GLYPHS.forEach(g => { GL[g.key] = g; });
+// Icon sources. The web lookups are SIMULATED: results are letter tiles styled per source.
+const WEB = [
+  { name: 'Dashboard Icons', bg: '#F1F3F5', fg: '#14181D', ring: '#F1F3F5', ext: 'svg' },
+  { name: 'selfh.st icons', bg: '#0B0D10', fg: '#EEF1F4', ring: '#3A414B', ext: 'svg' },
+  { name: 'Generated', bg: null, fg: null, ring: null, ext: 'png' },
+  { name: 'Image URL', bg: '#E4E9EF', fg: '#0F1720', ring: '#E4E9EF', ext: 'png' }
+];
+const P = {
+  play: 'M7 4.5v15l12-7.5z', stop: 'M6.5 6.5h11v11h-11z', restart: 'M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5',
+  pause: 'M9 5v14M15 5v14', search: 'M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4.2-4.2',
+  down: 'M12 4v11M7 10l5 5 5-5M5 20h14', bolt: 'M13 3L5 13.5h6L10 21l8-10.5h-6z',
+  ext: 'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
+  edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4', up: 'M12 19V5M6 11l6-6 6 6', dn: 'M12 5v14M6 13l6 6 6-6',
+  trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13', folder: GL.folder.d, folderMinus: GL.folder.d + 'M9.5 13h5',
+  plus: 'M12 5v14M5 12h14', chev: 'M9 6l6 6-6 6', kebab: 'M12 5h.01M12 12h.01M12 19h.01', x: 'M6 6l12 12M18 6L6 18',
+  check: 'M5 12.5l4.5 4.5L19 7.5', caretUp: 'M6 15l6-6 6 6', caretDown: 'M6 9l6 6 6-6'
+};
+// Sample data. All figures are invented for the mockup.
+const SEED = [
+  { id: 'plex', name: 'plex', letter: 'P', color: 'amber', image: 'plexinc/pms-docker', port: '32400', cpu: 3.4, mem: 640, status: 'running', update: false, autostart: true },
+  { id: 'qbittorrent', name: 'qbittorrent', letter: 'Q', color: 'slate', image: 'linuxserver/qbittorrent', port: '8080', cpu: 2.1, mem: 410, status: 'running', update: false, latent: true, autostart: true },
+  { id: 'prowlarr', name: 'prowlarr', letter: 'P', color: 'rose', image: 'linuxserver/prowlarr', port: '9696', cpu: 0.3, mem: 180, status: 'stopped', update: false, autostart: false },
+  { id: 'sonarr', name: 'sonarr', letter: 'S', color: 'blue', image: 'linuxserver/sonarr', port: '8989', cpu: 0.8, mem: 310, status: 'running', update: true, autostart: true },
+  { id: 'radarr', name: 'radarr', letter: 'R', color: 'orange', image: 'linuxserver/radarr', port: '7878', cpu: 0.6, mem: 285, status: 'running', update: true, autostart: true },
+  { id: 'mosquitto', name: 'mosquitto', letter: 'M', color: 'violet', image: 'eclipse-mosquitto', port: '1883', cpu: 0.1, mem: 12, status: 'running', update: false, autostart: true },
+  { id: 'zigbee2mqtt', name: 'zigbee2mqtt', letter: 'Z', color: 'amber', image: 'koenkk/zigbee2mqtt', port: '8099', cpu: 0.4, mem: 140, status: 'paused', update: false, autostart: true },
+  { id: 'homeassistant', name: 'homeassistant', letter: 'H', color: 'teal', image: 'home-assistant/home-assistant', port: '8123', cpu: 1.9, mem: 720, status: 'running', update: true, autostart: true },
+  { id: 'ollama', name: 'ollama', letter: 'O', color: 'slate', image: 'ollama/ollama', port: '11434', cpu: 6.2, mem: 2300, status: 'running', update: false, autostart: true },
+  { id: 'openwebui', name: 'open-webui', letter: 'W', color: 'blue', image: 'open-webui/open-webui', port: '3000', cpu: 0.9, mem: 520, status: 'running', update: false, latent: true, autostart: true },
+  { id: 'nextcloud', name: 'nextcloud', letter: 'N', color: 'blue', image: 'linuxserver/nextcloud', port: '443', cpu: 0.7, mem: 390, status: 'running', update: true, autostart: true },
+  { id: 'mariadb', name: 'mariadb', letter: 'M', color: 'teal', image: 'linuxserver/mariadb', port: '3306', cpu: 0.5, mem: 260, status: 'running', update: false, autostart: true },
+  { id: 'redis', name: 'redis', letter: 'R', color: 'rose', image: 'redis', port: '6379', cpu: 0.2, mem: 40, status: 'running', update: false, autostart: true },
+  { id: 'npm', name: 'nginx-proxy-manager', letter: 'N', color: 'green', image: 'jc21/nginx-proxy-manager', port: '81', cpu: 0.3, mem: 150, status: 'running', update: false, autostart: true },
+  { id: 'vaultwarden', name: 'vaultwarden', letter: 'V', color: 'slate', image: 'vaultwarden/server', port: '8000', cpu: 0.1, mem: 35, status: 'running', update: false, autostart: true },
+  { id: 'immich', name: 'immich', letter: 'I', color: 'violet', image: 'immich-app/immich-server', port: '2283', cpu: 1.2, mem: 860, status: 'stopped', update: false, autostart: false }
+];
+
+/* ------------------------------------------------------------------ state */
+const S = {
+  cs: {}, order: [],
+  folders: [
+    { id: 'f-media', name: 'Media', color: 'amber', icon: { type: 'glyph', key: 'media' }, members: ['plex', 'qbittorrent', 'prowlarr', 'sonarr', 'radarr'], expanded: true, delay: 5, reverseStop: true, preview: 'status', rule: '', dashboard: true },
+    { id: 'f-home', name: 'Smart home', color: 'teal', icon: { type: 'glyph', key: 'home' }, members: ['mosquitto', 'zigbee2mqtt', 'homeassistant'], expanded: false, delay: 10, reverseStop: true, preview: 'status', rule: '', dashboard: true },
+    { id: 'f-ai', name: 'AI', color: 'violet', icon: { type: 'glyph', key: 'cpu' }, members: ['ollama', 'openwebui'], expanded: false, delay: 0, reverseStop: true, preview: 'icons', rule: '', dashboard: false }
+  ],
+  query: '', menu: null, confirm: null, ed: null, job: null, toasts: []
+};
+SEED.forEach(c => { S.cs[c.id] = Object.assign({}, c); S.order.push(c.id); });
+let seq = 1;
+let menuRuns = [];
+const app = document.getElementById('app');
+
+/* ------------------------------------------------------------------ helpers */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const col = k => COLORS[k] || COLORS.slate;
+const slug = s => String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const firstLetter = s => { const m = String(s || '').match(/[a-z0-9]/i); return m ? m[0].toUpperCase() : '?'; };
+const fmtMem = mb => mb >= 1000 ? (mb / 1024).toFixed(1) + ' GB' : Math.round(mb) + ' MB';
+const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+const busyNow = () => !!(S.job && !S.job.done);
+const folderOf = cid => S.folders.find(f => f.members.includes(cid)) || null;
+const svg = (d, size = 16, sw = 2, extra = '') => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}><path d="${d}"/></svg>`;
+
+function set(patch) { Object.assign(S, patch); render(); }
+function setC(id, patch) { const cs = Object.assign({}, S.cs); cs[id] = Object.assign({}, cs[id], patch); set({ cs }); }
+function patchFolder(fid, patch) { set({ folders: S.folders.map(f => f.id === fid ? Object.assign({}, f, patch) : f) }); }
+function patchEd(patch) { set({ ed: Object.assign({}, S.ed, patch) }); }
+function toast(msg) {
+  const id = seq++;
+  S.toasts = S.toasts.concat([{ id, msg }]);
+  renderToasts();
+  setTimeout(() => { S.toasts = S.toasts.filter(t => t.id !== id); renderToasts(); }, 4200);
+}
+
+function stat(c) {
+  if (c.status === 'busy') return { kind: 'busy', text: c.busy || 'Working…', seg: 'var(--busy)', dot: 'var(--busy)' };
+  if (c.status === 'running') return { kind: 'running', text: 'Running', seg: 'var(--run)', dot: 'var(--run)' };
+  if (c.status === 'paused') return { kind: 'paused', text: 'Paused', seg: 'var(--paused)', dot: 'var(--paused)' };
+  return { kind: 'stopped', text: 'Stopped', seg: 'var(--stop-seg)', dot: 'var(--stop-dot)' };
+}
+function iconView(icon, colorKey) {
+  const c = col(colorKey);
+  const base = { glyph: null, letter: '', bg: c.bg, fg: c.fg, ring: 'transparent' };
+  if (icon && icon.type === 'container' && S.cs[icon.cid]) {
+    const cc = col(S.cs[icon.cid].color);
+    return Object.assign(base, { letter: S.cs[icon.cid].letter, bg: cc.bg, fg: cc.fg });
+  }
+  if (icon && icon.type === 'web') {
+    const w = WEB[icon.src] || WEB[0];
+    return Object.assign(base, { letter: icon.letter || '?', bg: w.bg || c.bg, fg: w.fg || c.fg, ring: w.ring || 'transparent' });
+  }
+  return Object.assign(base, { glyph: (GL[(icon && icon.key) || 'folder'] || GL.folder).d });
+}
+function iconInner(iv, glyphSize, letterSize) {
+  return iv.glyph ? svg(iv.glyph, glyphSize, 1.8) : `<span style="font-weight:700;font-size:${letterSize}px">${esc(iv.letter)}</span>`;
+}
+function tile(c, size, font, dot) {
+  const t = col(c.color);
+  return `<span class="ctile" aria-hidden="true" style="width:${size}px;height:${size}px;background:${t.bg};color:${t.fg};font-size:${font}px">${esc(c.letter)}${dot ? `<span class="sdot" style="background:${dot}"></span>` : ''}</span>`;
+}
+function switchBtn(pressed, label, text, act, arg) {
+  return `<button class="switch" aria-pressed="${pressed}" aria-label="${esc(label)}" data-act="${act}" data-arg="${esc(arg)}"><span class="track"><i></i></span><small>${esc(text)}</small></button>`;
+}
+
+/* ------------------------------------------------------------------ menus */
+function openMenu(el, kind, id, align) {
+  let pos = 'top:120px;right:24px';
+  if (el) {
+    const r = el.getBoundingClientRect(); const vw = innerWidth; const vh = innerHeight;
+    const vert = (r.bottom + 420 > vh && r.top > vh - r.bottom) ? `bottom:${Math.round(vh - r.top + 6)}px` : `top:${Math.round(r.bottom + 6)}px`;
+    const horiz = (align === 'left' && r.left + 268 < vw) ? `left:${Math.round(r.left)}px` : `right:${Math.round(Math.max(8, vw - r.right))}px`;
+    pos = vert + ';' + horiz;
+  }
+  set({ menu: { kind, id, pos, returnFocus: el && el.id } });
+}
+const mHead = label => ({ type: 'head', label });
+const mSep = () => ({ type: 'sep' });
+const mItem = (label, d, hint, disabled, fn, color) => ({ type: 'item', label, d, hint: hint || '', disabled: !!disabled, fn, color: color || 'var(--text)' });
+
+function folderMenu(f) {
+  const busy = busyNow();
+  const ms = f.members.map(id => S.cs[id]).filter(Boolean);
+  const count = s => ms.filter(c => c.status === s).length;
+  const stopped = count('stopped'), running = count('running'), paused = count('paused');
+  const upd = ms.filter(c => c.update).length;
+  const idx = S.folders.findIndex(x => x.id === f.id);
+  const items = [
+    mHead(f.name),
+    mItem('Start all', P.play, stopped ? stopped + ' stopped' : 'all up', busy || !stopped, () => run(f, 'start')),
+    mItem('Stop all', P.stop, f.reverseStop ? 'reverse order' : '', busy || !(running + paused), () => run(f, 'stop')),
+    mItem('Restart all', P.restart, running ? running + ' running' : '', busy || !running, () => run(f, 'restart')),
+    paused ? mItem('Resume all', P.play, paused + ' paused', busy, () => run(f, 'resume'))
+           : mItem('Pause all', P.pause, '', busy || !running, () => run(f, 'pause')),
+    mSep(),
+    mItem('Check for updates', P.search, '', busy || !ms.length, () => run(f, 'check'))
+  ];
+  if (upd) items.push(mItem('Update ' + plural(upd, 'container'), P.down, 'ready', busy, () => run(f, 'update')));
+  items.push(mItem('Force update all', P.bolt, String(ms.length), busy || !ms.length, () => set({ confirm: { kind: 'force', fid: f.id } }), 'var(--warn-fg)'));
+  items.push(mSep());
+  items.push(mItem('Open WebUIs', P.ext, running ? String(running) : '', !running, () => toast('Opening ' + plural(running, 'WebUI') + ' from “' + f.name + '” in new tabs')));
+  items.push(mItem('Edit folder…', P.edit, '', false, () => openEditor(f)));
+  items.push(mItem('Move folder up', P.up, '', idx <= 0, () => moveFolder(f.id, -1)));
+  items.push(mItem('Move folder down', P.dn, '', idx >= S.folders.length - 1, () => moveFolder(f.id, 1)));
+  items.push(mSep());
+  items.push(mItem('Delete folder', P.trash, '', busy, () => set({ confirm: { kind: 'delete', fid: f.id } }), 'var(--danger)'));
+  return items;
+}
+function containerMenu(c) {
+  const busy = busyNow();
+  const f = folderOf(c.id);
+  const items = [mHead(c.name)];
+  if (c.status === 'running') items.push(mItem('Stop', P.stop, '', busy, () => runOne(c, 'stop')));
+  else if (c.status === 'paused') items.push(mItem('Resume', P.play, '', busy, () => runOne(c, 'resume')));
+  else items.push(mItem('Start', P.play, '', busy || c.status === 'busy', () => runOne(c, 'start')));
+  items.push(mItem('Restart', P.restart, '', busy || c.status !== 'running', () => runOne(c, 'restart')));
+  items.push(c.update ? mItem('Update', P.down, 'ready', busy, () => runOne(c, 'update'))
+                      : mItem('Force update', P.bolt, '', busy, () => runOne(c, 'force')));
+  items.push(mSep());
+  items.push(mHead(f ? 'Move to folder' : 'Add to folder'));
+  S.folders.forEach(o => { if (!f || o.id !== f.id) items.push(mItem(o.name, P.folder, plural(o.members.length, 'item'), false, () => moveTo(c.id, o.id))); });
+  items.push(mItem('New folder…', P.plus, '', false, () => openEditor(null, [c.id])));
+  if (f) items.push(mItem('Remove from ' + f.name, P.folderMinus, '', false, () => moveTo(c.id, null)));
+  return items;
+}
+function moveTo(cid, fid) {
+  const folders = S.folders.map(f => {
+    const members = f.members.filter(m => m !== cid);
+    if (f.id === fid) members.push(cid);
+    return Object.assign({}, f, { members });
+  });
+  set({ folders });
+  const target = folders.find(f => f.id === fid);
+  toast(target ? S.cs[cid].name + ' moved to “' + target.name + '”' : S.cs[cid].name + ' removed from its folder');
+}
+function moveFolder(fid, dir) {
+  const folders = S.folders.slice(); const i = folders.findIndex(f => f.id === fid); const j = i + dir;
+  if (i < 0 || j < 0 || j >= folders.length) return;
+  [folders[i], folders[j]] = [folders[j], folders[i]];
+  set({ folders });
+}
+
+/* ------------------------------------------------------------------ jobs (SIMULATED docker operations) */
+function runOne(c, kind) { run({ id: null, name: c.name, members: [c.id], delay: 0, reverseStop: false }, kind); }
+function run(f, kind) {
+  if (busyNow()) { toast('Another job is still running'); return; }
+  const cs = S.cs;
+  const ids = f.members.filter(id => cs[id]);
+  const rev = f.reverseStop ? ids.slice().reverse() : ids.slice();
+  const steps = [];
+  const St = (cid, busy, ms, then, note, doneNote, last) => steps.push({ cid, busy, ms, then, note, doneNote, last });
+  const W = (cid, sec) => steps.push({ cid, busy: null, ms: 650, then: null, note: 'wait ' + sec + ' s', doneNote: null, last: false });
+  let targets = [], title = '', done = '';
+  if (kind === 'start') {
+    targets = ids.filter(id => cs[id].status === 'stopped');
+    targets.forEach((id, k) => { if (k > 0 && f.delay > 0) W(id, f.delay); St(id, 'Starting…', 900, { status: 'running' }, 'starting', 'started', true); });
+    title = 'Starting ' + f.name; done = plural(targets.length, 'container') + ' started';
+  } else if (kind === 'stop') {
+    targets = rev.filter(id => cs[id].status === 'running' || cs[id].status === 'paused');
+    targets.forEach(id => St(id, 'Stopping…', 800, { status: 'stopped' }, 'stopping', 'stopped', true));
+    title = 'Stopping ' + f.name; done = plural(targets.length, 'container') + ' stopped' + (f.reverseStop && targets.length > 1 ? ', last-started first' : '');
+  } else if (kind === 'restart') {
+    const runIds = ids.filter(id => cs[id].status === 'running');
+    rev.filter(id => runIds.includes(id)).forEach(id => St(id, 'Stopping…', 650, { status: 'stopped' }, 'stopping', null, false));
+    targets = runIds;
+    targets.forEach((id, k) => { if (k > 0 && f.delay > 0) W(id, f.delay); St(id, 'Starting…', 850, { status: 'running' }, 'starting', 'restarted', true); });
+    title = 'Restarting ' + f.name; done = plural(targets.length, 'container') + ' restarted';
+  } else if (kind === 'pause') {
+    targets = ids.filter(id => cs[id].status === 'running');
+    targets.forEach(id => St(id, 'Pausing…', 420, { status: 'paused' }, 'pausing', 'paused', true));
+    title = 'Pausing ' + f.name; done = plural(targets.length, 'container') + ' paused';
+  } else if (kind === 'resume') {
+    targets = ids.filter(id => cs[id].status === 'paused');
+    targets.forEach(id => St(id, 'Resuming…', 420, { status: 'running' }, 'resuming', 'running', true));
+    title = 'Resuming ' + f.name; done = plural(targets.length, 'container') + ' resumed';
+  } else if (kind === 'check') {
+    targets = ids; let found = 0;
+    targets.forEach(id => {
+      const c = cs[id]; const u = !!(c.update || c.latent); if (u) found++;
+      St(id, 'Checking…', 380, { status: c.status, update: u, latent: false }, 'checking', u ? 'update ready' : 'up to date', true);
+    });
+    title = 'Checking ' + f.name + ' for updates'; done = found ? plural(found, 'update') + ' ready' : 'Everything is up to date';
+  } else if (kind === 'update' || kind === 'force') {
+    targets = kind === 'update' ? ids.filter(id => cs[id].update) : ids;
+    targets.forEach(id => {
+      const back = cs[id].status === 'stopped' ? 'stopped' : 'running';
+      St(id, 'Pulling image…', 950, null, 'pulling', null, false);
+      St(id, 'Recreating…', 750, { status: back, update: false, latent: false }, 'recreating', back === 'stopped' ? 'updated, left stopped' : 'updated', true);
+    });
+    title = (kind === 'force' ? 'Force updating ' : 'Updating ') + f.name; done = plural(targets.length, 'container') + ' updated';
+  }
+  if (!targets.length) { toast('Nothing to do in “' + f.name + '”'); return; }
+  const rows = targets.map(id => ({ cid: id, name: cs[id].name, state: 'queued', note: 'queued' }));
+  const job = { id: seq++, title, steps, rows, i: 0, done: false, doneText: done };
+  set({ job });
+  setTimeout(() => step(job.id, 0), 250);
+}
+function step(jobId, i) {
+  const job = S.job;
+  if (!job || job.id !== jobId) return;
+  if (i >= job.steps.length) {
+    set({ job: Object.assign({}, job, { done: true, i }) });
+    setTimeout(() => { if (S.job && S.job.id === jobId) set({ job: null }); }, 6500);
+    return;
+  }
+  const st = job.steps[i];
+  const cs = Object.assign({}, S.cs);
+  if (st.busy) cs[st.cid] = Object.assign({}, cs[st.cid], { status: 'busy', busy: st.busy });
+  set({ cs, job: Object.assign({}, job, { i, rows: job.rows.map(r => r.cid === st.cid ? Object.assign({}, r, { state: 'active', note: st.note }) : r) }) });
+  setTimeout(() => {
+    const j2 = S.job; if (!j2 || j2.id !== jobId) return;
+    const cs2 = Object.assign({}, S.cs);
+    if (st.then) cs2[st.cid] = Object.assign({}, cs2[st.cid], st.then, { busy: null });
+    // last step for a container -> done; an intermediate step that changed status (e.g. the stop half of a restart) -> back to queued with that status
+    const rows = j2.rows.map(r => {
+      if (r.cid !== st.cid) return r;
+      if (st.last) return Object.assign({}, r, { state: 'done', note: st.doneNote });
+      if (st.then && st.then.status) return Object.assign({}, r, { state: 'queued', note: st.then.status });
+      return r;
+    });
+    set({ cs: cs2, job: Object.assign({}, j2, { i: i + 1, rows }) });
+    setTimeout(() => step(jobId, i + 1), 70);
+  }, st.ms);
+}
+
+/* ------------------------------------------------------------------ confirm */
+function doConfirm() {
+  const cf = S.confirm; if (!cf) return;
+  const f = S.folders.find(x => x.id === cf.fid);
+  set({ confirm: null });
+  if (!f) return;
+  if (cf.kind === 'force') { run(f, 'force'); return; }
+  set({ folders: S.folders.filter(x => x.id !== f.id) });
+  toast('Folder “' + f.name + '” deleted · ' + plural(f.members.length, 'container') + ' moved to Not in a folder');
+}
+
+/* ------------------------------------------------------------------ editor */
+function openEditor(f, preset) {
+  const ed = f
+    ? { id: f.id, name: f.name, color: f.color, icon: Object.assign({}, f.icon), members: f.members.slice(), delay: String(f.delay), reverseStop: f.reverseStop, preview: f.preview, rule: f.rule || '', dashboard: f.dashboard, iconAuto: false }
+    : { id: null, name: '', color: 'blue', icon: { type: 'glyph', key: 'folder' }, members: (preset || []).slice(), delay: '5', reverseStop: true, preview: 'status', rule: '', dashboard: true, iconAuto: true };
+  Object.assign(ed, { tab: (!f || ed.icon.type === 'web') ? 'web' : ed.icon.type === 'container' ? 'container' : 'builtin', webQuery: null, webUrl: '', webMsg: '', webMsgOk: true, search: '', error: '' });
+  set({ ed, menu: null });
+  setTimeout(() => { const n = document.getElementById('ed-name'); if (n) n.focus(); }, 0);
+}
+function edIcon(ed) {
+  if (ed.iconAuto) { const n = ed.name.trim(); return n ? { type: 'web', src: 0, letter: firstLetter(n), query: n } : { type: 'glyph', key: 'folder' }; }
+  return ed.icon;
+}
+function ruleMatches(ed) {
+  const r = (ed.rule || '').trim();
+  if (!r) return { ids: [], error: '' };
+  try { const re = new RegExp(r, 'i'); return { ids: S.order.filter(id => re.test(S.cs[id].name) && !ed.members.includes(id)), error: '' }; }
+  catch (e) { return { ids: [], error: 'That is not a valid pattern' }; }
+}
+function downloadUrl() {
+  const u = (S.ed.webUrl || '').trim();
+  if (!/^https?:\/\/[^\s/]+\/\S+\.(png|svg|jpe?g|webp|ico)(\?\S*)?$/i.test(u)) { patchEd({ webMsg: 'Paste a direct link to a .png, .svg, .jpg or .webp image', webMsgOk: false }); return; }
+  const file = u.split('?')[0].split('/').pop(); const host = u.replace(/^https?:\/\//i, '').split('/')[0];
+  patchEd({ icon: { type: 'web', src: 3, letter: firstLetter(file), query: file }, iconAuto: false, webMsg: 'Downloaded ' + file + ' from ' + host + ' · stored locally so it shows offline', webMsgOk: true });
+}
+function saveEd() {
+  const ed = S.ed; const name = ed.name.trim();
+  if (!name) { patchEd({ error: 'Give the folder a name' }); return; }
+  if (S.folders.some(f => f.id !== ed.id && f.name.toLowerCase() === name.toLowerCase())) { patchEd({ error: 'Another folder already uses this name' }); return; }
+  const members = ed.members.concat(ruleMatches(ed).ids);
+  const id = ed.id || ('f-' + seq++);
+  const rec = { id, name, color: ed.color, icon: edIcon(ed), members, delay: Math.max(0, Math.min(300, parseInt(ed.delay, 10) || 0)), reverseStop: ed.reverseStop, preview: ed.preview, rule: (ed.rule || '').trim(), dashboard: ed.dashboard, expanded: true };
+  let folders = S.folders.map(f => f.id === id ? Object.assign({}, f, rec, { expanded: f.expanded }) : Object.assign({}, f, { members: f.members.filter(m => !members.includes(m)) }));
+  if (!ed.id) folders = folders.concat([rec]);
+  set({ folders, ed: null });
+  toast((ed.id ? 'Saved “' : 'Created “') + name + '” · ' + plural(members.length, 'container'));
+}
+
+/* ------------------------------------------------------------------ views */
+function stackTiles(ids, preview, interactive) {
+  const showDot = preview !== 'icons';
+  return ids.map(id => {
+    const c = S.cs[id]; const st = stat(c);
+    const t = tile(c, 30, 13, showDot ? st.dot : null);
+    return interactive
+      ? `<button class="strip-btn" id="strip-${esc(id)}" aria-label="Actions for ${esc(c.name)}, ${esc(st.text.toLowerCase())}" title="${esc(c.name)} · ${esc(st.text)}" data-act="strip-menu" data-arg="${esc(id)}">${t}</button>`
+      : t;
+  }).join('');
+}
+function containerRow(c, k, inFolder) {
+  const st = stat(c); const runN = c.status === 'running';
+  return `<div class="g row crow ${inFolder ? '' : 'loose'}">
+    ${inFolder ? '<span class="tree" aria-hidden="true"></span>' : '<span></span>'}
+    <div class="ccell"><span class="order" title="Start order">${inFolder ? k + 1 : ''}</span>${tile(c, 32, 14, null)}
+      <span class="cname"><b>${esc(c.name)}</b><small>${esc(c.image)}</small></span></div>
+    <div class="status"><span class="dot dot-${st.kind}"></span><span class="t-${st.kind}">${esc(st.text)}</span></div>
+    <div>${c.update ? '<span class="badge">Update ready</span>' : '<span class="muted">Up to date</span>'}</div>
+    <div class="port">:${esc(c.port)}</div>
+    <div class="num">${runN ? c.cpu.toFixed(1) + '%' : '—'}</div>
+    <div class="num">${runN ? fmtMem(c.mem) : '—'}</div>
+    ${switchBtn(String(!!c.autostart), 'Autostart ' + c.name, c.autostart ? 'On' : 'Off', 'auto-container', c.id)}
+    <button class="icon-btn" id="cmenu-${esc(c.id)}" aria-label="Actions for ${esc(c.name)}" data-act="container-menu" data-arg="${esc(c.id)}">${svg(P.kebab, 18, 3)}</button>
+  </div>`;
+}
+function folderBlock(f, q) {
+  const searching = q.length > 0;
+  const all = f.members.filter(id => S.cs[id]);
+  const nameHit = searching && f.name.toLowerCase().includes(q);
+  const shown = (!searching || nameHit) ? all : all.filter(id => S.cs[id].name.includes(q));
+  if (searching && !shown.length) return '';
+  const ms = all.map(id => S.cs[id]);
+  const running = ms.filter(c => c.status === 'running');
+  const busyN = ms.filter(c => c.status === 'busy').length;
+  const upd = ms.filter(c => c.update).length;
+  const autoOn = ms.filter(c => c.autostart).length;
+  const mixed = autoOn > 0 && autoOn < ms.length;
+  const allOn = ms.length > 0 && autoOn === ms.length;
+  const expanded = searching ? true : !!f.expanded;
+  const showStrip = !expanded && f.preview !== 'count' && all.length > 0;
+  const iv = iconView(f.icon, f.color);
+  const cpu = running.reduce((a, c) => a + c.cpu, 0), mem = running.reduce((a, c) => a + c.mem, 0);
+  const runText = busyN ? 'Working… ' + running.length + ' of ' + all.length + ' up' : (all.length ? running.length + ' of ' + all.length + ' running' : 'Empty folder');
+  const runColor = busyN ? 'var(--busy-text)' : (all.length && running.length === all.length ? 'var(--run-text)' : 'var(--text-2)');
+  const sub = plural(all.length, 'container') + (f.delay ? ' · starts ' + f.delay + ' s apart' : '');
+  return `<div class="folder">
+    <div class="g row frow">
+      <button class="icon-btn chev" aria-label="${expanded ? 'Fold' : 'Unfold'} ${esc(f.name)}" aria-expanded="${expanded}" data-act="toggle-folder" data-arg="${esc(f.id)}" id="chev-${esc(f.id)}">${svg(P.chev, 16, 2.2)}</button>
+      <div class="fcell">
+        <button class="ficon" id="ficon-${esc(f.id)}" aria-label="Commands for folder ${esc(f.name)}" title="Folder actions" data-act="folder-icon-menu" data-arg="${esc(f.id)}" style="background:${iv.bg};color:${iv.fg};border-color:${iv.ring}">${iconInner(iv, 22, 18)}</button>
+        <div class="fmeta">
+          <button class="fname-btn" tabindex="-1" data-act="toggle-folder" data-arg="${esc(f.id)}">
+            <span class="fname-line"><span class="fname">${esc(f.name)}</span>${showStrip ? `<span class="fcount">${plural(all.length, 'container')}</span>` : ''}</span>
+            ${showStrip ? '' : `<span class="fsub">${esc(sub)}</span>`}
+          </button>
+          ${showStrip ? `<div class="strip">${stackTiles(all, f.preview, true)}</div>` : ''}
+        </div>
+      </div>
+      <div class="runcell"><span style="font-size:13px;color:${runColor}">${esc(runText)}</span>
+        <span class="segbar" aria-hidden="true">${ms.map(c => `<span style="background:${stat(c).seg}"></span>`).join('')}</span></div>
+      <div>${upd ? `<span class="badge">${plural(upd, 'update')}</span>` : '<span class="muted">Up to date</span>'}</div>
+      <div class="dash">—</div>
+      <div class="num">${running.length ? cpu.toFixed(1) + '%' : '—'}</div>
+      <div class="num">${running.length ? fmtMem(mem) : '—'}</div>
+      ${switchBtn(mixed ? 'mixed' : String(allOn), 'Autostart every container in ' + f.name, mixed ? 'Mixed' : (allOn ? 'All on' : 'All off'), 'auto-folder', f.id)}
+      <button class="icon-btn" id="fmenu-${esc(f.id)}" aria-label="More actions for folder ${esc(f.name)}" data-act="folder-menu" data-arg="${esc(f.id)}" style="color:var(--text-2)">${svg(P.kebab, 18, 3)}</button>
+    </div>
+    ${expanded ? `<div style="padding-bottom:6px">${shown.map(id => containerRow(S.cs[id], all.indexOf(id), true)).join('')}</div>` : ''}
+  </div>`;
+}
+function menuView() {
+  if (!S.menu) return '';
+  let items = [];
+  if (S.menu.kind === 'folder') { const f = S.folders.find(x => x.id === S.menu.id); if (f) items = folderMenu(f); }
+  else if (S.cs[S.menu.id]) items = containerMenu(S.cs[S.menu.id]);
+  menuRuns = items.map(it => it.fn || null);
+  if (!items.length) return '';
+  return `<button class="scrim-btn" aria-label="Close menu" data-act="close-menu"></button>
+  <div class="menu pop" id="menu" style="${S.menu.pos}">${items.map((it, i) =>
+    it.type === 'head' ? `<div class="menu-head">${esc(it.label)}</div>`
+    : it.type === 'sep' ? '<div class="menu-sep"></div>'
+    : `<button class="mi" ${it.disabled ? 'disabled' : ''} data-act="menu" data-arg="${i}" style="color:${it.color}">${svg(it.d, 16, 2, 'style="flex:none"')}<span class="lbl">${esc(it.label)}</span><span class="hint">${esc(it.hint)}</span></button>`
+  ).join('')}</div>`;
+}
+function confirmView() {
+  const cf = S.confirm; if (!cf) return '';
+  const f = S.folders.find(x => x.id === cf.fid); if (!f) return '';
+  const force = cf.kind === 'force';
+  const list = f.members.map(id => S.cs[id]).filter(Boolean);
+  return `<div class="overlay"><div class="dialog confirm pop" role="dialog" aria-modal="true" aria-labelledby="cf-title">
+    <h2 id="cf-title">${force ? 'Force update ' + plural(list.length, 'container') + ' in “' + esc(f.name) + '”?' : 'Delete folder “' + esc(f.name) + '”?'}</h2>
+    <p>${force ? 'Every image is pulled again and each container is recreated, even when it is already up to date. Running containers come back up in start order; stopped ones stay stopped.'
+               : 'Only the folder is removed. Its ' + plural(list.length, 'container') + ' keep running as they are and move to “Not in a folder”.'}</p>
+    ${force ? `<div class="well">${list.map(c => `<div class="well-row">${tile(c, 24, 11, null)}<span style="flex:1">${esc(c.name)}</span><span style="font-size:12px;color:${c.update ? 'var(--warn-fg)' : 'var(--text-dim)'}">${c.update ? 'update ready' : 'already up to date'}</span></div>`).join('')}</div>` : ''}
+    <div class="actions"><button class="btn btn-ghost" data-act="confirm-cancel" id="cf-cancel">Cancel</button>
+      <button class="btn" data-act="confirm-ok" style="border:0;font-weight:600;${force ? 'background:var(--warn-fg);color:var(--on-warn)' : 'background:var(--danger);color:var(--on-danger)'}">${force ? 'Force update' : 'Delete folder'}</button></div>
+  </div></div>`;
+}
+function editorView() {
+  const ed = S.ed; if (!ed) return '';
+  const icon = edIcon(ed); const iv = iconView(icon, ed.color); const c0 = col(ed.color);
+  const rm = ruleMatches(ed);
+  const n = ed.members.length;
+  const q = ed.webQuery === null ? ed.name : ed.webQuery;
+  const delayN = parseInt(ed.delay, 10) || 0;
+  const previewIds = ed.members.concat(rm.ids).filter(id => S.cs[id]);
+  const tabs = [['builtin', 'Built-in'], ['web', 'From the web'], ['container', 'From a container']];
+  const previews = [['status', 'Icons + status'], ['icons', 'Icons only'], ['count', 'Count only']];
+  const s2 = (ed.search || '').trim().toLowerCase();
+  let iconPane = '';
+  if (ed.tab === 'builtin') {
+    iconPane = `<div class="glyphs">${GLYPHS.map(g => { const on = icon.type === 'glyph' && icon.key === g.key;
+      return `<button class="pick" aria-label="${g.label}" title="${g.label}" aria-pressed="${on}" data-act="ed-glyph" data-arg="${g.key}">${svg(g.d, 22, 1.8)}</button>`; }).join('')}</div>`;
+  } else if (ed.tab === 'web') {
+    const results = q.trim() ? [0, 1, 2].map(k => { const w = WEB[k]; const on = icon.type === 'web' && icon.src === k && icon.query === q.trim();
+      return `<button class="pick" aria-pressed="${on}" data-act="ed-web" data-arg="${k}">
+        <span aria-hidden="true" style="width:44px;height:44px;border-radius:10px;background:${w.bg || c0.bg};color:${w.fg || c0.fg};border:1px solid ${w.ring || c0.bg};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px">${esc(firstLetter(q))}</span>
+        <span style="font-size:12px;font-weight:500">${w.name}</span><span class="fname-cap">${esc((slug(q) || 'icon') + '.' + w.ext)}</span></button>`; }).join('') : '';
+    iconPane = `<div style="display:flex;flex-direction:column;gap:12px">
+      <label class="check"><input type="checkbox" id="ed-auto" data-change="ed-auto" ${ed.iconAuto ? 'checked' : ''}><span>Fetch automatically from the folder name</span></label>
+      <div class="field" style="gap:6px"><label for="ed-webq" class="small" style="font-weight:400">Search icon libraries</label>
+        <input id="ed-webq" class="input" type="search" data-input="ed-webq" value="${esc(q)}" placeholder="App or topic name"></div>
+      ${results ? `<div class="webgrid">${results}</div>` : '<div class="small" style="font-size:13px">Type a folder name or a search term to look up icons.</div>'}
+      <div class="field" style="gap:6px"><label for="ed-weburl" class="small" style="font-weight:400">Or paste an image URL</label>
+        <div style="display:flex;gap:8px"><input id="ed-weburl" class="input mono" style="flex:1;min-width:0;font-size:12px" data-input="ed-weburl" value="${esc(ed.webUrl)}" placeholder="https://…/icon.png">
+        <button class="btn btn-ghost" data-act="ed-download" id="ed-download">Download</button></div>
+        <span style="font-size:12px" class="${ed.webMsg ? (ed.webMsgOk ? 'ok' : 'err') : 'small'}">${esc(ed.webMsg || 'The icon is copied to the server, so it still shows when offline.')}</span></div>
+    </div>`;
+  } else {
+    iconPane = n ? `<div class="ctgrid">${ed.members.filter(id => S.cs[id]).map(id => { const c = S.cs[id]; const on = icon.type === 'container' && icon.cid === id;
+      return `<button class="pick" aria-pressed="${on}" data-act="ed-cicon" data-arg="${esc(id)}">${tile(c, 36, 15, null)}<span style="font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name)}</span></button>`; }).join('')}</div>`
+      : '<div class="small" style="font-size:13px">Add containers to the folder first, then reuse one of their icons.</div>';
+  }
+  const pick = S.order.filter(id => !s2 || S.cs[id].name.includes(s2)).map(id => {
+    const c = S.cs[id]; const checked = ed.members.includes(id); const inF = folderOf(id); const other = inF && inF.id !== ed.id ? inF : null;
+    return `<label><input type="checkbox" class="check-input" style="width:18px;height:18px;accent-color:var(--accent);margin:0;flex:none" id="pick-${esc(id)}" data-change="ed-member" data-arg="${esc(id)}" ${checked ? 'checked' : ''}>
+      ${tile(c, 24, 11, null)}<span class="nm">${esc(c.name)}</span>${other ? `<span class="tag ${checked ? 'move' : ''}">${checked ? 'moves from ' : 'in '}${esc(other.name)}</span>` : ''}</label>`;
+  }).join('');
+  const orderRows = ed.members.map((id, k) => { const c = S.cs[id];
+    return `<div class="orow"><span class="n">${k + 1}</span>${tile(c, 22, 10, null)}<span class="nm">${esc(c.name)}</span>
+      <button class="icon-btn" id="up-${k}" aria-label="Start ${esc(c.name)} earlier" data-act="ed-up" data-arg="${k}" ${k === 0 ? 'disabled' : ''}>${svg(P.caretUp, 15, 2.2)}</button>
+      <button class="icon-btn" id="dn-${k}" aria-label="Start ${esc(c.name)} later" data-act="ed-down" data-arg="${k}" ${k === n - 1 ? 'disabled' : ''}>${svg(P.caretDown, 15, 2.2)}</button></div>`; }).join('');
+  const ruleText = rm.error ? rm.error : (ed.rule.trim() ? (rm.ids.length ? 'Will also add:' : 'No other containers match right now') : 'Optional. A regular expression, matched case-insensitively.');
+  return `<div class="overlay"><div class="dialog editor pop" role="dialog" aria-modal="true" aria-labelledby="ed-title">
+    <div class="ed-head"><h2 id="ed-title">${ed.id ? 'Edit folder' : 'New folder'}</h2>
+      <button class="icon-btn" aria-label="Close" data-act="ed-cancel">${svg(P.x, 18, 2)}</button></div>
+    <div class="ed-body" data-keep-scroll="ed-body">
+      <div class="preview"><span class="eyebrow">Preview</span>
+        <span aria-hidden="true" style="width:40px;height:40px;flex:none;border:1px solid ${iv.ring};border-radius:10px;background:${iv.bg};color:${iv.fg};display:flex;align-items:center;justify-content:center">${iconInner(iv, 22, 18)}</span>
+        <span style="display:flex;flex-direction:column;gap:2px"><span style="font-weight:600;font-size:15px">${esc(ed.name.trim() || 'Untitled folder')}</span>
+          <span class="small" style="color:var(--text-muted)">${plural(previewIds.length, 'container')}${delayN ? ' · starts ' + delayN + ' s apart' : ''}</span></span>
+        <span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-left:10px">${ed.preview === 'count' ? '' : stackTiles(previewIds, ed.preview, false)}</span>
+      </div>
+      <div class="cols">
+        <div class="col" style="flex:1 1 380px">
+          <div class="field"><label for="ed-name">Folder name</label>
+            <input id="ed-name" class="input" style="height:44px;font-size:15px;${ed.error ? 'border-color:var(--danger)' : ''}" data-input="ed-name" maxlength="32" value="${esc(ed.name)}" placeholder="e.g. Media, Cloud, Home automation">
+            <div class="field-row" style="font-size:12px"><span class="err">${esc(ed.error)}</span><span class="small mono">${ed.name.length} / 32</span></div></div>
+          <div class="field"><span class="field-title">Icon</span>
+            <div class="seg">${tabs.map(([k, l]) => `<button aria-pressed="${ed.tab === k}" data-act="ed-tab" data-arg="${k}">${l}</button>`).join('')}</div>
+            ${iconPane}</div>
+          <div class="field"><span class="field-title">Colour</span>
+            <div class="swatches">${Object.keys(COLORS).map(k => { const c = COLORS[k];
+              return `<button class="swatch" aria-label="${c.label}" title="${c.label}" aria-pressed="${ed.color === k}" data-act="ed-color" data-arg="${k}" style="background:${c.bg};border:2px solid ${c.fg}55"></button>`; }).join('')}</div></div>
+        </div>
+        <div class="col" style="flex:1 1 400px">
+          <div class="field"><div class="field-row"><span class="field-title">Containers in this folder</span><span class="small">${n ? n + ' selected' : 'none selected'}</span></div>
+            <label class="search"><span class="sr">Search containers</span>${svg(P.search, 15, 2, 'style="position:absolute;left:12px;color:var(--text-dim)"')}
+              <input id="ed-search" type="search" class="input" style="width:100%;height:38px;padding-left:34px" data-input="ed-search" value="${esc(ed.search)}" placeholder="Search containers"></label>
+            <div class="list" data-keep-scroll="ed-list">${pick}</div></div>
+          <div class="field"><div class="field-row"><span class="field-title">Start order</span><span class="small">${ed.reverseStop ? 'top starts first, stops last' : 'top starts first'}</span></div>
+            ${n ? `<div class="olist">${orderRows}</div>` : '<div class="small" style="font-size:13px">Tick containers above to set their order.</div>'}</div>
+          <div class="field"><label for="ed-rule">Auto-add containers whose name matches</label>
+            <input id="ed-rule" class="input mono" style="font-size:13px" data-input="ed-rule" value="${esc(ed.rule)}" placeholder="e.g. ^(sonarr|radarr|lidarr)$">
+            <div class="chips"><span style="color:${rm.error ? 'var(--danger)' : 'var(--text-muted)'}">${esc(ruleText)}</span>${rm.ids.map(id => `<span class="chip">${esc(S.cs[id].name)}</span>`).join('')}</div>
+            <div class="small">Containers carrying the Docker label <span class="mono" style="color:var(--text-2)">${esc('folder=' + (slug(ed.name) || 'name'))}</span> also join, including ones created later.</div></div>
+          <div class="field" style="gap:12px"><span class="field-title">Behaviour</span>
+            <div class="field-row" style="align-items:center"><label for="ed-delay" style="font-size:13px;font-weight:400">Wait between container starts</label>
+              <span style="display:flex;align-items:center;gap:8px"><input id="ed-delay" class="input mono" type="number" min="0" max="300" style="width:72px;height:36px;font-size:13px" data-input="ed-delay" value="${esc(ed.delay)}"><span class="small" style="font-size:13px;color:var(--text-muted)">seconds</span></span></div>
+            <button class="toggle-row" id="ed-rev" aria-pressed="${!!ed.reverseStop}" data-act="ed-rev"><span>Stop in reverse order</span><span class="track"><i></i></span></button>
+            <button class="toggle-row" id="ed-dash" aria-pressed="${!!ed.dashboard}" data-act="ed-dash"><span>Show folder on the Dashboard</span><span class="track"><i></i></span></button>
+            <div class="field" style="gap:6px"><span style="font-size:13px">When folded, show</span>
+              <div class="seg">${previews.map(([k, l]) => `<button aria-pressed="${ed.preview === k}" data-act="ed-preview" data-arg="${k}" style="height:34px;font-size:12px">${l}</button>`).join('')}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ed-foot">${ed.id ? '<button class="btn btn-danger-outline" data-act="ed-delete">Delete folder</button>' : ''}<span style="flex:1"></span>
+      <button class="btn btn-ghost" data-act="ed-cancel">Cancel</button><button class="btn btn-primary" data-act="ed-save">${ed.id ? 'Save folder' : 'Create folder'}</button></div>
+  </div></div>`;
+}
+function jobView() {
+  const job = S.job; if (!job) return '';
+  const pct = Math.round((job.done ? 1 : job.i / Math.max(1, job.steps.length)) * 100);
+  return `<aside class="jobs pop" aria-live="polite">
+    <div class="jobs-head">${job.done ? `<span style="color:var(--run)">${svg(P.check, 18, 2.6)}</span>` : '<span class="jdot active" style="width:16px;height:16px"></span>'}
+      <div class="jobs-title"><b>${esc(job.title)}</b><small>${esc(job.done ? job.doneText : 'Step ' + Math.min(job.i + 1, job.steps.length) + ' of ' + job.steps.length)}</small></div>
+      ${job.done ? `<button class="icon-btn" style="width:32px;height:32px" aria-label="Dismiss" data-act="job-dismiss">${svg(P.x, 16, 2)}</button>` : ''}</div>
+    <div class="prog"><i style="width:${pct}%"></i></div>
+    <div class="jrows">${job.rows.map(r => `<div class="jrow"><span class="jdot ${r.state === 'queued' ? '' : r.state}"></span><span class="nm" style="color:${r.state === 'queued' ? 'var(--text-dim)' : 'var(--text)'}">${esc(r.name)}</span><span class="nt">${esc(r.note)}</span></div>`).join('')}</div>
+  </aside>`;
+}
+function appView() {
+  const q = S.query.trim().toLowerCase();
+  const searching = q.length > 0;
+  const folders = S.folders.map(f => folderBlock(f, q)).filter(Boolean);
+  const inAny = new Set(); S.folders.forEach(f => f.members.forEach(id => inAny.add(id)));
+  const loose = S.order.filter(id => !inAny.has(id) && (!searching || S.cs[id].name.includes(q)));
+  const runningAll = S.order.filter(id => S.cs[id].status === 'running').length;
+  const updAll = S.order.filter(id => S.cs[id].update).length;
+  const anyCollapsed = S.folders.some(f => !f.expanded);
+  return `<div class="page">
+    <header class="head">
+      <div style="display:flex;flex-direction:column;gap:4px"><div class="eyebrow">Unraid · Docker</div><h1>Containers</h1>
+        <div class="summary">${plural(S.order.length, 'container')} · ${runningAll} running · ${plural(S.folders.length, 'folder')}${updAll ? ' · ' + plural(updAll, 'update') + ' ready' : ''}</div></div>
+      <div class="tools">
+        <label class="search"><span class="sr">Filter containers</span>${svg(P.search, 16, 2, 'style="color:var(--text-dim)"')}
+          <input id="q" type="search" class="input" data-input="query" value="${esc(S.query)}" placeholder="Filter containers or folders"></label>
+        <button class="btn btn-ghost" id="toggle-all" data-act="toggle-all">${anyCollapsed ? 'Unfold all' : 'Fold all'}</button>
+        <button class="btn btn-primary" id="new-folder" data-act="new-folder">${svg(P.plus, 16, 2.2)}<span>New folder</span></button>
+      </div>
+    </header>
+    <section class="card"><div class="hscroll"><div class="table">
+      <div class="g thead"><span></span><span>Container</span><span>Status</span><span>Version</span><span>Port</span><span>CPU</span><span>Memory</span><span>Autostart</span><span></span></div>
+      ${folders.join('')}
+      ${loose.length ? `<div class="section-label">Not in a folder · ${loose.length}</div>${loose.map(id => containerRow(S.cs[id], 0, false)).join('')}` : ''}
+      ${searching && !folders.length && !loose.length ? `<div class="empty">Nothing matches “${esc(S.query.trim())}”</div>` : ''}
+    </div></div></section>
+    <p class="tip">Tip: a folder's icon opens its commands · each container icon opens that container's menu · the folder name unfolds it</p>
+  </div>
+  ${menuView()}${confirmView()}${editorView()}${jobView()}`;
+}
+
+/* ------------------------------------------------------------------ render (keeps focus, caret and scroll across re-renders) */
+function render() {
+  const a = document.activeElement;
+  const focusId = a && a.id ? a.id : null;
+  let s0 = null, s1 = null;
+  try { if (a && typeof a.selectionStart === 'number') { s0 = a.selectionStart; s1 = a.selectionEnd; } } catch (e) {}
+  const scrolls = {};
+  document.querySelectorAll('[data-keep-scroll]').forEach(el => { scrolls[el.dataset.keepScroll] = el.scrollTop; });
+  app.innerHTML = appView();
+  document.querySelectorAll('[data-keep-scroll]').forEach(el => { if (scrolls[el.dataset.keepScroll] != null) el.scrollTop = scrolls[el.dataset.keepScroll]; });
+  if (focusId) {
+    const n = document.getElementById(focusId);
+    if (n) { n.focus({ preventScroll: true }); try { if (s0 != null) n.setSelectionRange(s0, s1); } catch (e) {} }
+  }
+}
+function renderToasts() {
+  document.getElementById('toasts').innerHTML = S.toasts.map(t => `<div class="toast pop">${esc(t.msg)}</div>`).join('');
+}
+
+/* ------------------------------------------------------------------ events */
+const ACT = {
+  'toggle-folder': fid => { const f = S.folders.find(x => x.id === fid); if (f) patchFolder(fid, { expanded: !f.expanded }); },
+  'folder-menu': (fid, el) => openMenu(el, 'folder', fid, 'right'),
+  'folder-icon-menu': (fid, el) => openMenu(el, 'folder', fid, 'left'),
+  'container-menu': (cid, el) => openMenu(el, 'container', cid, 'right'),
+  'strip-menu': (cid, el) => openMenu(el, 'container', cid, 'left'),
+  'close-menu': () => closeMenu(),
+  'menu': i => { const fn = menuRuns[Number(i)]; closeMenu(false); if (fn) fn(); },
+  'auto-container': cid => setC(cid, { autostart: !S.cs[cid].autostart }),
+  'auto-folder': fid => {
+    const f = S.folders.find(x => x.id === fid); const all = f.members.filter(id => S.cs[id]);
+    const target = !(all.length > 0 && all.every(id => S.cs[id].autostart));
+    const cs = Object.assign({}, S.cs); all.forEach(id => { cs[id] = Object.assign({}, cs[id], { autostart: target }); }); set({ cs });
+  },
+  'toggle-all': () => { const open = S.folders.some(f => !f.expanded); set({ folders: S.folders.map(f => Object.assign({}, f, { expanded: open })) }); },
+  'new-folder': () => openEditor(null),
+  'confirm-cancel': () => set({ confirm: null }),
+  'confirm-ok': () => doConfirm(),
+  'job-dismiss': () => set({ job: null }),
+  'ed-cancel': () => set({ ed: null }),
+  'ed-save': () => saveEd(),
+  'ed-delete': () => set({ ed: null, confirm: { kind: 'delete', fid: S.ed.id } }),
+  'ed-tab': k => patchEd({ tab: k }),
+  'ed-glyph': k => patchEd({ icon: { type: 'glyph', key: k }, iconAuto: false }),
+  'ed-web': k => { const q = (S.ed.webQuery === null ? S.ed.name : S.ed.webQuery).trim(); patchEd({ icon: { type: 'web', src: Number(k), letter: firstLetter(q), query: q }, iconAuto: false }); },
+  'ed-cicon': cid => patchEd({ icon: { type: 'container', cid }, iconAuto: false }),
+  'ed-color': k => patchEd({ color: k }),
+  'ed-up': k => moveMember(Number(k), -1),
+  'ed-down': k => moveMember(Number(k), 1),
+  'ed-download': () => downloadUrl(),
+  'ed-rev': () => patchEd({ reverseStop: !S.ed.reverseStop }),
+  'ed-dash': () => patchEd({ dashboard: !S.ed.dashboard }),
+  'ed-preview': k => patchEd({ preview: k })
+};
+const INPUT = {
+  'query': v => set({ query: v }),
+  'ed-name': v => patchEd({ name: v, error: '' }),
+  'ed-webq': v => patchEd({ webQuery: v }),
+  'ed-weburl': v => patchEd({ webUrl: v, webMsg: '' }),
+  'ed-search': v => patchEd({ search: v }),
+  'ed-rule': v => patchEd({ rule: v }),
+  'ed-delay': v => patchEd({ delay: v })
+};
+const CHANGE = {
+  'ed-member': cid => { const m = S.ed.members.includes(cid) ? S.ed.members.filter(x => x !== cid) : S.ed.members.concat([cid]); patchEd({ members: m }); },
+  'ed-auto': () => patchEd({ iconAuto: !S.ed.iconAuto, webQuery: null })
+};
+function moveMember(k, dir) {
+  const m = S.ed.members.slice(); const j = k + dir; if (j < 0 || j >= m.length) return;
+  [m[k], m[j]] = [m[j], m[k]]; patchEd({ members: m });
+}
+function closeMenu(restoreFocus = true) {
+  const back = S.menu && S.menu.returnFocus;
+  set({ menu: null });
+  if (restoreFocus && back) { const n = document.getElementById(back); if (n) n.focus(); }
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el || el.disabled) return;
+  const fn = ACT[el.dataset.act]; if (fn) fn(el.dataset.arg, el);
+});
+document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.input; if (k && INPUT[k]) INPUT[k](e.target.value); });
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.change; if (k && CHANGE[k]) CHANGE[k](e.target.dataset.arg); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (S.menu) closeMenu(); else if (S.confirm) set({ confirm: null }); else if (S.ed) set({ ed: null });
+});
+
+render();
+</script>
+</body>
+</html>
