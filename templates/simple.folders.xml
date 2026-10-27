@@ -45,6 +45,9 @@
   </Overview>
 
   <Changes>
+### 2026.10.28a
+- Fix: 2026.10.28 would not install due to a malformed plugin manifest.
+
 ### 2026.10.28
 - Renamed from Docker Folders to Simple Folders. Existing folders are imported on install.
 - New plugin icon.
