@@ -29,6 +29,11 @@ function df_containers_source(): array {
       'icon'      => '',
       'letter'    => $ct['letter'] ?? strtoupper(substr($ct['name'], 0, 1)),
       'tint'      => $ct['tint'] ?? 'slate',
+      /* The real plugin gets CPU and memory from the dockerload nchan stream,
+       * not from this payload. They are carried here only so a settled
+       * screenshot (which turns the stream off) can show plausible figures. */
+      'cpu'       => $ct['cpu'] ?? 0,
+      'mem'       => $ct['mem'] ?? 0,
       'template'  => '/boot/config/plugins/dockerMan/templates-user/my-'.$ct['name'].'.xml',
       'shell'     => 'sh',
       'labels'    => $ct['labels'] ?? [],

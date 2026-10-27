@@ -9,6 +9,8 @@ container at a time, in the order you chose.
 
 Supports **Unraid 7.2 – 7.4**.
 
+![Folders on the Docker page](docs/screenshot-folded.png)
+
 ---
 
 ## What it does
@@ -32,6 +34,8 @@ Supports **Unraid 7.2 – 7.4**.
   downloaded from Dashboard Icons / selfh.st and stored locally so they still
   render with no internet.
 - **Classic view.** One switch puts Unraid's standard table back, untouched.
+
+![A folder unfolded, showing its containers in start order](docs/screenshot-expanded.png)
 
 Editing or deleting a folder **never** stops, removes or recreates a
 container. Deleting one only removes the grouping; its containers keep running

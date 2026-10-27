@@ -2,25 +2,34 @@
 <!--
   Community Applications repository profile.
 
-  Required in the repository root for a CA submission; it supplies the
-  overview and support links moderators use to review provenance.
-  See https://ca.unraid.net/submit/help/repository-xml
+  Lives in the repository ROOT. The root element is <CommunityApplications>
+  and <Profile> is a CHILD holding the repository blurb (Markdown is
+  supported) - not the other way round. CA requires a non-empty <Profile>
+  before it will accept a new repository submission.
 -->
-<Profile>
-  <Repo>docker.folders</Repo>
-  <DisplayName>Docker Folders</DisplayName>
+<CommunityApplications>
+  <Profile>
+**Docker Folders** adds folders to the Unraid Docker page.
 
-  <Comment>
-    Group Docker containers into folders on the Unraid Docker page. Fold a
-    folder away behind a single row that still shows every member's icon,
-    unfold it to see the full container rows, and run start, stop, restart,
-    pause, resume, update and force update across a whole folder in a
-    defined order.
-  </Comment>
+Group related containers into a folder and fold it away behind a single row
+that still shows every member's icon; click any of those icons to get that
+container's own menu, or unfold the folder to see the full rows in start
+order.
 
-  <Support>https://github.com/gcarstoiu/docker.folders/issues</Support>
-  <Project>https://github.com/gcarstoiu/docker.folders</Project>
+A folder's icon opens its commands — start, stop, restart, pause, resume,
+check for updates, update, force update and open every WebUI — each running
+across the whole folder, one container at a time, honouring the folder's
+start order, its delay between starts, and reverse-order stop.
 
-  <Language>en_US</Language>
-  <Category>Tools:Utilities Productivity:</Category>
-</Profile>
+Folders can fill themselves from a name pattern or a Docker label, including
+containers created later. Folder start order drives Unraid's own autostart
+order rather than shadowing it, so containers come up at boot in the same
+order the folder uses. Editing or deleting a folder never stops, removes or
+recreates a container, and a "Classic view" switch restores the standard
+Unraid table at any time.
+
+Requires Unraid 7.2 or newer. Support through the repository's Issues page.
+  </Profile>
+  <Icon>https://raw.githubusercontent.com/gcarstoiu/docker.folders/main/src/usr/local/emhttp/plugins/docker.folders/images/icon.png</Icon>
+  <WebPage>https://github.com/gcarstoiu/docker.folders</WebPage>
+</CommunityApplications>
