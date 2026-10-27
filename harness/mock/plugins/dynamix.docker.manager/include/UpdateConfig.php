@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders harness - mock of Unraid's UpdateConfig.php.
+/* simple.folders harness - mock of Unraid's UpdateConfig.php.
  *
  *   POST action=autostart container=<name> auto=true|false wait=<seconds>
  *   POST action=wait      container=<name> wait=<seconds>

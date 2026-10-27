@@ -1,4 +1,4 @@
-/* docker.folders - UI tests against the local harness.
+/* simple.folders - UI tests against the local harness.
  *
  * Walks DESIGN_SPEC.md 15's acceptance checklist with real clicks and real
  * keystrokes, and writes a screenshot per state into harness/test/shots.
@@ -43,7 +43,7 @@ async function fresh(query = '') {
   await page.goto(`${BASE}/_reset`, { waitUntil: 'domcontentloaded' });
   await page.evaluateOnNewDocument(() => { try { localStorage.clear(); } catch (e) {} });
   await page.goto(`${BASE}/?nostream=1${query}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.df-card', { timeout: 10000 });
+  await page.waitForSelector('.sf-card', { timeout: 10000 });
 }
 
 const count = (sel) => page.$$eval(sel, (n) => n.length);
@@ -56,9 +56,9 @@ const TESTS = [
 
   t('renders the table with the expected totals', async () => {
     await fresh();
-    ok(await count('.df-row-folder') === 3, 'expected 3 folder rows');
-    ok(await count('.df-row-ct') === 16, 'expected 16 container rows');
-    const summary = await text('.df-summary');
+    ok(await count('.sf-row-folder') === 3, 'expected 3 folder rows');
+    ok(await count('.sf-row-ct') === 16, 'expected 16 container rows');
+    const summary = await text('.sf-summary');
     ok(summary === '16 containers · 13 running · 3 folders · 4 updates ready',
        `summary was: ${summary}`);
     await shot('01-overview');
@@ -66,13 +66,13 @@ const TESTS = [
 
   t('folded folders show every member icon, uncapped', async () => {
     await fresh('&folded=all');
-    ok(await count('.df-row-ct') === 6, 'only the loose containers should be listed');
+    ok(await count('.sf-row-ct') === 6, 'only the loose containers should be listed');
     /* Media has 5 members: all five icons, no "+N" overflow. */
-    const strips = await page.$$eval('.df-row-folder .df-strip',
+    const strips = await page.$$eval('.sf-row-folder .sf-strip',
       (nodes) => nodes.map((n) => n.children.length));
     /* Folder order is the fixture order: Media(5), Smart home(3), AI(2). */
     ok(JSON.stringify(strips) === '[5,3,2]', `strip sizes were ${JSON.stringify(strips)}`);
-    const plus = await page.$$eval('.df-strip', (n) => n.map((s) => s.textContent).join(''));
+    const plus = await page.$$eval('.sf-strip', (n) => n.map((s) => s.textContent).join(''));
     ok(!/\+\d/.test(plus), 'found a "+N" overflow marker');
     await shot('02-folded');
   }),
@@ -81,10 +81,10 @@ const TESTS = [
     await page.setViewport({ width: 1100, height: 900 });
     await fresh('&folded=all');
 
-    const media = await page.$('.df-row-folder[data-folder="f-media"]');
+    const media = await page.$('.sf-row-folder[data-folder="f-media"]');
     const box = await media.boundingBox();
-    const strip = await (await media.$('.df-strip')).boundingBox();
-    const status = await (await media.$('.df-folder-status')).boundingBox();
+    const strip = await (await media.$('.sf-strip')).boundingBox();
+    const status = await (await media.$('.sf-folder-status')).boundingBox();
 
     ok(strip.x + strip.width <= status.x + 1,
        `the strip (ends ${strip.x + strip.width}) overlaps the status column (starts ${status.x})`);
@@ -95,20 +95,20 @@ const TESTS = [
 
   t('clicking a folded icon opens that container\'s menu', async () => {
     await fresh('&folded=all');
-    await page.click('.df-row-folder[data-folder="f-media"] .df-strip-btn');
-    await page.waitForSelector('.df-menu', { timeout: 3000 });
-    const head = await text('.df-menu-head');
+    await page.click('.sf-row-folder[data-folder="f-media"] .sf-strip-btn');
+    await page.waitForSelector('.sf-menu', { timeout: 3000 });
+    const head = await text('.sf-menu-head');
     ok(head === 'plex', `menu header was "${head}", expected the container name`);
     await shot('04-container-menu-from-strip');
   }),
 
   t('clicking the folder icon opens the folder menu', async () => {
     await fresh();
-    await page.click('.df-row-folder[data-folder="f-media"] .df-folder-icon');
-    await page.waitForSelector('.df-menu', { timeout: 3000 });
-    ok(await text('.df-menu-head') === 'Media', 'menu header should be the folder name');
+    await page.click('.sf-row-folder[data-folder="f-media"] .sf-folder-icon');
+    await page.waitForSelector('.sf-menu', { timeout: 3000 });
+    ok(await text('.sf-menu-head') === 'Media', 'menu header should be the folder name');
 
-    const items = await page.$$eval('.df-menu-item .df-menu-label', (n) => n.map((x) => x.textContent));
+    const items = await page.$$eval('.sf-menu-item .sf-menu-label', (n) => n.map((x) => x.textContent));
     for (const want of ['Start all', 'Stop all', 'Restart all', 'Check for updates',
                         'Force update all', 'Edit folder…', 'Delete folder']) {
       ok(items.includes(want), `folder menu is missing "${want}"`);
@@ -118,39 +118,39 @@ const TESTS = [
 
   t('Escape closes the menu and returns focus to its trigger', async () => {
     await fresh();
-    await page.click('.df-row-folder[data-folder="f-media"] .df-folder-icon');
-    await page.waitForSelector('.df-menu');
+    await page.click('.sf-row-folder[data-folder="f-media"] .sf-folder-icon');
+    await page.waitForSelector('.sf-menu');
     await page.keyboard.press('Escape');
-    await page.waitForFunction(() => !document.querySelector('.df-menu'), { timeout: 3000 });
+    await page.waitForFunction(() => !document.querySelector('.sf-menu'), { timeout: 3000 });
     const focused = await page.evaluate(() => document.activeElement.className);
-    ok(focused.includes('df-folder-icon'), `focus went to "${focused}"`);
+    ok(focused.includes('sf-folder-icon'), `focus went to "${focused}"`);
   }),
 
   t('unfolding shows member rows with start-order numbers', async () => {
     await fresh('&folded=all');
-    await page.click('.df-row-folder[data-folder="f-media"] .df-chevron');
-    await page.waitForFunction(() => document.querySelectorAll('.df-row-ct').length === 11,
+    await page.click('.sf-row-folder[data-folder="f-media"] .sf-chevron');
+    await page.waitForFunction(() => document.querySelectorAll('.sf-row-ct').length === 11,
                                { timeout: 3000 });
-    const orders = await page.$$eval('.df-row-ct.is-nested .df-order', (n) => n.map((x) => x.textContent));
+    const orders = await page.$$eval('.sf-row-ct.is-nested .sf-order', (n) => n.map((x) => x.textContent));
     ok(JSON.stringify(orders) === '["1","2","3","4","5"]', `order numbers were ${JSON.stringify(orders)}`);
     await shot('06-unfolded');
   }),
 
   t('the filter matches folders and containers (spec 10)', async () => {
     await fresh('&folded=all');
-    await page.type('.df-filter-input', 'sonarr');
+    await page.type('.sf-filter-input', 'sonarr');
     await page.waitForFunction(
-      () => document.querySelectorAll('.df-row-folder').length === 1, { timeout: 3000 });
+      () => document.querySelectorAll('.sf-row-folder').length === 1, { timeout: 3000 });
 
     /* The folder name does not match, so only the matching member shows -
      * and while filtering every visible folder is unfolded. */
-    ok(await count('.df-row-ct') === 1, 'expected exactly the matching container');
-    ok(await text('.df-row-ct .df-ct-name') === 'sonarr', 'wrong container shown');
+    ok(await count('.sf-row-ct') === 1, 'expected exactly the matching container');
+    ok(await text('.sf-row-ct .sf-ct-name') === 'sonarr', 'wrong container shown');
 
-    await page.$eval('.df-filter-input', (n) => { n.value = ''; });
-    await page.type('.df-filter-input', 'zzzz');
-    await page.waitForSelector('.df-notice', { timeout: 3000 });
-    ok((await text('.df-notice')).includes('Nothing matches'), 'missing the empty-result notice');
+    await page.$eval('.sf-filter-input', (n) => { n.value = ''; });
+    await page.type('.sf-filter-input', 'zzzz');
+    await page.waitForSelector('.sf-notice', { timeout: 3000 });
+    ok((await text('.sf-notice')).includes('Nothing matches'), 'missing the empty-result notice');
     await shot('07-filter');
   }),
 
@@ -159,49 +159,49 @@ const TESTS = [
     ok(await page.$eval('#docker_containers', (n) => getComputedStyle(n).display) === 'none',
        'the native table should start hidden');
 
-    await page.click('.df-classic input');
+    await page.click('.sf-classic input');
     await page.waitForFunction(
       () => getComputedStyle(document.querySelector('#docker_containers')).display !== 'none',
       { timeout: 3000 });
 
-    ok(await count('.df-card') === 0, 'our table should be gone in classic view');
+    ok(await count('.sf-card') === 0, 'our table should be gone in classic view');
     ok(await count('#docker_list tr') === 16, 'the native table should still be populated');
     await shot('08-classic');
   }),
 
   t('deleting a folder asks first and never touches containers', async () => {
     await fresh();
-    const before = await count('.df-row-ct');
+    const before = await count('.sf-row-ct');
 
-    await page.click('.df-row-folder[data-folder="f-ai"] .df-folder-icon');
-    await page.waitForSelector('.df-menu');
+    await page.click('.sf-row-folder[data-folder="f-ai"] .sf-folder-icon');
+    await page.waitForSelector('.sf-menu');
     await clickMenuItem('Delete folder');
 
-    await page.waitForSelector('.df-dialog', { timeout: 3000 });
-    const body = await text('.df-dialog-text');
+    await page.waitForSelector('.sf-dialog', { timeout: 3000 });
+    const body = await text('.sf-dialog-text');
     ok(body.includes('keep running'), `confirmation body was: ${body}`);
     await shot('09-delete-confirm');
 
-    await clickButton('.df-dialog-foot', 'Delete folder');
+    await clickButton('.sf-dialog-foot', 'Delete folder');
     await page.waitForFunction(
-      () => document.querySelectorAll('.df-row-folder').length === 2, { timeout: 5000 });
+      () => document.querySelectorAll('.sf-row-folder').length === 2, { timeout: 5000 });
 
-    ok(await count('.df-row-ct') === before, 'container count changed - containers were touched');
-    const loose = await page.$$eval('.df-section-text', (n) => n.map((x) => x.textContent));
+    ok(await count('.sf-row-ct') === before, 'container count changed - containers were touched');
+    const loose = await page.$$eval('.sf-section-text', (n) => n.map((x) => x.textContent));
     ok(loose.includes('Not in a folder'), 'the orphaned containers should move to "Not in a folder"');
   }),
 
   t('force update warns and lists each member', async () => {
     await fresh();
-    await page.click('.df-row-folder[data-folder="f-media"] .df-folder-icon');
-    await page.waitForSelector('.df-menu');
+    await page.click('.sf-row-folder[data-folder="f-media"] .sf-folder-icon');
+    await page.waitForSelector('.sf-menu');
     await clickMenuItem('Force update all');
 
-    await page.waitForSelector('.df-dialog', { timeout: 3000 });
-    const title = await text('.df-dialog-title');
+    await page.waitForSelector('.sf-dialog', { timeout: 3000 });
+    const title = await text('.sf-dialog-title');
     ok(title.includes('Force update 5 containers'), `title was: ${title}`);
 
-    const notes = await page.$$eval('.df-confirm-note', (n) => n.map((x) => x.textContent));
+    const notes = await page.$$eval('.sf-confirm-note', (n) => n.map((x) => x.textContent));
     ok(notes.filter((x) => x === 'update ready').length === 2, 'expected 2 members with updates');
     ok(notes.filter((x) => x === 'already up to date').length === 3, 'expected 3 up-to-date members');
     await shot('10-force-update-confirm');
@@ -210,55 +210,55 @@ const TESTS = [
 
   t('the folder editor opens with a live preview and validates the name', async () => {
     await fresh();
-    await clickButton('.df-head-actions', '+ New folder');
-    await page.waitForSelector('.df-dialog', { timeout: 3000 });
+    await clickButton('.sf-head-actions', '+ New folder');
+    await page.waitForSelector('.sf-dialog', { timeout: 3000 });
 
-    ok(await text('.df-dialog-title') === 'New folder', 'wrong dialog title');
-    ok(await text('.df-ed-preview-row .df-folder-name') === 'Untitled folder',
+    ok(await text('.sf-dialog-title') === 'New folder', 'wrong dialog title');
+    ok(await text('.sf-ed-preview-row .sf-folder-name') === 'Untitled folder',
        'preview should show a placeholder name');
 
     /* Empty name is refused. */
-    ok(await page.$eval('.df-dialog-foot .df-btn-primary', (n) => n.disabled),
+    ok(await page.$eval('.sf-dialog-foot .sf-btn-primary', (n) => n.disabled),
        'Create should be disabled with an empty name');
 
     /* A duplicate is reported, not silently accepted. */
-    await page.type('#df-ed-name', 'Media');
+    await page.type('#sf-ed-name', 'Media');
     await page.waitForFunction(
-      () => document.querySelector('#df-ed-name-error').textContent.includes('already uses'),
+      () => document.querySelector('#sf-ed-name-error').textContent.includes('already uses'),
       { timeout: 3000 });
 
-    await page.$eval('#df-ed-name', (n) => { n.value = ''; });
-    await page.type('#df-ed-name', 'Cloud');
+    await page.$eval('#sf-ed-name', (n) => { n.value = ''; });
+    await page.type('#sf-ed-name', 'Cloud');
     await page.waitForFunction(
-      () => document.querySelector('#df-ed-name-error').textContent === '', { timeout: 3000 });
+      () => document.querySelector('#sf-ed-name-error').textContent === '', { timeout: 3000 });
 
     /* Picking members updates the preview and the start order. */
     await tickMembers(['nextcloud', 'mariadb', 'redis']);
     await page.waitForFunction(
-      () => document.querySelectorAll('.df-order-row').length === 3, { timeout: 3000 });
+      () => document.querySelectorAll('.sf-order-row').length === 3, { timeout: 3000 });
     await shot('11-editor');
   }),
 
   t('a container moves between folders, and only one folder holds it', async () => {
     await fresh();
-    await clickButton('.df-head-actions', '+ New folder');
-    await page.waitForSelector('.df-dialog');
-    await page.type('#df-ed-name', 'Cloud');
+    await clickButton('.sf-head-actions', '+ New folder');
+    await page.waitForSelector('.sf-dialog');
+    await page.type('#sf-ed-name', 'Cloud');
 
     /* sonarr is in Media; ticking it here must show that it will move. */
     await tickMembers(['sonarr']);
     await page.waitForFunction(() => {
-      const row = [...document.querySelectorAll('.df-ct-opt')]
-        .find((r) => r.querySelector('.df-ct-opt-name').textContent === 'sonarr');
+      const row = [...document.querySelectorAll('.sf-ct-opt')]
+        .find((r) => r.querySelector('.sf-ct-opt-name').textContent === 'sonarr');
       return row && /moves from Media/.test(row.textContent);
     }, { timeout: 3000 });
 
-    await clickButton('.df-dialog-foot', 'Create folder');
+    await clickButton('.sf-dialog-foot', 'Create folder');
     await page.waitForFunction(
-      () => document.querySelectorAll('.df-row-folder').length === 4, { timeout: 5000 });
+      () => document.querySelectorAll('.sf-row-folder').length === 4, { timeout: 5000 });
 
     const owners = await page.evaluate(async () => {
-      const r = await fetch('/plugins/docker.folders/include/Data.php');
+      const r = await fetch('/plugins/simple.folders/include/Data.php');
       const d = await r.json();
       return d.folders.filter((f) => f.resolved.includes('sonarr')).map((f) => f.name);
     });
@@ -268,26 +268,26 @@ const TESTS = [
 
   t('bulk stop runs sequentially in reverse order with a progress panel', async () => {
     await fresh();
-    await page.click('.df-row-folder[data-folder="f-ai"] .df-folder-icon');
-    await page.waitForSelector('.df-menu');
+    await page.click('.sf-row-folder[data-folder="f-ai"] .sf-folder-icon');
+    await page.waitForSelector('.sf-menu');
     await clickMenuItem('Stop all');
 
-    await page.waitForSelector('.df-panel', { timeout: 3000 });
-    ok((await text('.df-panel-title')) === 'Stopping AI', 'wrong panel title');
+    await page.waitForSelector('.sf-panel', { timeout: 3000 });
+    ok((await text('.sf-panel-title')) === 'Stopping AI', 'wrong panel title');
 
     /* reverseStop is on for this folder, so open-webui stops before ollama. */
-    const order = await page.$$eval('.df-panel-name', (n) => n.map((x) => x.textContent));
+    const order = await page.$$eval('.sf-panel-name', (n) => n.map((x) => x.textContent));
     ok(JSON.stringify(order) === '["ollama","open-webui"]',
        `panel listed ${JSON.stringify(order)}`);
     await shot('13-progress');
 
     await page.waitForFunction(
-      () => document.querySelector('.df-panel-foot') !== null, { timeout: 30000 });
-    const summary = await text('.df-panel-foot span');
+      () => document.querySelector('.sf-panel-foot') !== null, { timeout: 30000 });
+    const summary = await text('.sf-panel-foot span');
     ok(summary.includes('stopped'), `summary was: ${summary}`);
 
     const states = await page.evaluate(async () => {
-      const r = await fetch('/plugins/docker.folders/include/Data.php');
+      const r = await fetch('/plugins/simple.folders/include/Data.php');
       const d = await r.json();
       return d.containers.filter((c) => ['ollama', 'open-webui'].includes(c.name)).map((c) => c.state);
     });
@@ -296,18 +296,18 @@ const TESTS = [
 
   t('a second job is refused while one is running', async () => {
     await fresh();
-    await page.click('.df-row-folder[data-folder="f-media"] .df-folder-icon');
-    await page.waitForSelector('.df-menu');
+    await page.click('.sf-row-folder[data-folder="f-media"] .sf-folder-icon');
+    await page.waitForSelector('.sf-menu');
     await clickMenuItem('Stop all');
-    await page.waitForSelector('.df-panel', { timeout: 3000 });
+    await page.waitForSelector('.sf-panel', { timeout: 3000 });
 
     /* Every docker action is disabled while a job runs (spec 6).
      * Click through evaluate: the table re-renders as containers report busy,
      * so a handle resolved a moment ago may already be detached. */
     await page.evaluate(() =>
-      document.querySelector('.df-row-folder[data-folder="f-home"] .df-folder-icon').click());
-    await page.waitForSelector('.df-menu', { timeout: 3000 });
-    const disabled = await page.$eval('.df-menu-item', (n) => n.disabled);
+      document.querySelector('.sf-row-folder[data-folder="f-home"] .sf-folder-icon').click());
+    await page.waitForSelector('.sf-menu', { timeout: 3000 });
+    const disabled = await page.$eval('.sf-menu-item', (n) => n.disabled);
     ok(disabled, 'folder menu actions should be disabled while a job runs');
     await page.keyboard.press('Escape');
   }),
@@ -320,8 +320,8 @@ const TESTS = [
   t('Unraid\'s element styling does not leak into the plugin', async () => {
     await fresh('&folded=all');
 
-    const host = await page.$eval('#df-root', (n) => n.className);
-    ok(/\bunapi\b/.test(host), `#df-root must carry "unapi", had "${host}"`);
+    const host = await page.$eval('#sf-root', (n) => n.className);
+    ok(/\bunapi\b/.test(host), `#sf-root must carry "unapi", had "${host}"`);
 
     const probe = (sel) => page.$eval(sel, (n) => {
       const s = getComputedStyle(n);
@@ -334,7 +334,7 @@ const TESTS = [
       };
     });
 
-    for (const sel of ['.df-kebab', '.df-chevron', '.df-switch', '.df-strip-btn']) {
+    for (const sel of ['.sf-kebab', '.sf-chevron', '.sf-switch', '.sf-strip-btn']) {
       const got = await probe(sel);
       ok(got.transform === 'none', `${sel} is ${got.transform}, Unraid's uppercase leaked in`);
       ok(got.minWidth !== '86px', `${sel} picked up Unraid's min-width:86px`);
@@ -343,7 +343,7 @@ const TESTS = [
     }
 
     /* Our own buttons must keep the styling we gave them. */
-    const primary = await page.$eval('.df-btn-primary', (n) => {
+    const primary = await page.$eval('.sf-btn-primary', (n) => {
       const s = getComputedStyle(n);
       return { bg: s.backgroundColor, border: s.borderTopWidth, transform: s.textTransform };
     });
@@ -351,10 +351,10 @@ const TESTS = [
     ok(primary.transform === 'none', 'the primary button got uppercased');
     ok(primary.bg !== 'rgba(0, 0, 0, 0)', 'the primary button lost its background');
 
-    /* And the menu, which lives outside #df-root in the overlay layer. */
-    await page.click('.df-row-folder[data-folder="f-media"] .df-folder-icon');
-    await page.waitForSelector('.df-menu');
-    const item = await page.$eval('.df-menu-item', (n) => {
+    /* And the menu, which lives outside #sf-root in the overlay layer. */
+    await page.click('.sf-row-folder[data-folder="f-media"] .sf-folder-icon');
+    await page.waitForSelector('.sf-menu');
+    const item = await page.$eval('.sf-menu-item', (n) => {
       const s = getComputedStyle(n);
       return { transform: s.textTransform, minWidth: s.minWidth, border: s.borderTopWidth };
     });
@@ -368,11 +368,11 @@ const TESTS = [
   t('the page shows a single heading, not three', async () => {
     await fresh();
     /* Unraid prints "Docker Containers" above; the plugin must not add its
-     * own "Docker Folders" section bar or repeat "Containers". */
-    ok(await count('.df-eyebrow') === 0, 'the UNRAID-DOCKER eyebrow should be gone');
-    ok(await count('.df-title') === 0, 'the duplicate "Containers" heading should be gone');
-    ok(await count('.df-summary') === 1, 'the summary line should remain');
-    const summary = await text('.df-summary');
+     * own "Simple Folders" section bar or repeat "Containers". */
+    ok(await count('.sf-eyebrow') === 0, 'the UNRAID-DOCKER eyebrow should be gone');
+    ok(await count('.sf-title') === 0, 'the duplicate "Containers" heading should be gone');
+    ok(await count('.sf-summary') === 1, 'the summary line should remain');
+    const summary = await text('.sf-summary');
     ok(/containers/.test(summary), `summary was: ${summary}`);
   }),
 
@@ -384,10 +384,10 @@ const TESTS = [
     /* Note: no nostream here - the live channel has to be running. */
     await page.goto(`${BASE}/_reset`, { waitUntil: 'domcontentloaded' });
     await page.goto(`${BASE}/?folded=all`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.df-card');
+    await page.waitForSelector('.sf-card');
 
-    await page.$eval('.df-card', (n) => { n.scrollLeft = 400; });
-    const before = await page.$eval('.df-card', (n) => n.scrollLeft);
+    await page.$eval('.sf-card', (n) => { n.scrollLeft = 400; });
+    const before = await page.$eval('.sf-card', (n) => n.scrollLeft);
     ok(before > 0, 'could not scroll the card sideways to begin with');
 
     /* Count table rebuilds. Scroll position alone is not enough of a test:
@@ -396,11 +396,11 @@ const TESTS = [
      * must be true is that a live tick does not rebuild the table at all. */
     await page.evaluate(() => {
       window.__rebuilds = 0;
-      const root = document.getElementById('df-root');
+      const root = document.getElementById('sf-root');
       new MutationObserver((records) => {
         for (const r of records) {
           for (const node of r.removedNodes) {
-            if (node.nodeType === 1 && node.classList.contains('df-card')) window.__rebuilds++;
+            if (node.nodeType === 1 && node.classList.contains('sf-card')) window.__rebuilds++;
           }
         }
       }).observe(root, { childList: true });
@@ -414,11 +414,11 @@ const TESTS = [
      * so anything above a couple means live updates are redrawing again. */
     ok(rebuilds <= 2, `the table was rebuilt ${rebuilds} times in 6.5s`);
 
-    const after = await page.$eval('.df-card', (n) => n.scrollLeft);
+    const after = await page.$eval('.sf-card', (n) => n.scrollLeft);
     ok(after === before, `scroll moved from ${before} to ${after}`);
 
     /* And the live figures must actually still be arriving. */
-    const cpu = await page.$$eval('.df-cell-cpu', (n) => n.map((x) => x.textContent));
+    const cpu = await page.$$eval('.sf-cell-cpu', (n) => n.map((x) => x.textContent));
     ok(cpu.some((v) => v !== '\u2014'), 'no live CPU values arrived at all');
 
     await page.setViewport({ width: 1440, height: 1000, isMobile: false });
@@ -426,20 +426,20 @@ const TESTS = [
 
   t('typing in the filter survives a background refresh', async () => {
     await fresh();
-    await page.focus('.df-filter-input');
-    await page.type('.df-filter-input', 'son');
+    await page.focus('.sf-filter-input');
+    await page.type('.sf-filter-input', 'son');
     await new Promise((r) => setTimeout(r, 5600));   // past one poll
     const focused = await page.evaluate(() =>
       document.activeElement && document.activeElement.className);
-    ok(/df-filter-input/.test(focused || ''), `focus moved to "${focused}"`);
-    ok(await page.$eval('.df-filter-input', (n) => n.value) === 'son', 'the typed text was lost');
+    ok(/sf-filter-input/.test(focused || ''), `focus moved to "${focused}"`);
+    ok(await page.$eval('.sf-filter-input', (n) => n.value) === 'son', 'the typed text was lost');
   }),
 
   t('the table reaches both screen edges on a phone', async () => {
     await page.setViewport({ width: 420, height: 820, isMobile: true });
     await fresh('&folded=all');
 
-    const box = await page.$eval('.df-card', (n) => {
+    const box = await page.$eval('.sf-card', (n) => {
       const r = n.getBoundingClientRect();
       return { left: r.left, right: r.right, width: r.width };
     });
@@ -447,7 +447,7 @@ const TESTS = [
     ok(Math.abs(box.right - 420) <= 1, `card ends at ${box.right}px, viewport is 420px`);
 
     /* The table itself stays wide and scrollable - that is the design. */
-    const scrollable = await page.$eval('.df-card', (n) => n.scrollWidth > n.clientWidth);
+    const scrollable = await page.$eval('.sf-card', (n) => n.scrollWidth > n.clientWidth);
     ok(scrollable, 'the card should scroll horizontally on a phone');
 
     /* ...and the page itself must not scroll sideways. */
@@ -461,13 +461,13 @@ const TESTS = [
 
   t('the action bar carries every classic Docker action', async () => {
     await fresh();
-    ok(await count('.df-tip') === 0, 'the old tip line should be gone');
-    ok(await count('.df-actionbar') === 1, 'the action bar should be present');
+    ok(await count('.sf-tip') === 0, 'the old tip line should be gone');
+    ok(await count('.sf-actionbar') === 1, 'the action bar should be present');
 
-    ok((await text('.df-grouplbl')) === 'All containers',
+    ok((await text('.sf-grouplbl')) === 'All containers',
        'the lifecycle group must state its scope');
 
-    const labels = await page.$$eval('.df-actionbar button',
+    const labels = await page.$$eval('.sf-actionbar button',
       (n) => n.map((b) => (b.textContent || b.getAttribute('aria-label') || '').trim()));
 
     for (const want of ['Add container', 'Start', 'Stop', 'Pause', 'Resume', 'Check']) {
@@ -476,9 +476,9 @@ const TESTS = [
     ok(labels.some((l) => /^Update/.test(l)), 'action bar is missing Update');
 
     /* Container size is the one classic action kept in the overflow. */
-    await page.click('.df-actionbar .df-act');
-    await page.waitForSelector('.df-menu', { timeout: 3000 });
-    const items = await page.$$eval('.df-menu-item .df-menu-label', (n) => n.map((x) => x.textContent));
+    await page.click('.sf-actionbar .sf-act');
+    await page.waitForSelector('.sf-menu', { timeout: 3000 });
+    const items = await page.$$eval('.sf-menu-item .sf-menu-label', (n) => n.map((x) => x.textContent));
     ok(items.some((i) => /Container size/.test(i)), `overflow was ${JSON.stringify(items)}`);
     await page.keyboard.press('Escape');
 
@@ -487,7 +487,7 @@ const TESTS = [
 
   t('Add container uses Unraid\'s brand orange', async () => {
     await fresh();
-    const style = await page.$eval('.df-chip-brand', (n) => {
+    const style = await page.$eval('.sf-chip-brand', (n) => {
       const s = getComputedStyle(n);
       return { bg: s.backgroundColor, color: s.color };
     });
@@ -500,20 +500,20 @@ const TESTS = [
   t('Stop all and Pause all confirm before acting', async () => {
     await fresh();
     const before = await page.evaluate(async () => {
-      const d = await (await fetch('/plugins/docker.folders/include/Data.php')).json();
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
       return d.stats.running;
     });
 
-    await clickButton('.df-seggroup', 'Stop');
-    await page.waitForSelector('.df-dialog', { timeout: 3000 });
-    const title = await text('.df-dialog-title');
+    await clickButton('.sf-seggroup', 'Stop');
+    await page.waitForSelector('.sf-dialog', { timeout: 3000 });
+    const title = await text('.sf-dialog-title');
     ok(/every container/i.test(title), `confirmation title was: ${title}`);
 
     /* Cancelling must change nothing. */
     await page.keyboard.press('Escape');
-    await page.waitForFunction(() => !document.querySelector('.df-dialog'), { timeout: 3000 });
+    await page.waitForFunction(() => !document.querySelector('.sf-dialog'), { timeout: 3000 });
     const after = await page.evaluate(async () => {
-      const d = await (await fetch('/plugins/docker.folders/include/Data.php')).json();
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
       return d.stats.running;
     });
     ok(after === before, `cancelling stopped containers anyway (${before} -> ${after})`);
@@ -522,21 +522,21 @@ const TESTS = [
 
   t('a global stop runs in reverse boot order', async () => {
     await fresh();
-    await clickButton('.df-seggroup', 'Stop');
-    await page.waitForSelector('.df-dialog');
+    await clickButton('.sf-seggroup', 'Stop');
+    await page.waitForSelector('.sf-dialog');
     await page.evaluate(() => {
-      [...document.querySelectorAll('.df-dialog-foot button')]
+      [...document.querySelectorAll('.sf-dialog-foot button')]
         .find((b) => /^Stop all/.test(b.textContent.trim())).click();
     });
 
-    await page.waitForSelector('.df-panel', { timeout: 3000 });
-    const listed = await page.$$eval('.df-panel-name', (n) => n.map((x) => x.textContent));
+    await page.waitForSelector('.sf-panel', { timeout: 3000 });
+    const listed = await page.$$eval('.sf-panel-name', (n) => n.map((x) => x.textContent));
     ok(listed.length > 1, 'expected several containers in the job');
 
-    await page.waitForFunction(() => document.querySelector('.df-panel-foot') !== null,
+    await page.waitForFunction(() => document.querySelector('.sf-panel-foot') !== null,
                                { timeout: 60000 });
     const running = await page.evaluate(async () => {
-      const d = await (await fetch('/plugins/docker.folders/include/Data.php')).json();
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
       return d.stats.running;
     });
     ok(running === 0, `${running} containers still running after Stop all`);
@@ -548,26 +548,26 @@ const TESTS = [
    * three. The search now queries each catalogue's published index. */
   t('icon search returns real matches, never broken images', async () => {
     await fresh();
-    await clickButton('.df-head-actions', '+ New folder');
-    await page.waitForSelector('.df-dialog');
+    await clickButton('.sf-head-actions', '+ New folder');
+    await page.waitForSelector('.sf-dialog');
 
-    await page.$$eval('.df-tab', (tabs) =>
+    await page.$$eval('.sf-tab', (tabs) =>
       tabs.find((t) => t.textContent.trim() === 'From the web').click());
-    await page.waitForSelector('.df-icon-results', { timeout: 3000 });
+    await page.waitForSelector('.sf-icon-results', { timeout: 3000 });
 
     /* A term both libraries carry: many results, exact match first. */
-    const search = '.df-ed-icon-panel input[type="search"]';
+    const search = '.sf-ed-icon-panel input[type="search"]';
     await page.$eval(search, (n) => { n.value = ''; });
     await page.type(search, 'plex');
     await page.waitForFunction(
-      () => document.querySelectorAll('.df-icon-card').length > 4, { timeout: 6000 });
+      () => document.querySelectorAll('.sf-icon-card').length > 4, { timeout: 6000 });
 
-    const cards = await page.$$eval('.df-icon-card .df-icon-card-file', (n) => n.map((x) => x.textContent));
+    const cards = await page.$$eval('.sf-icon-card .sf-icon-card-file', (n) => n.map((x) => x.textContent));
     ok(cards.length > 4, `only ${cards.length} results for "plex"`);
     ok(cards[0] === 'plex.svg', `first result was ${cards[0]}, expected the exact match`);
 
     /* Every preview must actually load - no broken images. */
-    const broken = await page.$$eval('.df-icon-card img',
+    const broken = await page.$$eval('.sf-icon-card img',
       (imgs) => imgs.filter((i) => i.complete && i.naturalWidth === 0).length);
     ok(broken === 0, `${broken} preview images failed to load`);
 
@@ -575,13 +575,13 @@ const TESTS = [
     await page.$eval(search, (n) => { n.value = ''; });
     await page.type(search, 'cobra');
     await page.waitForFunction(
-      () => /No icon named/.test(document.querySelector('.df-icon-results').textContent),
+      () => /No icon named/.test(document.querySelector('.sf-icon-results').textContent),
       { timeout: 6000 });
 
-    const after = await page.$$eval('.df-icon-card .df-icon-card-name', (n) => n.map((x) => x.textContent));
+    const after = await page.$$eval('.sf-icon-card .sf-icon-card-name', (n) => n.map((x) => x.textContent));
     ok(JSON.stringify(after) === '["Generated"]',
        `expected only the monogram, got ${JSON.stringify(after)}`);
-    const stillBroken = await page.$$eval('.df-icon-card img',
+    const stillBroken = await page.$$eval('.sf-icon-card img',
       (imgs) => imgs.filter((i) => i.complete && i.naturalWidth === 0).length);
     ok(stillBroken === 0, 'a broken image was rendered for a term with no matches');
 
@@ -595,11 +595,11 @@ const TESTS = [
   t('dialog buttons stay on screen when the viewport is short', async () => {
     await page.setViewport({ width: 420, height: 600, isMobile: true });
     await fresh();
-    await clickButton('.df-head-actions', '+ New folder');
-    await page.waitForSelector('.df-dialog');
+    await clickButton('.sf-head-actions', '+ New folder');
+    await page.waitForSelector('.sf-dialog');
 
     const fit = await page.evaluate(() => {
-      const foot = document.querySelector('.df-dialog-foot');
+      const foot = document.querySelector('.sf-dialog-foot');
       const r = foot.getBoundingClientRect();
       return { bottom: r.bottom, viewport: window.innerHeight, visible: r.height > 0 };
     });
@@ -610,7 +610,7 @@ const TESTS = [
     /* Confirm the rule is actually dvh, not just vh that happens to match. */
     const usesDvh = await page.evaluate(() => {
       const css = [...document.styleSheets]
-        .filter((s) => (s.href || '').includes('docker.folders'))
+        .filter((s) => (s.href || '').includes('simple.folders'))
         .flatMap((s) => { try { return [...s.cssRules]; } catch (e) { return []; } })
         .map((r) => r.cssText).join('');
       return /dvh/.test(css);
@@ -622,20 +622,51 @@ const TESTS = [
     await page.setViewport({ width: 1440, height: 1000, isMobile: false });
   }),
 
+  /* The plugin was called docker.folders before the rename. Container
+   * templates carrying the old label must keep working, or renaming the
+   * plugin silently empties people's folders. */
+  t('the pre-rename docker.folders label still assigns a container', async () => {
+    await page.goto(`${BASE}/_reset`, { waitUntil: 'domcontentloaded' });
+
+    for (const [key, value] of [['docker.folders', 'f-ai'], ['simple.folders', '']]) {
+      await page.goto(
+        `${BASE}/_label?container=immich&key=${encodeURIComponent(key)}&value=${encodeURIComponent(value)}`,
+        { waitUntil: 'domcontentloaded' });
+    }
+
+    const owner = await page.evaluate(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      const f = d.folders.find((x) => x.resolved.includes('immich'));
+      return f ? f.name : null;
+    });
+    ok(owner === 'AI', `immich landed in ${owner}, expected AI via the legacy label`);
+
+    /* And the current label works the same way. */
+    await page.goto(`${BASE}/_reset`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/_label?container=immich&key=simple.folders&value=f-media`,
+                    { waitUntil: 'domcontentloaded' });
+    const owner2 = await page.evaluate(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      const f = d.folders.find((x) => x.resolved.includes('immich'));
+      return f ? f.name : null;
+    });
+    ok(owner2 === 'Media', `immich landed in ${owner2}, expected Media`);
+  }),
+
   t('every control is reachable by keyboard', async () => {
     await fresh('&folded=all');
     const reached = await page.evaluate(() => {
       const sel = 'button:not([disabled]):not([tabindex="-1"]), input:not([disabled]), [tabindex="0"]';
-      return [...document.querySelector('#df-root').querySelectorAll(sel)].length;
+      return [...document.querySelector('#sf-root').querySelectorAll(sel)].length;
     });
     ok(reached > 20, `only ${reached} focusable controls found`);
 
     /* The chevron carries the expanded state, not a div with a click handler. */
-    const aria = await page.$eval('.df-chevron', (n) => n.getAttribute('aria-expanded'));
+    const aria = await page.$eval('.sf-chevron', (n) => n.getAttribute('aria-expanded'));
     ok(aria === 'false', `chevron aria-expanded was "${aria}"`);
 
     /* The folder switch uses aria-pressed="mixed" when members differ. */
-    const mixed = await page.$eval('.df-row-folder[data-folder="f-media"] .df-switch',
+    const mixed = await page.$eval('.sf-row-folder[data-folder="f-media"] .sf-switch',
       (n) => n.getAttribute('aria-pressed'));
     ok(mixed === 'mixed', `folder switch aria-pressed was "${mixed}"`);
   })
@@ -644,8 +675,8 @@ const TESTS = [
 /* ------------------------------------------------------------------ */
 async function clickMenuItem(label) {
   const clicked = await page.evaluate((want) => {
-    const item = [...document.querySelectorAll('.df-menu-item')]
-      .find((b) => b.querySelector('.df-menu-label').textContent === want);
+    const item = [...document.querySelectorAll('.sf-menu-item')]
+      .find((b) => b.querySelector('.sf-menu-label').textContent === want);
     if (!item || item.disabled) return false;
     item.click();
     return true;
@@ -657,8 +688,8 @@ async function clickMenuItem(label) {
 async function tickMembers(names) {
   for (const name of names) {
     const found = await page.evaluate((want) => {
-      const row = [...document.querySelectorAll('.df-ct-opt')]
-        .find((r) => r.querySelector('.df-ct-opt-name').textContent === want);
+      const row = [...document.querySelectorAll('.sf-ct-opt')]
+        .find((r) => r.querySelector('.sf-ct-opt-name').textContent === want);
       if (!row) return false;
       row.querySelector('input').click();
       return true;

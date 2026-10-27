@@ -1,9 +1,9 @@
 <?PHP
-/* docker.folders harness - request router for PHP's built-in server.
+/* simple.folders harness - request router for PHP's built-in server.
  *
  * Maps the paths the plugin uses on a real Unraid box onto this repository:
  *
- *   /plugins/docker.folders/*            -> src/usr/local/emhttp/plugins/docker.folders/*
+ *   /plugins/simple.folders/*            -> src/usr/local/emhttp/plugins/simple.folders/*
  *   /plugins/dynamix.docker.manager/*    -> harness/mock/plugins/dynamix.docker.manager/*
  *   /webGui/*                            -> harness/mock/webGui/*
  *   /sub/<channel>                       -> harness/mock/sub.php   (nchan stand-in)
@@ -19,7 +19,7 @@
 require_once __DIR__.'/prepend.php';
 
 $root   = __DIR__;
-$plugin = dirname($root).'/src/usr/local/emhttp/plugins/docker.folders';
+$plugin = dirname($root).'/src/usr/local/emhttp/plugins/simple.folders';
 $path   = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 /* ---- nchan stand-in --------------------------------------------------- */
@@ -46,7 +46,7 @@ if ($path === '/_reset') {
 
 /* ---- static + php under the mapped prefixes --------------------------- */
 $map = [
-  '/plugins/docker.folders'         => $plugin,
+  '/plugins/simple.folders'         => $plugin,
   '/plugins/dynamix.docker.manager' => $root.'/mock/plugins/dynamix.docker.manager',
   '/webGui'                         => $root.'/mock/webGui',
 ];
@@ -77,6 +77,22 @@ foreach ($map as $prefix => $dir) {
   header('Content-Type: '.($types[$ext] ?? 'application/octet-stream'));
   header('Cache-Control: no-store');
   readfile($file);
+  return true;
+}
+
+/* ---- set a container label (tests only) -------------------------------- */
+if ($path === '/_label') {
+  require_once $root.'/mock/state.php';
+  $ct    = (string)($_GET['container'] ?? '');
+  $key   = (string)($_GET['key'] ?? '');
+  $value = (string)($_GET['value'] ?? '');
+  harness_mutate($ct, function ($c) use ($key, $value) {
+    $c['labels'] = $c['labels'] ?? [];
+    if ($value === '') unset($c['labels'][$key]); else $c['labels'][$key] = $value;
+    return $c;
+  });
+  header('Content-Type: application/json');
+  echo json_encode(['ok' => true]);
   return true;
 }
 

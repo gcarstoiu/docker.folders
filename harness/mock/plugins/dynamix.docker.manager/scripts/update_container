@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?PHP
-/* docker.folders harness - mock of Unraid's
+/* simple.folders harness - mock of Unraid's
  * /usr/local/emhttp/plugins/dynamix.docker.manager/scripts/update_container
  *
  * Real usage:  update_container <name>*<name>*<name>

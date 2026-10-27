@@ -1,0 +1,222 @@
+/* simple.folders - popovers, toasts and the progress panel.
+ * Copyright (C) 2026  gcarstoiu
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2, as published
+ * by the Free Software Foundation.
+ *
+ * These are mounted into .sf-layer (see util.js): a sibling of #sf-root that
+ * carries the same .sf-root class, so the tokens still apply, but is never
+ * emptied by a re-render and is not clipped by the card's overflow.
+ */
+
+/* The overlay host itself must occupy nothing and intercept nothing; it
+   exists only to carry the token scope for its absolutely positioned
+   children. .sf-root's own padding would otherwise add a gap to the page. */
+.sf-root.sf-layer { padding: 0; position: static; }
+.sf-root.sf-layer > * { pointer-events: auto; }
+
+.sf-root .sf-menu,
+.sf-root .sf-toasts,
+.sf-root .sf-panel {
+  font-family: var(--sf-font-sans, inherit);
+}
+
+/* ---------------------------------------------------------------------------
+ * Popover menu (spec 6)
+ * ------------------------------------------------------------------------- */
+.sf-root .sf-menu {
+  position: absolute;
+  z-index: 10050;
+  width: var(--sf-menu-w, 260px);
+  max-height: 76vh;
+  max-height: 76dvh;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--sf-border-popover);
+  border-radius: var(--sf-r-tile);
+  background: var(--sf-bg-popover);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, .42);
+  animation: sf-pop var(--sf-t-popover) ease-out;
+}
+@keyframes sf-pop {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.sf-root .sf-menu-head {
+  padding: 7px 9px 9px;
+  font-size: var(--sf-fs-caption);
+  font-weight: 600;
+  color: var(--sf-text-muted);
+  border-bottom: 1px solid var(--sf-border-soft);
+  margin-bottom: 5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.sf-root .sf-menu-sub {
+  padding: 9px 9px 4px;
+  font-family: var(--sf-font-mono);
+  font-size: var(--sf-fs-eyebrow);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--sf-text-faint);
+}
+
+.sf-root .sf-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--sf-menu-item-min, 38px);
+  padding: 7px 9px;
+  border-radius: 7px;
+  font-size: var(--sf-fs-small);
+  text-align: left;
+  color: var(--sf-text);
+}
+.sf-root .sf-menu-item:hover:not([disabled]) { background: var(--sf-bg-hover-menu); }
+.sf-root .sf-menu-item[disabled] { opacity: .4; cursor: not-allowed; }
+
+.sf-root .sf-menu-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sf-root .sf-menu-hint {
+  flex: none;
+  font-family: var(--sf-font-mono);
+  font-size: var(--sf-fs-eyebrow);
+  color: var(--sf-text-faint);
+}
+
+.sf-root .sf-menu-warn   .sf-menu-label { color: var(--sf-warn-fg); }
+.sf-root .sf-menu-danger .sf-menu-label { color: var(--sf-danger-fg); }
+
+.sf-root .sf-menu-divider {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--sf-border-soft);
+}
+
+/* ---------------------------------------------------------------------------
+ * Toasts (spec 7.2) - bottom-left, auto-dismiss after 4.2s
+ * ------------------------------------------------------------------------- */
+/* Clear of a bottom URL bar and of a home indicator. */
+.sf-root .sf-toasts {
+  position: fixed;
+  left: 16px;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  z-index: 10060;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+}
+.sf-root .sf-toast {
+  max-width: 420px;
+  padding: 11px 14px;
+  border: 1px solid var(--sf-border-popover);
+  border-radius: var(--sf-r-tile);
+  background: var(--sf-bg-popover);
+  color: var(--sf-text);
+  font-size: var(--sf-fs-small);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .38);
+  animation: sf-pop var(--sf-t-popover) ease-out;
+}
+.sf-root .sf-toast-error { border-color: var(--sf-danger-border); color: var(--sf-danger-fg); }
+
+/* ---------------------------------------------------------------------------
+ * Progress panel (spec 7.1) - fixed bottom-right, 340px
+ * ------------------------------------------------------------------------- */
+.sf-root .sf-panel {
+  position: fixed;
+  right: 16px;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  z-index: 10055;
+  width: var(--sf-panel-w, 340px);
+  max-height: 70vh;
+  max-height: 70dvh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--sf-border-popover);
+  border-radius: var(--sf-r-tile);
+  background: var(--sf-bg-popover);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .44);
+  animation: sf-pop var(--sf-t-popover) ease-out;
+}
+
+.sf-root .sf-panel-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 12px 14px 8px;
+}
+.sf-root .sf-panel-title { font-size: var(--sf-fs-small); font-weight: 600; }
+.sf-root .sf-panel-step { font-family: var(--sf-font-mono); font-size: var(--sf-fs-eyebrow); color: var(--sf-text-faint); }
+
+.sf-root .sf-progress {
+  height: 4px;
+  margin: 0 14px;
+  border-radius: 2px;
+  background: var(--sf-stopped-seg);
+  overflow: hidden;
+}
+.sf-root .sf-progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--sf-accent);
+  border-radius: 2px;
+  transition: width var(--sf-t-progress) ease;
+}
+
+.sf-root .sf-panel-list {
+  margin: 10px 0 0;
+  padding: 0 6px 6px;
+  overflow-y: auto;
+  list-style: none;
+}
+.sf-root .sf-panel-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  font-size: var(--sf-fs-caption);
+}
+.sf-root .sf-panel-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sf-root .sf-panel-note {
+  flex: none;
+  font-family: var(--sf-font-mono);
+  font-size: var(--sf-fs-eyebrow);
+  color: var(--sf-text-faint);
+}
+.sf-root .sf-panel-row.is-active { background: var(--sf-bg-hover-menu); }
+.sf-root .sf-panel-row.is-failed .sf-panel-note { color: var(--sf-danger-fg); }
+
+/* Queued = hollow ring, active = spinner, done = filled dot (spec 7.1). */
+.sf-root .sf-mark { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.sf-root .sf-mark-queued { box-shadow: inset 0 0 0 2px var(--sf-stopped-ring); }
+.sf-root .sf-mark-done { background: var(--sf-running); }
+.sf-root .sf-mark-failed { background: var(--sf-danger-fg); }
+.sf-root .sf-mark-active {
+  border: 2px solid var(--sf-busy);
+  border-top-color: transparent;
+  animation: sf-spin .8s linear infinite;
+}
+
+.sf-root .sf-panel-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 14px 12px;
+  border-top: 1px solid var(--sf-border-soft);
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text-muted);
+}
+.sf-root .sf-panel-close {
+  padding: 5px 10px;
+  border: 1px solid var(--sf-border-control);
+  border-radius: 7px;
+  font-size: var(--sf-fs-caption);
+  color: var(--sf-text);
+}
+.sf-root .sf-panel-close:hover { background: var(--sf-bg-hover-ghost); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-root .sf-menu,
+.sf-root .sf-toast,
+.sf-root .sf-panel { animation: none; }
+  .sf-root .sf-mark-active { animation: sf-spin 2.4s linear infinite; }
+}

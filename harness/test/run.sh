@@ -15,7 +15,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PORT="${HARNESS_PORT:-8089}"
 CDP_PORT="${CDP_PORT:-9222}"
-NAME=docker-folders-chrome
+NAME=simple-folders-chrome
 
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT

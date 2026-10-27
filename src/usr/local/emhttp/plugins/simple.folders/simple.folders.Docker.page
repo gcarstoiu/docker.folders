@@ -1,0 +1,78 @@
+Menu="Docker"
+Cond="is_file('/var/run/dockerd.pid')"
+Markdown="false"
+Tabs="false"
+---
+<?PHP
+/* simple.folders - group Docker containers into folders.
+ * Copyright (C) 2026  gcarstoiu
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2, as published
+ * by the Free Software Foundation.
+ *
+ * ---------------------------------------------------------------------------
+ * HOW THIS GETS ON THE PAGE
+ *
+ * emhttp scans every *.page file under /usr/local/emhttp/plugins. A page whose
+ * Menu is "Docker" is rendered inside the Docker tab, immediately after core's
+ * DockerContainers.page (Menu="Docker:1"). So this file runs in the same
+ * document as the native table, with jQuery, NchanSubscriber, csrf_token,
+ * docker[] and loadlist() already defined.
+ *
+ * There is deliberately NO Title= above. emhttp renders a grey section
+ * header for every page that has one, so a Title would put a second
+ * "Simple Folders" bar under Unraid's own "Docker Containers" heading. Both
+ * page renderers (MainContentTabless and MainContentTabbed) evaluate a
+ * page's content whether or not it has a Title, so dropping it costs
+ * nothing and keeps a single heading on the page.
+ *
+ * Nothing here patches a core file. Removing the plugin removes the feature
+ * and leaves the stock page untouched.
+ * ---------------------------------------------------------------------------
+ */
+$dfPlugin = 'simple.folders';
+$dfBase   = "/plugins/$dfPlugin";
+
+/* The theme decides which token set applies; see styles/themes.css. Unraid
+ * exposes it as $display['theme'] (white, black, azure, gray). */
+$dfTheme = $display['theme'] ?? 'black';
+?>
+
+<link rel="stylesheet" href="<?=autov("$dfBase/styles/tokens.css")?>">
+<link rel="stylesheet" href="<?=autov("$dfBase/styles/table.css")?>">
+<link rel="stylesheet" href="<?=autov("$dfBase/styles/menus.css")?>">
+<link rel="stylesheet" href="<?=autov("$dfBase/styles/editor.css")?>">
+
+<!-- Mount point. The app renders here; the native table above is hidden
+     (not removed) so "Classic view" can bring it straight back. -->
+<!-- "unapi" is Unraid's own opt-out: its base stylesheet guards every
+     element rule with :where(:not(.unapi *)), so everything inside here is
+     exempt from the webGUI styling of button, input, select, textarea,
+     table and p. Without it, Unraid repaints every control in this plugin
+     (uppercase, letter-spacing, min-width 86px, an orange border). -->
+<div id="sf-root"
+     class="sf-root unapi"
+     data-theme="<?=htmlspecialchars($dfTheme)?>"
+     data-base="<?=htmlspecialchars($dfBase)?>"
+     hidden></div>
+
+<script>
+/* Configuration handed from PHP to the app, before any module loads. */
+window.SimpleFolders = window.SimpleFolders || {};
+window.SimpleFolders.config = {
+  base:    <?=json_encode($dfBase)?>,
+  theme:   <?=json_encode($dfTheme)?>,
+  /* On a real server nchan runs over a websocket. The harness has no
+     websocket support and sets this to 'longpoll' before this file loads. */
+  nchan:   window.SimpleFolders.nchanTransport || 'websocket'
+};
+</script>
+
+<?PHP
+/* defer preserves this order and runs them after the document parses, so the
+   native table and csrf_token are already in place when app.js starts. */
+foreach (['util','api','store','render','menus','dialog','jobs','actions','editor','app'] as $dfJs):
+?>
+<script defer src="<?=autov("$dfBase/javascript/$dfJs.js")?>"></script>
+<?PHP endforeach; ?>

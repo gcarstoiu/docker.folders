@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders harness - stand-in for the two icon CDNs.
+/* simple.folders harness - stand-in for the two icon CDNs.
  *
  *   /icondata/<source>/index.json   the catalogue index (trimmed fixtures)
  *   /icondata/<source>/<ext>/<file> a placeholder icon of that name

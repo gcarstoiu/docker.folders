@@ -1,4 +1,4 @@
-/* docker.folders - product screenshots for the Community Apps listing.
+/* simple.folders - product screenshots for the Community Apps listing.
  *
  *   node harness/test/shoot.mjs
  *
@@ -24,7 +24,7 @@ async function capture(name, query, height) {
   await page.evaluateOnNewDocument(() => { try { localStorage.clear(); } catch (e) {} });
   await page.setViewport({ width: 1360, height });
   await page.goto(`${BASE}/?nostream=1${query}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.df-card');
+  await page.waitForSelector('.sf-card');
 
   /* Strip the harness' own header so the shot is the plugin alone. */
   await page.evaluate(() => {
@@ -36,12 +36,12 @@ async function capture(name, query, height) {
   /* Give the live columns plausible values: the real page fills these from
      the dockerload stream, which is off for a settled capture. */
   await page.evaluate(() => {
-    const DF = window.DockerFolders;
-    DF.store.state.containers.forEach((ct) => {
+    const SF = window.SimpleFolders;
+    SF.store.state.containers.forEach((ct) => {
       if (ct.state !== 'running') return;
-      DF.store.state.live[ct.name] = { cpu: ct.cpu ?? 0, mem: ct.mem ?? 0 };
+      SF.store.state.live[ct.name] = { cpu: ct.cpu ?? 0, mem: ct.mem ?? 0 };
     });
-    DF.store.emit();
+    SF.store.emit();
   });
 
   await new Promise((r) => setTimeout(r, 300));

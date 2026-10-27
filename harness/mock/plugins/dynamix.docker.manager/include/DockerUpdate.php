@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders harness - mock of Unraid's DockerUpdate.php.
+/* simple.folders harness - mock of Unraid's DockerUpdate.php.
  *
  * The real file downloads templates and refreshes every container's
  * update-available flag, then returns nothing. "Check for updates" in the UI

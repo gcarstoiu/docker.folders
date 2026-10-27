@@ -1,8 +1,8 @@
 <?PHP
-/* docker.folders harness - a stand-in for Unraid's Docker page.
+/* simple.folders harness - a stand-in for Unraid's Docker page.
  *
  * Reproduces exactly what the plugin is entitled to assume is present when its
- * docker.folders.Docker.page is rendered inside the Docker tab:
+ * simple.folders.Docker.page is rendered inside the Docker tab:
  *
  *   - jQuery (Unraid ships 3.x) and the NchanSubscriber global
  *   - var csrf_token, and $.post patched to append it (webGUI does this in
@@ -21,7 +21,7 @@ $theme = preg_replace('/[^a-z]/', '', $_GET['theme'] ?? 'black');
  * never sees the page go idle - so screenshots and DOM dumps need a way to
  * opt out. Only the two live columns are affected. */
 $nostream = isset($_GET['nostream']);
-$plugin = __DIR__.'/../../src/usr/local/emhttp/plugins/docker.folders';
+$plugin = __DIR__.'/../../src/usr/local/emhttp/plugins/simple.folders';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -54,7 +54,7 @@ $plugin = __DIR__.'/../../src/usr/local/emhttp/plugins/docker.folders';
 <body class="<?=htmlspecialchars($theme)?>">
 
 <div class="harness-bar">
-  <strong style="color:#fff">docker.folders harness</strong>
+  <strong style="color:#fff">simple.folders harness</strong>
   <span>theme:</span>
   <?php foreach (['black','white','azure','gray'] as $t): ?>
     <a href="?theme=<?=$t?>"><?=$t?></a>
@@ -92,7 +92,7 @@ $plugin = __DIR__.'/../../src/usr/local/emhttp/plugins/docker.folders';
 /* PHP's built-in server cannot do websockets, so tell the plugin to use the
    long-poll transport NchanSubscriber also supports. Must be set before the
    plugin page's inline config runs. */
-window.DockerFolders = { nchanTransport: <?= $nostream ? "'none'" : "'longpoll'" ?> };
+window.SimpleFolders = { nchanTransport: <?= $nostream ? "'none'" : "'longpoll'" ?> };
 
 /* ?folded=<id,id|all> presets the per-viewer fold state before app.js reads
    it, so a headless capture can show folded folders without clicking. */
@@ -101,7 +101,7 @@ try {
   var want = <?= json_encode((string)$_GET['folded']) ?>;
   var map = {};
   (want === 'all' ? ['f-media','f-home','f-ai'] : want.split(',')).forEach(function (id) { map[id] = false; });
-  localStorage.setItem('docker.folders:expanded', JSON.stringify(map));
+  localStorage.setItem('simple.folders:expanded', JSON.stringify(map));
 } catch (e) {}
 <?php endif; ?>
 
@@ -130,7 +130,7 @@ function loadlist(init) {
     $('#docker_list').html(data[0]);
     (new Function(data[1]))();
     $('input[type=button]').prop('disabled', false).show();
-    $(document).trigger('docker.folders:loadlist');
+    $(document).trigger('simple.folders:loadlist');
   });
 }
 
@@ -150,7 +150,7 @@ $(function () { loadlist(true); });
 <?php
 /* Render the plugin page the way emhttp does: strip the "Menu=/Icon=" header
    above the --- separator, then evaluate the rest as PHP+HTML. */
-$page = $plugin.'/docker.folders.Docker.page';
+$page = $plugin.'/simple.folders.Docker.page';
 if (file_exists($page)) {
   $raw  = file_get_contents($page);
   $body = strpos($raw, "\n---\n") !== false ? substr($raw, strpos($raw, "\n---\n") + 5) : $raw;

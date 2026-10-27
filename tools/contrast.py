@@ -11,7 +11,7 @@ Exit status is non-zero if any pair fails.
 """
 import re, sys, pathlib
 
-CSS = pathlib.Path(__file__).resolve().parent.parent / "src/usr/local/emhttp/plugins/docker.folders/styles/tokens.css"
+CSS = pathlib.Path(__file__).resolve().parent.parent / "src/usr/local/emhttp/plugins/simple.folders/styles/tokens.css"
 
 def srgb(c):
     c = c / 255
@@ -28,14 +28,14 @@ def ratio(fg, bg):
     return (hi + 0.05) / (lo + 0.05)
 
 def parse_blocks(text):
-    """Return {selector: {var: value}} for each .df-root rule."""
-    # Strip comments first: they mention .df-root in prose, which would
+    """Return {selector: {var: value}} for each .sf-root rule."""
+    # Strip comments first: they mention .sf-root in prose, which would
     # otherwise be matched as a selector.
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     blocks = {}
-    for m in re.finditer(r"(\.df-root[^{]*)\{([^}]*)\}", text, re.S):
+    for m in re.finditer(r"(\.sf-root[^{]*)\{([^}]*)\}", text, re.S):
         sel = m.group(1).strip()
-        vars_ = dict(re.findall(r"(--df-[a-z0-9-]+)\s*:\s*(#[0-9A-Fa-f]{6})", m.group(2)))
+        vars_ = dict(re.findall(r"(--sf-[a-z0-9-]+)\s*:\s*(#[0-9A-Fa-f]{6})", m.group(2)))
         if vars_:
             blocks[sel] = vars_
     return blocks
@@ -44,43 +44,43 @@ def parse_blocks(text):
 TEXT = 4.5
 UI   = 3.0
 PAIRS = [
-    ("--df-text",           "--df-bg-card",    TEXT, "body text on the table card"),
-    ("--df-text",           "--df-bg-folder",  TEXT, "body text on a folder row"),
-    ("--df-text",           "--df-bg-popover", TEXT, "menu item text"),
-    ("--df-text",           "--df-bg-dialog",  TEXT, "dialog text"),
-    ("--df-text-secondary", "--df-bg-card",    TEXT, "secondary text on the card"),
-    ("--df-text-muted",     "--df-bg-card",    TEXT, "muted text on the card"),
-    ("--df-text-muted",     "--df-bg-folder",  TEXT, "muted text on a folder row"),
-    ("--df-text-dim",       "--df-bg-folder",  TEXT, "dim labels on a folder row"),
-    ("--df-text-dim",       "--df-bg-card",    TEXT, "dim labels on the card"),
-    ("--df-text-faint",     "--df-bg-card",    TEXT, "faint labels (column heads)"),
-    ("--df-running-text",   "--df-bg-card",    TEXT, "'Running' label"),
-    ("--df-running-text",   "--df-bg-folder",  TEXT, "'x of y running' on a folder row"),
-    ("--df-paused-text",    "--df-bg-card",    TEXT, "'Paused' label"),
-    ("--df-busy-text",      "--df-bg-card",    TEXT, "busy label"),
-    ("--df-warn-fg",        "--df-warn-bg",    TEXT, "'Update ready' badge"),
-    ("--df-danger-fg",      "--df-bg-popover", TEXT, "'Delete folder' menu item"),
-    ("--df-warn-fg",        "--df-bg-popover", TEXT, "'Force update' menu item"),
-    ("--df-accent",         "--df-bg-card",    TEXT, "accent text/links"),
-    ("--df-accent-soft-fg", "--df-accent-soft-bg", TEXT, "accent chip"),
-    ("--df-on-accent",      "--df-accent",     TEXT, "primary button label"),
-    ("--df-accent-chip-fg", "--df-bg-card",    TEXT, "chip text on the card"),
-    ("--df-on-brand",       "--df-brand",      TEXT, "'Add container' label"),
-    ("--df-on-brand",       "--df-brand-hover",TEXT, "'Add container' label, hovered"),
-    ("--df-brand-border",   "--df-bg-card",    UI,   "'Add container' edge"),
+    ("--sf-text",           "--sf-bg-card",    TEXT, "body text on the table card"),
+    ("--sf-text",           "--sf-bg-folder",  TEXT, "body text on a folder row"),
+    ("--sf-text",           "--sf-bg-popover", TEXT, "menu item text"),
+    ("--sf-text",           "--sf-bg-dialog",  TEXT, "dialog text"),
+    ("--sf-text-secondary", "--sf-bg-card",    TEXT, "secondary text on the card"),
+    ("--sf-text-muted",     "--sf-bg-card",    TEXT, "muted text on the card"),
+    ("--sf-text-muted",     "--sf-bg-folder",  TEXT, "muted text on a folder row"),
+    ("--sf-text-dim",       "--sf-bg-folder",  TEXT, "dim labels on a folder row"),
+    ("--sf-text-dim",       "--sf-bg-card",    TEXT, "dim labels on the card"),
+    ("--sf-text-faint",     "--sf-bg-card",    TEXT, "faint labels (column heads)"),
+    ("--sf-running-text",   "--sf-bg-card",    TEXT, "'Running' label"),
+    ("--sf-running-text",   "--sf-bg-folder",  TEXT, "'x of y running' on a folder row"),
+    ("--sf-paused-text",    "--sf-bg-card",    TEXT, "'Paused' label"),
+    ("--sf-busy-text",      "--sf-bg-card",    TEXT, "busy label"),
+    ("--sf-warn-fg",        "--sf-warn-bg",    TEXT, "'Update ready' badge"),
+    ("--sf-danger-fg",      "--sf-bg-popover", TEXT, "'Delete folder' menu item"),
+    ("--sf-warn-fg",        "--sf-bg-popover", TEXT, "'Force update' menu item"),
+    ("--sf-accent",         "--sf-bg-card",    TEXT, "accent text/links"),
+    ("--sf-accent-soft-fg", "--sf-accent-soft-bg", TEXT, "accent chip"),
+    ("--sf-on-accent",      "--sf-accent",     TEXT, "primary button label"),
+    ("--sf-accent-chip-fg", "--sf-bg-card",    TEXT, "chip text on the card"),
+    ("--sf-on-brand",       "--sf-brand",      TEXT, "'Add container' label"),
+    ("--sf-on-brand",       "--sf-brand-hover",TEXT, "'Add container' label, hovered"),
+    ("--sf-brand-border",   "--sf-bg-card",    UI,   "'Add container' edge"),
     # Non-text indicators: shape also carries the meaning, so 3:1 applies.
-    ("--df-running",        "--df-bg-folder",  UI,   "running dot"),
-    ("--df-paused",         "--df-bg-folder",  UI,   "paused bars"),
-    ("--df-stopped-ring",   "--df-bg-folder",  UI,   "stopped ring"),
-    ("--df-accent",         "--df-bg-card",    UI,   "focus ring"),
-    ("--df-border-control", "--df-bg-card",    UI,   "control border"),
-    ("--df-switch-on",      "--df-bg-card",    UI,   "switch, on"),
-    ("--df-switch-off",     "--df-bg-card",    UI,   "switch, off"),
-    ("--df-switch-off",     "--df-bg-folder",  UI,   "switch, off, on a folder row"),
-    ("--df-border-control", "--df-bg-dialog",  UI,   "control border in a dialog"),
-    ("--df-border-control", "--df-bg-input",   UI,   "input border"),
-    ("--df-switch-knob",    "--df-switch-off", UI,   "switch knob, off"),
-    ("--df-switch-knob",    "--df-switch-on",  UI,   "switch knob, on"),
+    ("--sf-running",        "--sf-bg-folder",  UI,   "running dot"),
+    ("--sf-paused",         "--sf-bg-folder",  UI,   "paused bars"),
+    ("--sf-stopped-ring",   "--sf-bg-folder",  UI,   "stopped ring"),
+    ("--sf-accent",         "--sf-bg-card",    UI,   "focus ring"),
+    ("--sf-border-control", "--sf-bg-card",    UI,   "control border"),
+    ("--sf-switch-on",      "--sf-bg-card",    UI,   "switch, on"),
+    ("--sf-switch-off",     "--sf-bg-card",    UI,   "switch, off"),
+    ("--sf-switch-off",     "--sf-bg-folder",  UI,   "switch, off, on a folder row"),
+    ("--sf-border-control", "--sf-bg-dialog",  UI,   "control border in a dialog"),
+    ("--sf-border-control", "--sf-bg-input",   UI,   "input border"),
+    ("--sf-switch-knob",    "--sf-switch-off", UI,   "switch knob, off"),
+    ("--sf-switch-knob",    "--sf-switch-on",  UI,   "switch knob, on"),
 ]
 
 GLYPHS = ["slate", "blue", "teal", "green", "amber", "orange", "rose", "violet"]
@@ -88,16 +88,16 @@ GLYPHS = ["slate", "blue", "teal", "green", "amber", "orange", "rose", "violet"]
 def main():
     quiet = "--quiet" in sys.argv
     blocks = parse_blocks(CSS.read_text())
-    base = blocks.get(".df-root", {})
+    base = blocks.get(".sf-root", {})
     failures = []
 
     for sel, overrides in blocks.items():
         tokens = {**base, **overrides}
-        theme = "dark (black, gray)" if sel == ".df-root" else sel.split('"')[1]
+        theme = "dark (black, gray)" if sel == ".sf-root" else sel.split('"')[1]
         rows = []
 
         checks = list(PAIRS) + [
-            (f"--df-{g}-glyph", f"--df-{g}-tile", UI, f"{g} folder glyph") for g in GLYPHS
+            (f"--sf-{g}-glyph", f"--sf-{g}-tile", UI, f"{g} folder glyph") for g in GLYPHS
         ]
         for fg, bg, minimum, label in checks:
             if fg not in tokens or bg not in tokens:

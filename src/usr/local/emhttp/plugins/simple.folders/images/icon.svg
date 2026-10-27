@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Simple Folders - plugin icon.
+  Copyright (C) 2026  gcarstoiu
+  Licensed under the GNU General Public License version 2.
+
+  A white folder holding three containers, on a tile in Unraid's brand
+  orange (#ff8c2f to #f15a2c, the orange-500 and orange-800 of the webGUI's
+  own palette). Drawn as solid shapes rather than strokes so it still reads
+  at 16px in the Plugins list, and self-contained on its own tile so it sits
+  on Community Apps' light and dark backgrounds equally well.
+
+  icon.png is rendered from this file; see tools/make-icon.sh.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="sf-tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9a44"/>
+      <stop offset="1" stop-color="#f15a2c"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="128" height="128" rx="28" fill="url(#sf-tile)"/>
+
+  <!-- the folder's back flap -->
+  <path d="M24 44a7 7 0 0 1 7-7h18.5a7 7 0 0 1 5.2 2.3l5.1 5.7H97a7 7 0 0 1 7 7v38a7 7 0 0 1-7 7H31a7 7 0 0 1-7-7z"
+        fill="#fff" opacity=".22"/>
+
+  <!-- the folder itself -->
+  <path d="M24 58a7 7 0 0 1 7-7h66a7 7 0 0 1 7 7v32a7 7 0 0 1-7 7H31a7 7 0 0 1-7-7z"
+        fill="#fff"/>
+
+  <!-- three containers inside, fading back to suggest more -->
+  <rect x="35" y="64" width="17" height="17" rx="4" fill="#f15a2c"/>
+  <rect x="56" y="64" width="17" height="17" rx="4" fill="#f15a2c" opacity=".72"/>
+  <rect x="77" y="64" width="17" height="17" rx="4" fill="#f15a2c" opacity=".45"/>
+</svg>

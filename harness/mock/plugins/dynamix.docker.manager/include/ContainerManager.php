@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders harness - mock of Unraid's ContainerManager.php.
+/* simple.folders harness - mock of Unraid's ContainerManager.php.
  *
  *   POST action=start|stop|pause|unpause
  *

@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders harness - mock of Unraid's
+/* simple.folders harness - mock of Unraid's
  * /usr/local/emhttp/plugins/dynamix.docker.manager/include/Events.php
  *
  * Contract copied from webgui master (7.4.0-rc.2.1), read 2026-10-27. It is

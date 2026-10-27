@@ -1,16 +1,16 @@
 <?PHP
-/* docker.folders harness - container source adapter.
+/* simple.folders harness - container source adapter.
  *
- * lib/Containers.php calls df_containers_source() when DF_CONTAINER_SOURCE is
+ * lib/Containers.php calls sf_containers_source() when SF_CONTAINER_SOURCE is
  * defined, instead of talking to DockerClient. This maps the harness fixture
- * state onto the exact shape df_containers() returns on a real server, so the
+ * state onto the exact shape sf_containers() returns on a real server, so the
  * plugin code under test is identical either way.
  *
  * NOT part of the plugin package. Never shipped.
  */
 require_once __DIR__.'/state.php';
 
-function df_containers_source(): array {
+function sf_containers_source(): array {
   $out = [];
   foreach (harness_load() as $ct) {
     $out[] = [

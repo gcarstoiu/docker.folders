@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders - local development harness.
+/* simple.folders - local development harness.
  *
  * Mutable container state shared by every mock endpoint. Seeded from
  * harness/fixtures/containers.json on first use, then persisted to

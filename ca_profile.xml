@@ -9,7 +9,7 @@
 -->
 <CommunityApplications>
   <Profile>
-**Docker Folders** adds folders to the Unraid Docker page.
+**Simple Folders** adds folders to the Unraid Docker page.
 
 Group related containers into a folder and fold it away behind a single row
 that still shows every member's icon; click any of those icons to get that
@@ -30,6 +30,6 @@ Unraid table at any time.
 
 Requires Unraid 7.2 or newer. Support through the repository's Issues page.
   </Profile>
-  <Icon>https://raw.githubusercontent.com/gcarstoiu/docker.folders/main/src/usr/local/emhttp/plugins/docker.folders/images/icon.png</Icon>
-  <WebPage>https://github.com/gcarstoiu/docker.folders</WebPage>
+  <Icon>https://raw.githubusercontent.com/gcarstoiu/simple.folders/main/src/usr/local/emhttp/plugins/simple.folders/images/icon.png</Icon>
+  <WebPage>https://github.com/gcarstoiu/simple.folders</WebPage>
 </CommunityApplications>

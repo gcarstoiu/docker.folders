@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Community Applications plugin template.
+
+  Root element is <Plugin>. A plugin entry is identified by <PluginURL>; it
+  must NOT carry <Repository>, which is what marks an entry as a Docker
+  application and would get this misclassified.
+
+  Minimum required: <Name> and <PluginURL>.
+-->
+<Plugin>
+  <Name>Simple Folders</Name>
+  <PluginURL>https://raw.githubusercontent.com/gcarstoiu/simple.folders/main/simple.folders.plg</PluginURL>
+  <TemplateURL>https://raw.githubusercontent.com/gcarstoiu/simple.folders/main/templates/simple.folders.xml</TemplateURL>
+  <PluginAuthor>gcarstoiu</PluginAuthor>
+
+  <Support>https://github.com/gcarstoiu/simple.folders/issues</Support>
+  <Project>https://github.com/gcarstoiu/simple.folders</Project>
+  <ReadMe>https://raw.githubusercontent.com/gcarstoiu/simple.folders/main/README.md</ReadMe>
+  <License>GPL-2.0</License>
+
+  <Icon>https://raw.githubusercontent.com/gcarstoiu/simple.folders/main/src/usr/local/emhttp/plugins/simple.folders/images/icon.png</Icon>
+  <Screenshot>https://raw.githubusercontent.com/gcarstoiu/simple.folders/main/docs/screenshot-folded.png</Screenshot>
+  <Screenshot>https://raw.githubusercontent.com/gcarstoiu/simple.folders/main/docs/screenshot-expanded.png</Screenshot>
+
+  <Category>Tools:Utilities Productivity:</Category>
+  <MinVer>7.2.0</MinVer>
+
+  <ExtraSearchTerms>docker folders folder group grouping organise organize container tidy collapse fold start order autostart bulk</ExtraSearchTerms>
+
+  <Overview>
+    Adds folders to the Unraid Docker page.
+
+    Group related containers into a folder, fold it away behind a single row that still shows every member's icon, and unfold it to see the full container rows numbered in start order.
+
+    A folder's icon opens its commands: start, stop, restart, pause, resume, check for updates, update, force update, and open every WebUI. Each runs across the whole folder, one container at a time, honouring the folder's start order, its delay between starts, and reverse-order stop. Only one job runs at a time. Clicking any icon in a folded folder opens that single container's menu instead.
+
+    Folders can fill themselves: give one a name pattern, or label a container simple.folders=&lt;folder&gt;, and matching containers join automatically, including ones created later.
+
+    Folder start order drives Unraid's own autostart order rather than shadowing it, so containers come up at boot in the same order the folder uses. Folder icons come from a built-in set, from one of the member containers, or downloaded and stored locally so they still render with no internet.
+
+    Editing or deleting a folder never stops, removes or recreates a container; deleting one only removes the grouping and its containers move to "Not in a folder". A "Classic view" switch restores the standard Unraid table at any time, and uninstalling leaves the stock page exactly as it was.
+
+    Folder definitions are stored on the flash drive and survive reboots. No core Unraid file is modified.
+  </Overview>
+
+  <Changes>
+### 2026.10.28
+- Renamed from Docker Folders to Simple Folders. Existing folders are imported on install.
+- New plugin icon.
+
+### 2026.10.27d
+- The classic Docker actions now sit at the foot of the table.
+- Fix: folder icon search showed broken images and too few results.
+- Fix: dialog buttons hidden behind a bottom URL bar on mobile.
+
+### 2026.10.27c
+- Fix: on a phone, scrolling the table sideways no longer snaps back.
+- The table now reaches both screen edges on a phone.
+
+### 2026.10.27b
+- Fix: Unraid's button styling repainted the plugin's controls as oversized orange boxes.
+- The page no longer repeats Unraid's heading.
+
+### 2026.10.27a
+- Fix: the Docker page showed "Request failed (500)" and no containers.
+- Server errors are now reported with a message instead of a blank 500.
+
+### 2026.10.27
+- Initial release.
+  </Changes>
+</Plugin>

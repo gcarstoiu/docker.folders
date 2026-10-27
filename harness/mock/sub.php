@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders harness - mock of Unraid's nchan endpoints (/sub/<channel>).
+/* simple.folders harness - mock of Unraid's nchan endpoints (/sub/<channel>).
  *
  * On a real server nginx+nchan serves these, and the webGUI subscribes with
  * the bundled NchanSubscriber over a websocket. PHP's built-in server cannot

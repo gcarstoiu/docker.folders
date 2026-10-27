@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders harness - mock of Unraid's DockerContainers.php.
+/* simple.folders harness - mock of Unraid's DockerContainers.php.
  *
  * The real endpoint returns three NUL-separated parts:
  *   [0] the <tbody> rows as HTML

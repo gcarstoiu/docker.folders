@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Build the docker.folders Slackware package and stamp its md5 into the .plg.
+# Build the simple.folders Slackware package and stamp its md5 into the .plg.
 #
 # Unraid plugins install a .txz that is unpacked at / , so everything under
 # src/ must mirror the final filesystem layout exactly.
@@ -10,7 +10,7 @@
 #
 set -euo pipefail
 
-PLUGIN="docker.folders"
+PLUGIN="simple.folders"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$ROOT/src"
 ARCHIVE="$ROOT/archive"
@@ -56,7 +56,7 @@ $PLUGIN: across a whole folder in a defined order.
 $PLUGIN:
 $PLUGIN: Folder definitions live on the flash drive and survive reboots.
 $PLUGIN:
-$PLUGIN: Homepage: https://github.com/gcarstoiu/docker.folders
+$PLUGIN: Homepage: https://github.com/gcarstoiu/simple.folders
 $PLUGIN:
 $PLUGIN:
 EOF

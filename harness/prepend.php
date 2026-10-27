@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders - local development harness.
+/* simple.folders - local development harness.
  *
  * Stand-in for Unraid's /usr/local/emhttp/webGui/include/local_prepend.php,
  * which Unraid installs as php.ini's auto_prepend_file. It rejects EVERY POST
@@ -70,17 +70,17 @@ if (!function_exists('my_logger')) {
  * them first is the supported way to relocate them. Production never does.
  * ------------------------------------------------------------------------- */
 $harness = __DIR__;
-define('DF_CONFIG_DIR',          $harness.'/state/config');
-define('DF_RUN_DIR',             $harness.'/state/run');
-define('DF_DOCKER_MAN',          $harness.'/mock/plugins/dynamix.docker.manager');
-define('DF_DOCKER_MAN_AUTOSTART',$harness.'/state/unraid-autostart');
-define('DF_CONTAINER_SOURCE',    $harness.'/mock/container_source.php');
+define('SF_CONFIG_DIR',          $harness.'/state/config');
+define('SF_RUN_DIR',             $harness.'/state/run');
+define('SF_DOCKER_MAN',          $harness.'/mock/plugins/dynamix.docker.manager');
+define('SF_DOCKER_MAN_AUTOSTART',$harness.'/state/unraid-autostart');
+define('SF_CONTAINER_SOURCE',    $harness.'/mock/container_source.php');
 
 /* Icon catalogues served locally, so a test never depends on the real CDNs
  * being reachable. Same shape as production: an index URL plus a base the
  * icon paths hang off. */
 $base = 'http://localhost:'.($_SERVER['SERVER_PORT'] ?? '8089').'/icondata/';
-define('DF_ICON_SOURCES', [
+define('SF_ICON_SOURCES', [
   'dashboard-icons' => [
     'label' => 'Dashboard Icons',
     'base'  => $base.'dashboard-icons/',
@@ -97,7 +97,7 @@ define('DF_ICON_SOURCES', [
 
 /* Seed the folder store from the fixtures on first run so the page opens
  * looking like design/screenshots/01-overview.png. */
-if (!is_file(DF_CONFIG_DIR.'/folders.json')) {
-  @mkdir(DF_CONFIG_DIR.'/icons', 0755, true);
-  @copy($harness.'/fixtures/folders.json', DF_CONFIG_DIR.'/folders.json');
+if (!is_file(SF_CONFIG_DIR.'/folders.json')) {
+  @mkdir(SF_CONFIG_DIR.'/icons', 0755, true);
+  @copy($harness.'/fixtures/folders.json', SF_CONFIG_DIR.'/folders.json');
 }

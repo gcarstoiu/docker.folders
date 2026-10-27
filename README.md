@@ -1,4 +1,4 @@
-# Docker Folders
+# Simple Folders
 
 Group Docker containers into folders on the Unraid Docker page.
 
@@ -24,7 +24,7 @@ Supports **Unraid 7.2 – 7.4**.
   WebUI. They run sequentially, honouring the folder's delay between starts
   and reverse-order stop. Only one job runs at a time.
 - **Folders that fill themselves.** Give a folder a name pattern, or label a
-  container `docker.folders=<folder>`, and matching containers join
+  container `simple.folders=<folder>`, and matching containers join
   automatically — including containers created later.
 - **Start order that actually applies at boot.** A folder's order and delay are
   written into Unraid's own `/var/lib/docker/unraid-autostart`, so the array
@@ -49,12 +49,12 @@ and move to "Not in a folder".
 
 ## Install
 
-**Community Applications** — search for *Docker Folders*.
+**Community Applications** — search for *Simple Folders*.
 
 **Manually** — Plugins → Install Plugin, and paste:
 
 ```
-https://raw.githubusercontent.com/gcarstoiu/docker.folders/main/docker.folders.plg
+https://raw.githubusercontent.com/gcarstoiu/simple.folders/main/simple.folders.plg
 ```
 
 Then open the **Docker** tab.
@@ -62,7 +62,7 @@ Then open the **Docker** tab.
 ### Uninstalling
 
 Removing the plugin restores the stock Docker page and touches no container.
-Folder definitions stay in `/boot/config/plugins/docker.folders/` so a
+Folder definitions stay in `/boot/config/plugins/simple.folders/` so a
 reinstall picks them up; delete that directory to erase them.
 
 ---
@@ -96,9 +96,9 @@ two menu items differ only in which containers they target.
 
 | Path | What |
 |---|---|
-| `/boot/config/plugins/docker.folders/folders.json` | folder definitions (flash, survives reboots) |
-| `/boot/config/plugins/docker.folders/icons/` | downloaded folder icons |
-| `/usr/local/emhttp/plugins/docker.folders/` | the plugin itself (RAM; rebuilt each boot) |
+| `/boot/config/plugins/simple.folders/folders.json` | folder definitions (flash, survives reboots) |
+| `/boot/config/plugins/simple.folders/icons/` | downloaded folder icons |
+| `/usr/local/emhttp/plugins/simple.folders/` | the plugin itself (RAM; rebuilt each boot) |
 | browser `localStorage` | which folders *you* have open, and Classic view |
 
 Fold state is per-viewer on purpose, so two people looking at the same server
@@ -150,11 +150,11 @@ screenshot per state to `harness/test/shots/`.
 ### Packaging
 
 ```bash
-./pkg_build.sh      # -> archive/docker.folders-<version>.txz, md5 into the .plg
+./pkg_build.sh      # -> archive/simple.folders-<version>.txz, md5 into the .plg
 ```
 
 Bump the version in one place: the `<!ENTITY version>` line in
-`docker.folders.plg`.
+`simple.folders.plg`.
 
 ### Design
 

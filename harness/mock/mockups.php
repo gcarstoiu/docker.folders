@@ -1,5 +1,5 @@
 <?PHP
-/* docker.folders harness - action-bar mockups.
+/* simple.folders harness - action-bar mockups.
  *
  * Three designs for the global action bar that replaces the tip line at the
  * bottom of the table, rendered with the plugin's real tokens and stylesheets
@@ -16,9 +16,9 @@ $theme = preg_replace('/[^a-z]/', '', $_GET['theme'] ?? 'black');
 <head>
 <meta charset="utf-8">
 <title>Action bar mockups</title>
-<link rel="stylesheet" href="/plugins/docker.folders/styles/tokens.css">
-<link rel="stylesheet" href="/plugins/docker.folders/styles/table.css">
-<link rel="stylesheet" href="/plugins/docker.folders/styles/menus.css">
+<link rel="stylesheet" href="/plugins/simple.folders/styles/tokens.css">
+<link rel="stylesheet" href="/plugins/simple.folders/styles/table.css">
+<link rel="stylesheet" href="/plugins/simple.folders/styles/menus.css">
 <style>
   body { margin:0; background:<?= $theme === 'white' || $theme === 'azure' ? '#F2F3F5' : '#101215' ?>;
          font-family: system-ui, sans-serif; }
@@ -32,7 +32,7 @@ $theme = preg_replace('/[^a-z]/', '', $_GET['theme'] ?? 'black');
 </style>
 </head>
 <body>
-<div class="wrap df-root unapi" data-theme="<?= htmlspecialchars($theme) ?>">
+<div class="wrap sf-root unapi" data-theme="<?= htmlspecialchars($theme) ?>">
 
 <!-- ======================================================= A -->
 <div class="lbl">A &mdash; Icon rail</div>
@@ -40,20 +40,20 @@ $theme = preg_replace('/[^a-z]/', '', $_GET['theme'] ?? 'black');
 between groups. Names live in the tooltip and the accessible label. Smallest footprint;
 relies on the icons being legible on their own.</p>
 <div class="frame">
-  <div class="df-actions df-actions-a">
-    <button class="df-act df-act-primary" title="Add container" aria-label="Add container"><?= ico('plus') ?></button>
-    <span class="df-act-sep"></span>
-    <button class="df-act" title="Start all" aria-label="Start all"><?= ico('play') ?></button>
-    <button class="df-act" title="Stop all" aria-label="Stop all"><?= ico('stop') ?></button>
-    <button class="df-act" title="Pause all" aria-label="Pause all"><?= ico('pause') ?></button>
-    <button class="df-act" title="Resume all" aria-label="Resume all"><?= ico('resume') ?></button>
-    <span class="df-act-sep"></span>
-    <button class="df-act" title="Check for updates" aria-label="Check for updates"><?= ico('check') ?></button>
-    <button class="df-act df-act-badge" title="Update all" aria-label="Update all, 4 ready">
-      <?= ico('download') ?><span class="df-act-count">4</span>
+  <div class="sf-actions sf-actions-a">
+    <button class="sf-act sf-act-primary" title="Add container" aria-label="Add container"><?= ico('plus') ?></button>
+    <span class="sf-act-sep"></span>
+    <button class="sf-act" title="Start all" aria-label="Start all"><?= ico('play') ?></button>
+    <button class="sf-act" title="Stop all" aria-label="Stop all"><?= ico('stop') ?></button>
+    <button class="sf-act" title="Pause all" aria-label="Pause all"><?= ico('pause') ?></button>
+    <button class="sf-act" title="Resume all" aria-label="Resume all"><?= ico('resume') ?></button>
+    <span class="sf-act-sep"></span>
+    <button class="sf-act" title="Check for updates" aria-label="Check for updates"><?= ico('check') ?></button>
+    <button class="sf-act sf-act-badge" title="Update all" aria-label="Update all, 4 ready">
+      <?= ico('download') ?><span class="sf-act-count">4</span>
     </button>
-    <span class="df-act-sep"></span>
-    <button class="df-act" title="Container size" aria-label="Container size"><?= ico('size') ?></button>
+    <span class="sf-act-sep"></span>
+    <button class="sf-act" title="Container size" aria-label="Container size"><?= ico('size') ?></button>
   </div>
 </div>
 
@@ -63,18 +63,18 @@ relies on the icons being legible on their own.</p>
 &ldquo;Start All&rdquo;, since the bar is already global. Add container is the one filled button.
 Readable without hovering, and still far lighter than the classic row.</p>
 <div class="frame">
-  <div class="df-actions df-actions-b">
-    <button class="df-chip df-chip-primary"><?= ico('plus') ?><span>Add container</span></button>
-    <span class="df-act-sep"></span>
-    <button class="df-chip"><?= ico('play') ?><span>Start</span></button>
-    <button class="df-chip"><?= ico('stop') ?><span>Stop</span></button>
-    <button class="df-chip"><?= ico('pause') ?><span>Pause</span></button>
-    <button class="df-chip"><?= ico('resume') ?><span>Resume</span></button>
-    <span class="df-act-sep"></span>
-    <button class="df-chip"><?= ico('check') ?><span>Check</span></button>
-    <button class="df-chip df-chip-warn"><?= ico('download') ?><span>Update</span><span class="df-act-count">4</span></button>
-    <span class="df-act-sep"></span>
-    <button class="df-chip"><?= ico('size') ?><span>Size</span></button>
+  <div class="sf-actions sf-actions-b">
+    <button class="sf-chip sf-chip-primary"><?= ico('plus') ?><span>Add container</span></button>
+    <span class="sf-act-sep"></span>
+    <button class="sf-chip"><?= ico('play') ?><span>Start</span></button>
+    <button class="sf-chip"><?= ico('stop') ?><span>Stop</span></button>
+    <button class="sf-chip"><?= ico('pause') ?><span>Pause</span></button>
+    <button class="sf-chip"><?= ico('resume') ?><span>Resume</span></button>
+    <span class="sf-act-sep"></span>
+    <button class="sf-chip"><?= ico('check') ?><span>Check</span></button>
+    <button class="sf-chip sf-chip-warn"><?= ico('download') ?><span>Update</span><span class="sf-act-count">4</span></button>
+    <span class="sf-act-sep"></span>
+    <button class="sf-chip"><?= ico('size') ?><span>Size</span></button>
   </div>
 </div>
 
@@ -85,21 +85,21 @@ joined segmented control, so they read as one set of choices rather than four lo
 Updates sit apart on the right with their count; the rarely-used Container size moves into an
 overflow menu.</p>
 <div class="frame">
-  <div class="df-actions df-actions-c">
-    <button class="df-chip df-chip-primary"><?= ico('plus') ?><span>Add container</span></button>
+  <div class="sf-actions sf-actions-c">
+    <button class="sf-chip sf-chip-primary"><?= ico('plus') ?><span>Add container</span></button>
 
-    <div class="df-seggroup" role="group" aria-label="All containers">
-      <button class="df-seg" title="Start all"><?= ico('play') ?><span>Start</span></button>
-      <button class="df-seg" title="Stop all"><?= ico('stop') ?><span>Stop</span></button>
-      <button class="df-seg" title="Pause all"><?= ico('pause') ?><span>Pause</span></button>
-      <button class="df-seg" title="Resume all"><?= ico('resume') ?><span>Resume</span></button>
+    <div class="sf-seggroup" role="group" aria-label="All containers">
+      <button class="sf-seg" title="Start all"><?= ico('play') ?><span>Start</span></button>
+      <button class="sf-seg" title="Stop all"><?= ico('stop') ?><span>Stop</span></button>
+      <button class="sf-seg" title="Pause all"><?= ico('pause') ?><span>Pause</span></button>
+      <button class="sf-seg" title="Resume all"><?= ico('resume') ?><span>Resume</span></button>
     </div>
 
-    <span class="df-act-grow"></span>
+    <span class="sf-act-grow"></span>
 
-    <button class="df-chip"><?= ico('check') ?><span>Check</span></button>
-    <button class="df-chip df-chip-warn"><?= ico('download') ?><span>Update 4</span></button>
-    <button class="df-act" title="More" aria-label="More actions"><?= ico('more') ?></button>
+    <button class="sf-chip"><?= ico('check') ?><span>Check</span></button>
+    <button class="sf-chip sf-chip-warn"><?= ico('download') ?><span>Update 4</span></button>
+    <button class="sf-act" title="More" aria-label="More actions"><?= ico('more') ?></button>
   </div>
 </div>
 
@@ -107,30 +107,30 @@ overflow menu.</p>
 <div style="display:flex; gap:18px; flex-wrap:wrap">
   <?php foreach (['a','b','c'] as $v): ?>
   <div class="frame" style="width:420px; overflow:hidden">
-    <div class="df-actions df-actions-<?= $v ?>">
-      <button class="<?= $v === 'a' ? 'df-act df-act-primary' : 'df-chip df-chip-primary' ?>"><?= ico('plus') ?><?= $v === 'a' ? '' : '<span>Add container</span>' ?></button>
-      <span class="df-act-sep"></span>
+    <div class="sf-actions sf-actions-<?= $v ?>">
+      <button class="<?= $v === 'a' ? 'sf-act sf-act-primary' : 'sf-chip sf-chip-primary' ?>"><?= ico('plus') ?><?= $v === 'a' ? '' : '<span>Add container</span>' ?></button>
+      <span class="sf-act-sep"></span>
       <?php if ($v === 'c'): ?>
-        <div class="df-seggroup">
-          <button class="df-seg"><?= ico('play') ?><span>Start</span></button>
-          <button class="df-seg"><?= ico('stop') ?><span>Stop</span></button>
-          <button class="df-seg"><?= ico('pause') ?><span>Pause</span></button>
-          <button class="df-seg"><?= ico('resume') ?><span>Resume</span></button>
+        <div class="sf-seggroup">
+          <button class="sf-seg"><?= ico('play') ?><span>Start</span></button>
+          <button class="sf-seg"><?= ico('stop') ?><span>Stop</span></button>
+          <button class="sf-seg"><?= ico('pause') ?><span>Pause</span></button>
+          <button class="sf-seg"><?= ico('resume') ?><span>Resume</span></button>
         </div>
       <?php else: ?>
-        <button class="<?= $v === 'a' ? 'df-act' : 'df-chip' ?>"><?= ico('play') ?><?= $v === 'a' ? '' : '<span>Start</span>' ?></button>
-        <button class="<?= $v === 'a' ? 'df-act' : 'df-chip' ?>"><?= ico('stop') ?><?= $v === 'a' ? '' : '<span>Stop</span>' ?></button>
-        <button class="<?= $v === 'a' ? 'df-act' : 'df-chip' ?>"><?= ico('pause') ?><?= $v === 'a' ? '' : '<span>Pause</span>' ?></button>
-        <button class="<?= $v === 'a' ? 'df-act' : 'df-chip' ?>"><?= ico('resume') ?><?= $v === 'a' ? '' : '<span>Resume</span>' ?></button>
+        <button class="<?= $v === 'a' ? 'sf-act' : 'sf-chip' ?>"><?= ico('play') ?><?= $v === 'a' ? '' : '<span>Start</span>' ?></button>
+        <button class="<?= $v === 'a' ? 'sf-act' : 'sf-chip' ?>"><?= ico('stop') ?><?= $v === 'a' ? '' : '<span>Stop</span>' ?></button>
+        <button class="<?= $v === 'a' ? 'sf-act' : 'sf-chip' ?>"><?= ico('pause') ?><?= $v === 'a' ? '' : '<span>Pause</span>' ?></button>
+        <button class="<?= $v === 'a' ? 'sf-act' : 'sf-chip' ?>"><?= ico('resume') ?><?= $v === 'a' ? '' : '<span>Resume</span>' ?></button>
       <?php endif; ?>
-      <span class="df-act-sep"></span>
-      <button class="<?= $v === 'a' ? 'df-act' : 'df-chip' ?>"><?= ico('check') ?><?= $v === 'a' ? '' : '<span>Check</span>' ?></button>
-      <button class="<?= $v === 'a' ? 'df-act df-act-badge' : 'df-chip df-chip-warn' ?>"><?= ico('download') ?><?= $v === 'a' ? '<span class="df-act-count">4</span>' : '<span>Update 4</span>' ?></button>
+      <span class="sf-act-sep"></span>
+      <button class="<?= $v === 'a' ? 'sf-act' : 'sf-chip' ?>"><?= ico('check') ?><?= $v === 'a' ? '' : '<span>Check</span>' ?></button>
+      <button class="<?= $v === 'a' ? 'sf-act sf-act-badge' : 'sf-chip sf-chip-warn' ?>"><?= ico('download') ?><?= $v === 'a' ? '<span class="sf-act-count">4</span>' : '<span>Update 4</span>' ?></button>
       <?php if ($v !== 'c'): ?>
-        <span class="df-act-sep"></span>
-        <button class="<?= $v === 'a' ? 'df-act' : 'df-chip' ?>"><?= ico('size') ?><?= $v === 'a' ? '' : '<span>Size</span>' ?></button>
+        <span class="sf-act-sep"></span>
+        <button class="<?= $v === 'a' ? 'sf-act' : 'sf-chip' ?>"><?= ico('size') ?><?= $v === 'a' ? '' : '<span>Size</span>' ?></button>
       <?php else: ?>
-        <button class="df-act"><?= ico('more') ?></button>
+        <button class="sf-act"><?= ico('more') ?></button>
       <?php endif; ?>
     </div>
   </div>
@@ -141,85 +141,85 @@ overflow menu.</p>
 
 <style>
 /* ---- shared ---- */
-.df-root .df-actions {
+.sf-root .sf-actions {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
   padding: 10px 12px;
 }
-.df-root .df-act-sep {
+.sf-root .sf-act-sep {
   width: 1px; height: 22px; margin: 0 6px;
-  background: var(--df-border-row);
+  background: var(--sf-border-row);
 }
-.df-root .df-act-grow { flex: 1 1 auto; }
-.df-root .df-act-count {
+.sf-root .sf-act-grow { flex: 1 1 auto; }
+.sf-root .sf-act-count {
   min-width: 17px; height: 17px; padding: 0 5px;
   display: inline-grid; place-items: center;
-  border-radius: var(--df-r-pill);
-  background: var(--df-warn-bg); color: var(--df-warn-fg);
-  border: 1px solid var(--df-warn-border);
-  font: 600 10px/1 var(--df-font-mono);
+  border-radius: var(--sf-r-pill);
+  background: var(--sf-warn-bg); color: var(--sf-warn-fg);
+  border: 1px solid var(--sf-warn-border);
+  font: 600 10px/1 var(--sf-font-mono);
 }
 
 /* ---- A: icon rail ---- */
-.df-root .df-act {
+.sf-root .sf-act {
   position: relative;
   width: 40px; height: 40px;
   display: grid; place-items: center;
-  border-radius: var(--df-r-control);
-  color: var(--df-text-secondary);
+  border-radius: var(--sf-r-control);
+  color: var(--sf-text-secondary);
 }
-.df-root .df-act:hover { background: var(--df-bg-hover-ghost); color: var(--df-text); }
-.df-root .df-act svg { width: 19px; height: 19px; }
-.df-root .df-act-primary {
-  background: var(--df-accent); color: var(--df-on-accent);
+.sf-root .sf-act:hover { background: var(--sf-bg-hover-ghost); color: var(--sf-text); }
+.sf-root .sf-act svg { width: 19px; height: 19px; }
+.sf-root .sf-act-primary {
+  background: var(--sf-accent); color: var(--sf-on-accent);
 }
-.df-root .df-act-primary:hover { background: var(--df-accent-hover); color: var(--df-on-accent); }
-.df-root .df-act-badge .df-act-count { position: absolute; top: 2px; right: 1px; }
+.sf-root .sf-act-primary:hover { background: var(--sf-accent-hover); color: var(--sf-on-accent); }
+.sf-root .sf-act-badge .sf-act-count { position: absolute; top: 2px; right: 1px; }
 
 /* ---- B: icon + label chip ---- */
-.df-root .df-chip {
+.sf-root .sf-chip {
   display: inline-flex; align-items: center; gap: 7px;
   height: 36px; padding: 0 12px;
-  border: 1px solid var(--df-border-control);
-  border-radius: var(--df-r-control);
-  color: var(--df-text);
-  font-size: var(--df-fs-small); font-weight: 500;
+  border: 1px solid var(--sf-border-control);
+  border-radius: var(--sf-r-control);
+  color: var(--sf-text);
+  font-size: var(--sf-fs-small); font-weight: 500;
   white-space: nowrap;
 }
-.df-root .df-chip:hover { background: var(--df-bg-hover-ghost); }
-.df-root .df-chip svg { width: 16px; height: 16px; color: var(--df-text-muted); }
-.df-root .df-chip-primary {
-  background: var(--df-accent); border-color: var(--df-accent);
-  color: var(--df-on-accent); font-weight: 600;
+.sf-root .sf-chip:hover { background: var(--sf-bg-hover-ghost); }
+.sf-root .sf-chip svg { width: 16px; height: 16px; color: var(--sf-text-muted); }
+.sf-root .sf-chip-primary {
+  background: var(--sf-accent); border-color: var(--sf-accent);
+  color: var(--sf-on-accent); font-weight: 600;
 }
-.df-root .df-chip-primary svg { color: var(--df-on-accent); }
-.df-root .df-chip-warn { border-color: var(--df-warn-border); color: var(--df-warn-fg); }
-.df-root .df-chip-warn svg { color: var(--df-warn-fg); }
+.sf-root .sf-chip-primary svg { color: var(--sf-on-accent); }
+.sf-root .sf-chip-warn { border-color: var(--sf-warn-border); color: var(--sf-warn-fg); }
+.sf-root .sf-chip-warn svg { color: var(--sf-warn-fg); }
 
 /* ---- C: segmented group ---- */
-.df-root .df-actions-c {
-  border: 1px solid var(--df-border-card);
-  border-radius: var(--df-r-card);
-  background: var(--df-bg-card);
+.sf-root .sf-actions-c {
+  border: 1px solid var(--sf-border-card);
+  border-radius: var(--sf-r-card);
+  background: var(--sf-bg-card);
   padding: 10px 12px;
   gap: 10px;
 }
-.df-root .df-seggroup { display: inline-flex; }
-.df-root .df-seg {
+.sf-root .sf-seggroup { display: inline-flex; }
+.sf-root .sf-seg {
   display: inline-flex; align-items: center; gap: 6px;
   height: 36px; padding: 0 12px;
-  border: 1px solid var(--df-border-control);
+  border: 1px solid var(--sf-border-control);
   border-left-width: 0;
-  color: var(--df-text);
-  font-size: var(--df-fs-small); font-weight: 500;
+  color: var(--sf-text);
+  font-size: var(--sf-fs-small); font-weight: 500;
   white-space: nowrap;
 }
-.df-root .df-seg:first-child {
+.sf-root .sf-seg:first-child {
   border-left-width: 1px;
-  border-radius: var(--df-r-control) 0 0 var(--df-r-control);
+  border-radius: var(--sf-r-control) 0 0 var(--sf-r-control);
 }
-.df-root .df-seg:last-child { border-radius: 0 var(--df-r-control) var(--df-r-control) 0; }
-.df-root .df-seg:hover { background: var(--df-bg-hover-ghost); }
-.df-root .df-seg svg { width: 16px; height: 16px; color: var(--df-text-muted); }
+.sf-root .sf-seg:last-child { border-radius: 0 var(--sf-r-control) var(--sf-r-control) 0; }
+.sf-root .sf-seg:hover { background: var(--sf-bg-hover-ghost); }
+.sf-root .sf-seg svg { width: 16px; height: 16px; color: var(--sf-text-muted); }
 </style>
 </body>
 </html>

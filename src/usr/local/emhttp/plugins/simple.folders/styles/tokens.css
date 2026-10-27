@@ -1,0 +1,220 @@
+/* simple.folders - design tokens.
+ * Copyright (C) 2026  gcarstoiu
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2, as published
+ * by the Free Software Foundation.
+ *
+ * Values come from design/design-tokens.json. That file is dark-only; Unraid
+ * ships four themes, so the dark set is the default here and the two light
+ * themes (white, azure) override it. The dark themes (black, gray) use the
+ * defaults unchanged.
+ *
+ * Everything is scoped to .sf-root so the plugin cannot restyle the rest of
+ * the Docker page, and so "Classic view" is a clean fall back.
+ */
+
+.sf-root {
+  /* ---- surfaces ---- */
+  --sf-bg-page:        #101215;
+  --sf-bg-card:        #16191D;
+  --sf-bg-folder:      #191D22;
+  --sf-bg-popover:     #1F2328;
+  --sf-bg-dialog:      #1B1F24;
+  --sf-bg-input:       #121418;
+  --sf-bg-well:        #15181C;
+  --sf-bg-hover-row:   #1C2026;
+  --sf-bg-hover-ghost: #262B32;
+  --sf-bg-hover-menu:  #2A3038;
+  --sf-scrim:          rgba(5, 6, 8, .66);
+
+  /* ---- borders ---- */
+  --sf-border-card:    #262B31;
+  --sf-border-control: #6E747D;
+  --sf-border-popover: #343A42;
+  --sf-border-row:     #23272D;
+  --sf-border-soft:    #1F2328;
+
+  /* ---- text ---- */
+  --sf-text:           #E6E8EB;
+  --sf-text-secondary: #C9CED4;
+  --sf-text-muted:     #9AA1AB;
+  /* The spec flags #6F7782 as failing contrast on the folder row (3.74:1);
+     DESIGN_SPEC.md 14 replaces it with this value. */
+  --sf-text-dim:       #8B929C;
+  --sf-text-faint:     #7D8590;
+
+  /* ---- accent ---- */
+  --sf-accent:         #6EA8FE;
+  --sf-accent-hover:   #8AB8FF;
+  --sf-on-accent:      #0B1320;
+  --sf-accent-soft-bg: #1E3354;
+  --sf-accent-soft-fg: #CFE0FF;
+  --sf-accent-chip-fg: #A9C9FF;
+
+  /* ---- status ---- */
+  --sf-running:        #3FB97A;
+  --sf-running-text:   #8FDCB1;
+  --sf-stopped-ring:   #6B727C;
+  --sf-stopped-seg:    #3A4049;
+  --sf-stopped-dot:    #5C636D;
+  --sf-paused:         #E0A43A;
+  --sf-paused-text:    #F0C06A;
+  --sf-busy:           #6EA8FE;
+  --sf-busy-text:      #9CC2FF;
+
+  /* ---- warning / danger ---- */
+  --sf-warn-bg:        #3A2312;
+  --sf-warn-fg:        #FFB27A;
+  --sf-warn-border:    #66391A;
+  --sf-on-warn:        #1D1006;
+  --sf-danger-fg:      #FF9B9B;
+  --sf-danger-border:  #5A2A2A;
+  --sf-on-danger:      #2A0A0A;
+
+  /* ---- Unraid brand orange ----
+     --orange-500 / --orange-800 from the webGUI's own palette
+     (plugins/dynamix/styles/default-color-palette.css).
+     White on this fill measures 2.32:1, so the label is near-black instead;
+     the darker orange supplies the edge, which the fill alone cannot give
+     on a white card (2.32:1, below the 3:1 a control boundary needs). */
+  --sf-brand:        #ff8c2f;
+  --sf-brand-hover:  #f15a2c;
+  --sf-brand-border: #f15a2c;
+  --sf-on-brand:     #1D1006;
+
+  /* ---- switch ---- */
+  --sf-switch-on:      #3D7BE0;
+  --sf-switch-off:     #6B717A;
+  --sf-switch-mixed:   #4A5260;
+  --sf-switch-knob:    #F2F4F7;
+
+  /* ---- folder palette: tile background / glyph foreground ---- */
+  --sf-slate-tile:  #2A323E;  --sf-slate-glyph:  #CDD6E2;
+  --sf-blue-tile:   #1C365F;  --sf-blue-glyph:   #A6C8FF;
+  --sf-teal-tile:   #0F3B3E;  --sf-teal-glyph:   #86DAD4;
+  --sf-green-tile:  #173D29;  --sf-green-glyph:  #8EDCAB;
+  --sf-amber-tile:  #46320F;  --sf-amber-glyph:  #F4C870;
+  --sf-orange-tile: #4A2414;  --sf-orange-glyph: #FFAD84;
+  --sf-rose-tile:   #471C2B;  --sf-rose-glyph:   #F7A6BE;
+  --sf-violet-tile: #30235A;  --sf-violet-glyph: #C9B1FF;
+
+  /* ---- type ----
+     The spec asks for IBM Plex. Shipping a webfont for a plugin that lives
+     inside someone else's UI is the wrong trade, so inherit the host's face
+     and keep only the sans/mono distinction the design relies on. */
+  --sf-font-sans: inherit;
+  --sf-font-mono: ui-monospace, "SFMono-Regular", "Bitstream Vera Sans Mono", Menlo, Consolas, monospace;
+
+  --sf-fs-title:   28px;
+  --sf-fs-dialog:  18px;
+  --sf-fs-folder:  15px;
+  --sf-fs-body:    14px;
+  --sf-fs-small:   13px;
+  --sf-fs-caption: 12px;
+  --sf-fs-eyebrow: 11px;
+
+  /* ---- radii ---- */
+  --sf-r-control: 8px;
+  --sf-r-tile:    10px;
+  --sf-r-card:    12px;
+  --sf-r-dialog:  14px;
+  --sf-r-pill:    999px;
+
+  /* ---- metrics ---- */
+  --sf-table-min:      1100px;
+  --sf-grid: 40px minmax(280px, 1fr) 150px 124px 84px 72px 92px 104px 44px;
+  --sf-grid-gap:       10px;
+  --sf-row-pad-x:      12px;
+  --sf-folder-row-min: 64px;
+  --sf-folder-row-pad: 10px;
+  --sf-ct-row-min:     52px;
+  --sf-folder-icon:    40px;
+  --sf-strip-btn:      38px;
+  --sf-strip-tile:     30px;
+  --sf-strip-dot:      11px;
+  --sf-ct-tile:        32px;
+  --sf-icon-btn:       36px;
+  --sf-control-h:      40px;
+  --sf-menu-w:         260px;
+  --sf-menu-item-min:  38px;
+  --sf-panel-w:        340px;
+  --sf-confirm-max:    480px;
+  --sf-editor-max:     1000px;
+
+  /* ---- motion ---- */
+  --sf-t-popover:  140ms;
+  --sf-t-chevron:  150ms;
+  --sf-t-switch:   150ms;
+  --sf-t-progress: 300ms;
+}
+
+/* ---------------------------------------------------------------------------
+ * Light themes. Unraid's "white" uses a near-white page and "azure" a light
+ * grey one; both need the full set inverted, not just text and background.
+ * ------------------------------------------------------------------------- */
+.sf-root[data-theme="white"],
+.sf-root[data-theme="azure"] {
+  --sf-bg-page:        #F2F3F5;
+  --sf-bg-card:        #FFFFFF;
+  --sf-bg-folder:      #F7F8FA;
+  --sf-bg-popover:     #FFFFFF;
+  --sf-bg-dialog:      #FFFFFF;
+  --sf-bg-input:       #FFFFFF;
+  --sf-bg-well:        #F2F4F6;
+  --sf-bg-hover-row:   #EFF2F5;
+  --sf-bg-hover-ghost: #E4E8ED;
+  --sf-bg-hover-menu:  #EBEFF4;
+  --sf-scrim:          rgba(15, 18, 22, .45);
+
+  --sf-border-card:    #DCE0E5;
+  --sf-border-control: #858C95;
+  --sf-border-popover: #D2D8DF;
+  --sf-border-row:     #E5E8EC;
+  --sf-border-soft:    #EDEFF2;
+
+  --sf-text:           #16191D;
+  --sf-text-secondary: #363C44;
+  --sf-text-muted:     #595F68;
+  --sf-text-dim:       #5E646D;
+  --sf-text-faint:     #6A7079;
+
+  --sf-accent:         #1B5FC9;
+  --sf-accent-hover:   #154EA8;
+  --sf-on-accent:      #FFFFFF;
+  --sf-accent-soft-bg: #E2ECFB;
+  --sf-accent-soft-fg: #103F85;
+  --sf-accent-chip-fg: #174E9E;
+
+  --sf-running:        #1C8A50;
+  --sf-running-text:   #10653A;
+  --sf-stopped-ring:   #828A94;
+  --sf-stopped-seg:    #D2D7DD;
+  --sf-stopped-dot:    #8B939D;
+  --sf-paused:         #9A6A0F;
+  --sf-paused-text:    #7A5209;
+  --sf-busy:           #1B5FC9;
+  --sf-busy-text:      #103F85;
+
+  --sf-warn-bg:        #FBEDE0;
+  --sf-warn-fg:        #80440F;
+  --sf-warn-border:    #E6C5A1;
+  --sf-on-warn:        #FFFFFF;
+  --sf-danger-fg:      #A8201A;
+  --sf-danger-border:  #E3AFAB;
+  --sf-on-danger:      #FFFFFF;
+
+  --sf-switch-on:      #1B5FC9;
+  --sf-switch-off:     #858C95;
+  --sf-switch-mixed:   #939BA6;
+  --sf-switch-knob:    #FFFFFF;
+
+  --sf-slate-tile:  #E3E7EC;  --sf-slate-glyph:  #38414D;
+  --sf-blue-tile:   #DEE9FB;  --sf-blue-glyph:   #1A4788;
+  --sf-teal-tile:   #D8EFED;  --sf-teal-glyph:   #0D5551;
+  --sf-green-tile:  #DCF0E3;  --sf-green-glyph:  #1A5A36;
+  --sf-amber-tile:  #F7EAD0;  --sf-amber-glyph:  #6E4F0C;
+  --sf-orange-tile: #FAE3D7;  --sf-orange-glyph: #803C18;
+  --sf-rose-tile:   #FADFE6;  --sf-rose-glyph:   #8A2544;
+  --sf-violet-tile: #E8E1FA;  --sf-violet-glyph: #45309B;
+}

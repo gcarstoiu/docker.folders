@@ -1,0 +1,633 @@
+/* simple.folders - header, card and rows.
+ * Copyright (C) 2026  gcarstoiu
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2, as published
+ * by the Free Software Foundation.
+ *
+ * Follows DESIGN_SPEC.md 3-5. The rows are a CSS grid, not a table: a folded
+ * folder row carries a wrapping icon strip whose height depends on the member
+ * count, and table layout cannot grow a row that way without breaking the
+ * column alignment of every other row.
+ */
+
+.sf-root {
+  font-family: var(--sf-font-sans);
+  font-size: var(--sf-fs-body);
+  color: var(--sf-text);
+  padding: 0 0 24px;
+}
+.sf-root *,
+.sf-root *::before,
+.sf-root *::after { box-sizing: border-box; }
+
+/* ---------------------------------------------------------------------------
+ * Element reset
+ *
+ * The webGUI styles bare controls hard. Its rule is, in full:
+ *
+ *   button:where(:not(.unapi *)) {
+ *     font-family: clear-sans; font-size: 1.1rem; font-weight: bold;
+ *     letter-spacing: 1.8px; text-transform: uppercase; min-width: 86px;
+ *     margin: 10px 12px 10px 0; padding: 8px; text-align: center;
+ *     white-space: nowrap; border-radius: 4px; border: var(--button-border);
+ *     color: var(--button-text-color); background: var(--button-background);
+ *     ...
+ *   }
+ *
+ * Two mistakes were made here and both shipped:
+ *
+ *  1. The reset was written as ":where(.sf-root) button", specificity
+ *     (0,0,1) - a deliberate tie with Unraid's selector, decided only by
+ *     load order. Relying on load order inside someone else's page is not a
+ *     guarantee. It is now ".sf-root button", (0,1,1), which beats Unraid's
+ *     outright; every component rule below is ".sf-root .sf-xxx", (0,2,0),
+ *     so they still beat this reset.
+ *
+ *  2. It reset too few properties. text-transform, letter-spacing,
+ *     min-width, text-align and border-radius were never cleared, so
+ *     controls came out UPPERCASE, letter-spaced and 86px wide. Everything
+ *     Unraid sets is cleared below.
+ *
+ * #sf-root also carries Unraid's own "unapi" opt-out class, which exempts it
+ * from these rules entirely. This reset is the belt to that's braces: it
+ * holds even for rules that carry no opt-out.
+ * ------------------------------------------------------------------------- */
+.sf-root button,
+.sf-root input,
+.sf-root select,
+.sf-root textarea {
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  white-space: normal;
+  box-shadow: none;
+  outline-offset: 0;
+}
+.sf-root button { cursor: pointer; }
+
+.sf-root :focus-visible {
+  outline: 2px solid var(--sf-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.sf-root .sf-mono { font-family: var(--sf-font-mono); font-size: var(--sf-fs-small); }
+.sf-root .sf-muted { color: var(--sf-text-dim); }
+
+/* ---------------------------------------------------------------------------
+ * Header
+ * ------------------------------------------------------------------------- */
+/* Sits immediately under Unraid's own "Docker Containers" heading, so the
+   top padding is modest - this is a continuation of that heading, not a new
+   one. */
+.sf-root .sf-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 4px 16px 14px;
+}
+.sf-root .sf-summary { font-size: var(--sf-fs-body); color: var(--sf-text-muted); }
+
+.sf-root .sf-head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.sf-root .sf-filter { position: relative; display: flex; align-items: center; }
+.sf-root .sf-filter-icon {
+  position: absolute; left: 11px; width: 15px; height: 15px;
+  color: var(--sf-text-dim); pointer-events: none;
+}
+.sf-root .sf-filter-input {
+  height: var(--sf-control-h);
+  width: 260px;
+  padding: 0 12px 0 34px;
+  border: 1px solid var(--sf-border-control);
+  border-radius: var(--sf-r-control);
+  background: var(--sf-bg-input);
+  color: var(--sf-text);
+}
+.sf-root .sf-filter-input::placeholder { color: var(--sf-text-dim); }
+
+.sf-root .sf-btn {
+  height: var(--sf-control-h);
+  padding: 0 14px;
+  border: 1px solid var(--sf-border-control);
+  border-radius: var(--sf-r-control);
+  background: var(--sf-bg-card);
+  color: var(--sf-text);
+  font-size: var(--sf-fs-small);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.sf-root .sf-btn:hover:not(:disabled) { background: var(--sf-bg-hover-ghost); }
+.sf-root .sf-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.sf-root .sf-btn-primary {
+  background: var(--sf-accent);
+  border-color: var(--sf-accent);
+  color: var(--sf-on-accent);
+  font-weight: 600;
+}
+.sf-root .sf-btn-primary:hover:not(:disabled) { background: var(--sf-accent-hover); border-color: var(--sf-accent-hover); }
+
+.sf-root .sf-classic {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: var(--sf-fs-caption); color: var(--sf-text-muted);
+  cursor: pointer; user-select: none;
+}
+.sf-root .sf-classic input { accent-color: var(--sf-accent); width: 14px; height: 14px; cursor: pointer; }
+
+/* ---------------------------------------------------------------------------
+ * Card
+ *
+ * The grid has a hard minimum width; below it the CARD scrolls sideways, so
+ * columns never overlap on a narrow screen (spec 3.1).
+ * ------------------------------------------------------------------------- */
+.sf-root .sf-card {
+  margin: 0 16px;
+  border: 1px solid var(--sf-border-card);
+  border-radius: var(--sf-r-card);
+  background: var(--sf-bg-card);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.sf-root .sf-row {
+  display: grid;
+  grid-template-columns: var(--sf-grid);
+  column-gap: var(--sf-grid-gap);
+  align-items: center;
+  min-width: var(--sf-table-min);
+  padding: 0 var(--sf-row-pad-x);
+}
+
+.sf-root .sf-cell { min-width: 0; }
+.sf-root .sf-cell-tree { display: flex; align-items: center; justify-content: center; align-self: stretch; }
+.sf-root .sf-cell-menu { display: flex; justify-content: flex-end; }
+
+.sf-root .sf-row-head {
+  height: 42px;
+  border-bottom: 1px solid var(--sf-border-row);
+  font-family: var(--sf-font-mono);
+  font-size: var(--sf-fs-eyebrow);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--sf-text-faint);
+}
+
+.sf-root .sf-section {
+  min-width: var(--sf-table-min);
+  padding: 16px var(--sf-row-pad-x) 7px;
+  border-top: 1px solid var(--sf-border-soft);
+  font-family: var(--sf-font-mono);
+  font-size: var(--sf-fs-eyebrow);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--sf-text-faint);
+}
+.sf-root .sf-section-count { margin-left: 5px; }
+
+.sf-root .sf-notice {
+  margin: 0 16px;
+  padding: 28px 16px;
+  border: 1px solid var(--sf-border-card);
+  border-radius: var(--sf-r-card);
+  background: var(--sf-bg-card);
+  color: var(--sf-text-muted);
+  text-align: center;
+}
+.sf-root .sf-notice-error { color: var(--sf-danger-fg); border-color: var(--sf-danger-border); }
+
+
+/* ---------------------------------------------------------------------------
+ * Folder row
+ * ------------------------------------------------------------------------- */
+.sf-root .sf-row-folder {
+  position: relative;
+  min-height: var(--sf-folder-row-min);
+  padding-top: var(--sf-folder-row-pad);
+  padding-bottom: var(--sf-folder-row-pad);
+  background: var(--sf-bg-folder);
+  border-top: 1px solid var(--sf-border-row);
+}
+.sf-root .sf-body > .sf-row-folder:first-child { border-top: 0; }
+.sf-root .sf-row-folder:hover { background: var(--sf-bg-hover-row); }
+
+.sf-root .sf-chevron {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border-radius: 6px;
+  color: var(--sf-text-muted);
+}
+.sf-root .sf-chevron:hover:not(:disabled) { background: var(--sf-bg-hover-ghost); color: var(--sf-text); }
+.sf-root .sf-chevron:disabled { opacity: .35; cursor: default; }
+
+/* A chevron drawn from borders: no extra sprite lookup for the most-used
+   control on the page. */
+.sf-root .sf-chevron-mark {
+  width: 6px; height: 6px;
+  border-right: 1.8px solid currentColor;
+  border-bottom: 1.8px solid currentColor;
+  transform: rotate(-45deg) translate(-1px, -1px);
+  transition: transform var(--sf-t-chevron) ease;
+}
+.sf-root .sf-chevron[aria-expanded="true"] .sf-chevron-mark { transform: rotate(45deg) translate(-1px, -1px); }
+
+.sf-root .sf-cell-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.sf-root .sf-folder-icon {
+  flex: none;
+  width: var(--sf-folder-icon); height: var(--sf-folder-icon);
+  display: grid; place-items: center;
+  border-radius: var(--sf-r-tile);
+  background: var(--sf-slate-tile);
+  color: var(--sf-slate-glyph);
+  box-shadow: inset 0 0 0 0 transparent;
+  transition: box-shadow var(--sf-t-popover) ease;
+}
+.sf-root .sf-folder-icon:hover { box-shadow: inset 0 0 0 2px var(--sf-accent); }
+.sf-root .sf-folder-glyph { width: 21px; height: 21px; }
+.sf-root .sf-folder-img {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+/* The folder's colour tints its icon tile. */
+.sf-root .sf-row-folder[data-color="slate"]  .sf-folder-icon { background: var(--sf-slate-tile);  color: var(--sf-slate-glyph); }
+.sf-root .sf-row-folder[data-color="blue"]   .sf-folder-icon { background: var(--sf-blue-tile);   color: var(--sf-blue-glyph); }
+.sf-root .sf-row-folder[data-color="teal"]   .sf-folder-icon { background: var(--sf-teal-tile);   color: var(--sf-teal-glyph); }
+.sf-root .sf-row-folder[data-color="green"]  .sf-folder-icon { background: var(--sf-green-tile);  color: var(--sf-green-glyph); }
+.sf-root .sf-row-folder[data-color="amber"]  .sf-folder-icon { background: var(--sf-amber-tile);  color: var(--sf-amber-glyph); }
+.sf-root .sf-row-folder[data-color="orange"] .sf-folder-icon { background: var(--sf-orange-tile); color: var(--sf-orange-glyph); }
+.sf-root .sf-row-folder[data-color="rose"]   .sf-folder-icon { background: var(--sf-rose-tile);   color: var(--sf-rose-glyph); }
+.sf-root .sf-row-folder[data-color="violet"] .sf-folder-icon { background: var(--sf-violet-tile); color: var(--sf-violet-glyph); }
+
+.sf-root .sf-folder-text { min-width: 0; flex: 1 1 auto; }
+.sf-root .sf-folder-line1 { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.sf-root .sf-folder-name {
+  font-size: var(--sf-fs-folder);
+  font-weight: 600;
+  color: var(--sf-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  min-width: 0;
+}
+.sf-root .sf-folder-count { flex: none; font-size: var(--sf-fs-caption); color: var(--sf-text-dim); }
+.sf-root .sf-folder-sub { margin-top: 3px; font-size: var(--sf-fs-caption); color: var(--sf-text-dim); }
+
+/* ---- icon strip (spec 4.1) ----
+   Its own line under the name, wrapping. Never beside the name: at the
+   Container column's minimum width only two icons fit alongside it. */
+.sf-root .sf-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 4px;
+  margin-left: -4px;
+}
+.sf-root .sf-strip-btn {
+  position: relative;
+  width: var(--sf-strip-btn); height: var(--sf-strip-btn);
+  display: grid; place-items: center;
+  border-radius: var(--sf-r-control);
+}
+.sf-root .sf-strip-btn:hover { background: var(--sf-bg-hover-ghost); }
+
+.sf-root .sf-strip-tile {
+  width: var(--sf-strip-tile); height: var(--sf-strip-tile);
+  border-radius: 8px;
+}
+.sf-root .sf-strip-dot {
+  position: absolute;
+  right: 3px; bottom: 3px;
+  width: var(--sf-strip-dot); height: var(--sf-strip-dot);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--sf-bg-folder);
+}
+.sf-root .sf-row-folder:hover .sf-strip-dot { box-shadow: 0 0 0 2px var(--sf-bg-hover-row); }
+
+/* ---- status summary ---- */
+.sf-root .sf-folder-status { font-size: var(--sf-fs-small); color: var(--sf-text-secondary); }
+.sf-root .sf-folder-status.is-all { color: var(--sf-running-text); }
+.sf-root .sf-folder-status.is-busy { color: var(--sf-busy-text); }
+
+.sf-root .sf-segments { display: flex; gap: 2px; width: 100px; margin-top: 6px; }
+.sf-root .sf-segment { flex: 1 1 0; height: 4px; border-radius: 2px; background: var(--sf-stopped-seg); }
+.sf-root .sf-seg-running { background: var(--sf-running); }
+.sf-root .sf-seg-paused { background: var(--sf-paused); }
+.sf-root .sf-seg-busy { background: var(--sf-busy); }
+.sf-root .sf-seg-stopped { background: var(--sf-stopped-seg); }
+
+/* ---------------------------------------------------------------------------
+ * Container row
+ * ------------------------------------------------------------------------- */
+.sf-root .sf-row-ct {
+  min-height: var(--sf-ct-row-min);
+  border-top: 1px solid var(--sf-border-soft);
+}
+.sf-root .sf-row-ct:hover { background: var(--sf-bg-hover-row); }
+
+/* The tree line that ties a nested row to its folder. */
+.sf-root .sf-tree {
+  width: 1px;
+  align-self: stretch;
+  background: var(--sf-border-row);
+  margin-left: 11px;
+}
+.sf-root .sf-row-ct.is-nested .sf-cell-name { padding-left: 2px; }
+
+.sf-root .sf-order {
+  flex: none;
+  width: 14px;
+  text-align: right;
+  color: var(--sf-text-faint);
+  font-size: var(--sf-fs-eyebrow);
+}
+
+.sf-root .sf-ct-icon {
+  flex: none;
+  width: var(--sf-ct-tile); height: var(--sf-ct-tile);
+  border-radius: 8px;
+}
+.sf-root .sf-ct-icon:hover { box-shadow: 0 0 0 2px var(--sf-accent); }
+.sf-root .sf-ct-tile { width: var(--sf-ct-tile); height: var(--sf-ct-tile); border-radius: 8px; }
+
+.sf-root .sf-tile-img { object-fit: contain; background: var(--sf-bg-well); display: block; }
+.sf-root .sf-tile-letter {
+  display: grid; place-items: center;
+  font-weight: 600; font-size: var(--sf-fs-caption);
+  background: var(--sf-slate-tile); color: var(--sf-slate-glyph);
+}
+.sf-root .sf-tile-letter[data-tint="slate"] { background: var(--sf-slate-tile);  color: var(--sf-slate-glyph); }
+.sf-root .sf-tile-letter[data-tint="blue"] { background: var(--sf-blue-tile);   color: var(--sf-blue-glyph); }
+.sf-root .sf-tile-letter[data-tint="teal"] { background: var(--sf-teal-tile);   color: var(--sf-teal-glyph); }
+.sf-root .sf-tile-letter[data-tint="green"] { background: var(--sf-green-tile);  color: var(--sf-green-glyph); }
+.sf-root .sf-tile-letter[data-tint="amber"] { background: var(--sf-amber-tile);  color: var(--sf-amber-glyph); }
+.sf-root .sf-tile-letter[data-tint="orange"] { background: var(--sf-orange-tile); color: var(--sf-orange-glyph); }
+.sf-root .sf-tile-letter[data-tint="rose"] { background: var(--sf-rose-tile);   color: var(--sf-rose-glyph); }
+.sf-root .sf-tile-letter[data-tint="violet"] { background: var(--sf-violet-tile); color: var(--sf-violet-glyph); }
+
+.sf-root .sf-ct-text { min-width: 0; }
+.sf-root .sf-ct-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sf-root .sf-ct-image { font-size: var(--sf-fs-caption); color: var(--sf-text-dim);
+               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sf-root .sf-ct-status { display: flex; align-items: center; gap: 8px; }
+.sf-root .sf-status-text { font-size: var(--sf-fs-small); }
+.sf-root .sf-status-running { color: var(--sf-running-text); }
+.sf-root .sf-status-paused { color: var(--sf-paused-text); }
+.sf-root .sf-status-busy { color: var(--sf-busy-text); }
+.sf-root .sf-status-stopped { color: var(--sf-text-muted); }
+
+/* ---- status markers ----
+   Each state has a different SHAPE as well as colour, so the status is
+   readable without colour vision (spec 5, spec 14):
+     running - filled disc      paused - two bars
+     stopped - hollow ring      busy   - spinning arc */
+.sf-root .sf-dot { position: relative; flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.sf-root .sf-strip-dot.sf-dot-running,
+.sf-root .sf-dot-running { background: var(--sf-running); }
+
+.sf-root .sf-strip-dot.sf-dot-stopped,
+.sf-root .sf-dot-stopped { background: transparent; box-shadow: inset 0 0 0 2px var(--sf-stopped-ring); }
+.sf-root .sf-strip-dot.sf-dot-stopped { box-shadow: inset 0 0 0 2px var(--sf-stopped-ring), 0 0 0 2px var(--sf-bg-folder); }
+
+.sf-root .sf-dot-paused { background: transparent; }
+.sf-root .sf-dot-paused::before,
+.sf-root .sf-dot-paused::after {
+  content: ""; position: absolute; top: 1px; bottom: 1px; width: 3px;
+  background: var(--sf-paused); border-radius: 1px;
+}
+.sf-root .sf-dot-paused::before { left: 1px; }
+.sf-root .sf-dot-paused::after { right: 1px; }
+
+.sf-root .sf-dot-busy {
+  background: transparent;
+  border: 2px solid var(--sf-busy);
+  border-top-color: transparent;
+  animation: sf-spin .8s linear infinite;
+}
+@keyframes sf-spin { to { transform: rotate(360deg); } }
+
+/* ---- badges ---- */
+.sf-root .sf-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: var(--sf-r-pill);
+  font-size: var(--sf-fs-caption);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.sf-root .sf-badge-warn {
+  background: var(--sf-warn-bg);
+  color: var(--sf-warn-fg);
+  border: 1px solid var(--sf-warn-border);
+}
+
+/* ---- switch ---- */
+.sf-root .sf-switch-wrap { display: flex; align-items: center; gap: 8px; }
+.sf-root .sf-switch {
+  flex: none;
+  position: relative;
+  width: 34px; height: 19px;
+  border-radius: var(--sf-r-pill);
+  background: var(--sf-switch-off);
+  transition: background var(--sf-t-switch) ease;
+}
+.sf-root .sf-switch[data-state="on"] { background: var(--sf-switch-on); }
+.sf-root .sf-switch[data-state="mixed"] { background: var(--sf-switch-mixed); }
+
+.sf-root .sf-switch-knob {
+  position: absolute; top: 2.5px; left: 2.5px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--sf-switch-knob);
+  transition: transform var(--sf-t-switch) ease;
+}
+.sf-root .sf-switch[data-state="on"]    .sf-switch-knob { transform: translateX(15px); }
+.sf-root .sf-switch[data-state="mixed"] .sf-switch-knob { transform: translateX(7.5px); }
+
+.sf-root .sf-switch-label { font-size: var(--sf-fs-caption); color: var(--sf-text-muted); white-space: nowrap; }
+
+/* ---- kebab ---- */
+.sf-root .sf-kebab {
+  width: var(--sf-icon-btn); height: var(--sf-icon-btn);
+  display: grid; place-items: center;
+  border-radius: var(--sf-r-control);
+  color: var(--sf-text-muted);
+  font-size: 16px; line-height: 1;
+}
+.sf-root .sf-kebab:hover { background: var(--sf-bg-hover-ghost); color: var(--sf-text); }
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion
+ * ------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------
+ * Global action bar
+ *
+ * The classic Docker view's eight actions, in a card of its own under the
+ * table. The four lifecycle buttons are a joined segmented control so they
+ * read as one set acting on everything, under a label that says so.
+ * ------------------------------------------------------------------------- */
+.sf-root .sf-actionbar {
+  margin: 14px 16px 0;
+  padding: 10px 12px 11px;
+  border: 1px solid var(--sf-border-card);
+  border-radius: var(--sf-r-card);
+  background: var(--sf-bg-card);
+}
+
+.sf-root .sf-grouplbl {
+  font-family: var(--sf-font-mono);
+  font-size: var(--sf-fs-eyebrow);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--sf-text-faint);
+  padding: 0 0 8px 2px;
+}
+
+.sf-root .sf-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sf-root .sf-act-grow { flex: 1 1 auto; }
+
+/* ---- icon-only button (the overflow) ---- */
+.sf-root .sf-act {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: var(--sf-r-control);
+  color: var(--sf-text-muted);
+}
+.sf-root .sf-act:hover { background: var(--sf-bg-hover-ghost); color: var(--sf-text); }
+.sf-root .sf-act svg { width: 18px; height: 18px; }
+
+/* ---- icon + label chip ---- */
+.sf-root .sf-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px; padding: 0 12px;
+  border: 1px solid var(--sf-border-control);
+  border-radius: var(--sf-r-control);
+  color: var(--sf-text);
+  font-size: var(--sf-fs-small);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.sf-root .sf-chip:hover:not(:disabled) { background: var(--sf-bg-hover-ghost); }
+.sf-root .sf-chip:disabled { opacity: .4; cursor: not-allowed; }
+.sf-root .sf-chip svg { width: 16px; height: 16px; color: var(--sf-text-muted); }
+
+/* Add container, in Unraid's brand orange. The label is near-black, not
+   white: white on this orange measures 2.32:1. */
+.sf-root .sf-chip-brand {
+  background: var(--sf-brand);
+  border-color: var(--sf-brand-border);
+  color: var(--sf-on-brand);
+  font-weight: 600;
+}
+.sf-root .sf-chip-brand svg { color: var(--sf-on-brand); }
+.sf-root .sf-chip-brand:hover:not(:disabled) {
+  background: var(--sf-brand-hover);
+  border-color: var(--sf-brand-hover);
+}
+
+.sf-root .sf-chip-warn { border-color: var(--sf-warn-border); color: var(--sf-warn-fg); }
+.sf-root .sf-chip-warn svg { color: var(--sf-warn-fg); }
+.sf-root .sf-chip-warn:hover:not(:disabled) { background: var(--sf-warn-bg); }
+
+/* ---- the joined lifecycle group ---- */
+.sf-root .sf-seggroup { display: inline-flex; }
+
+.sf-root .sf-seg {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 36px; padding: 0 12px;
+  border: 1px solid var(--sf-border-control);
+  border-left-width: 0;
+  color: var(--sf-text);
+  font-size: var(--sf-fs-small);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.sf-root .sf-seg:first-child {
+  border-left-width: 1px;
+  border-radius: var(--sf-r-control) 0 0 var(--sf-r-control);
+}
+.sf-root .sf-seg:last-child { border-radius: 0 var(--sf-r-control) var(--sf-r-control) 0; }
+.sf-root .sf-seg:hover:not(:disabled) { background: var(--sf-bg-hover-ghost); }
+.sf-root .sf-seg:disabled { opacity: .4; cursor: not-allowed; }
+.sf-root .sf-seg svg { width: 16px; height: 16px; color: var(--sf-text-muted); }
+/* The outline must not be swallowed by the neighbouring segment's border. */
+.sf-root .sf-seg:focus-visible { position: relative; z-index: 1; }
+
+/* ---------------------------------------------------------------------------
+ * Phones
+ *
+ * The table is deliberately wider than a phone (min-width 1100px, spec 3.1)
+ * and scrolls sideways inside its card. Every pixel of width therefore
+ * counts, and a 16px gutter on each side - plus whatever padding Unraid's
+ * own page container adds - wastes a visible slice of a narrow screen.
+ *
+ * margin-inline: calc(50% - 50vw) pulls the card out to the viewport edges
+ * whatever the ancestors' padding happens to be, without this code having to
+ * know what that padding is. It is confined to this media query: on desktop
+ * 100vw includes the scrollbar, which would overhang.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Leave room for a bottom URL bar / home indicator, so the action bar is
+     not the thing hiding behind it. */
+  .sf-root { padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); }
+
+  .sf-root .sf-head {
+    padding: 4px 12px 12px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sf-root .sf-head-actions { gap: 8px; }
+  .sf-root .sf-filter { flex: 1 1 auto; }
+  .sf-root .sf-filter-input { width: 100%; }
+
+  .sf-root .sf-card {
+    margin-inline: calc(50% - 50vw);
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    /* Momentum scrolling, and keep the sideways scroll from turning into a
+       browser back-gesture on the first swipe. */
+    overscroll-behavior-x: contain;
+  }
+
+  .sf-root .sf-notice { margin-inline: 12px; }
+
+  .sf-root .sf-actionbar { margin: 12px 12px 0; }
+  /* The segmented group would otherwise force the bar wider than the
+     screen; let it take a line of its own and share it evenly. */
+  .sf-root .sf-seggroup { display: flex; width: 100%; }
+  .sf-root .sf-seg { flex: 1 1 0; justify-content: center; padding: 0 6px; }
+  .sf-root .sf-chip { flex: 1 1 auto; justify-content: center; }
+  .sf-root .sf-act-grow { display: none; }
+  }
+
+@media (prefers-reduced-motion: reduce) {
+  .sf-root *,
+.sf-root *::before,
+.sf-root *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  /* The busy spinner is the only indicator that work is happening, so keep
+     it turning - just slowly enough not to be a motion trigger. */
+  .sf-root .sf-dot-busy { animation: sf-spin 2.4s linear infinite !important; }
+}

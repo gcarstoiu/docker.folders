@@ -23,7 +23,7 @@ PHP_IMAGE="${PHP_IMAGE:-php:8.3-cli-alpine}"
 mkdir -p "$HARNESS/state"
 chmod +x "$HARNESS/mock/plugins/dynamix.docker.manager/scripts/update_container" 2>/dev/null || true
 
-echo "docker.folders harness"
+echo "simple.folders harness"
 echo "  url       http://localhost:$PORT/"
 echo "  latency   ${HARNESS_LATENCY:-0.6}s per action"
 echo "  failures  ${HARNESS_FAIL:-none}"
@@ -64,7 +64,7 @@ tty_flags=()
 [ -t 0 ] && [ -t 1 ] && tty_flags=(-it)
 
 exec docker run --rm "${tty_flags[@]}" \
-  --name docker-folders-harness \
+  --name simple-folders-harness \
   -p "$PORT:$PORT" \
   -v "$REPO:/app" \
   -w /app \
