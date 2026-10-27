@@ -33,6 +33,11 @@
 require_once __DIR__.'/lib/Paths.php';
 require_once __DIR__.'/lib/Guard.php';
 
+/* Armed before any further include, so a failure inside Unraid's own
+ * DockerClient.php is reported as JSON rather than a blank 500. */
+df_install_error_handler();
+
+
 const DF_ICON_MAX_BYTES = 512 * 1024;      // 512 KB is generous for an icon
 const DF_ICON_TIMEOUT   = 12;
 

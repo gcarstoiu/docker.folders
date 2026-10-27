@@ -30,6 +30,29 @@ if (defined('DF_CONTAINER_SOURCE') && is_file(DF_CONTAINER_SOURCE)) {
   require_once DF_CONTAINER_SOURCE;
 }
 
+/* ---------------------------------------------------------------------------
+ * DockerClient.php MUST be required here, at file scope - never from inside a
+ * function.
+ *
+ * It declares $dockerManPaths, $driver, $docroot and $dockercfg at ITS top
+ * level, and thirteen of its methods reach for them with `global`. An include
+ * takes the scope of whatever included it, so requiring it inside a function
+ * makes those four function-locals instead of globals, every `global` lookup
+ * resolves to null, and the class fails at runtime with no useful message.
+ * ------------------------------------------------------------------------- */
+if (!function_exists('df_containers_source')) {
+  $dfDockerClient = DF_DOCKER_MAN.'/include/DockerClient.php';
+
+  /* DockerClient derives $docroot from this when it is not already set. */
+  $_SERVER['DOCUMENT_ROOT'] = $_SERVER['DOCUMENT_ROOT'] ?: '/usr/local/emhttp';
+  $docroot = $docroot ?? $_SERVER['DOCUMENT_ROOT'];
+
+  if (is_file($dfDockerClient)) {
+    require_once $dfDockerClient;
+  }
+  unset($dfDockerClient);
+}
+
 /* Return every container, name-sorted, in the shape the UI consumes.
  *
  *   [ name, id, image, state, update, port, autostart, wait, webui,
@@ -41,15 +64,29 @@ if (defined('DF_CONTAINER_SOURCE') && is_file(DF_CONTAINER_SOURCE)) {
 function df_containers(): array {
   if (function_exists('df_containers_source')) return df_containers_source();
 
-  $client = DF_DOCKER_MAN.'/include/DockerClient.php';
-  if (!is_file($client)) return [];
-  require_once $client;
+  /* Required at file scope above; see the note there for why. */
+  if (!class_exists('DockerClient')) {
+    throw new RuntimeException(
+      'Unraid\'s Docker manager was not found at '.DF_DOCKER_MAN.
+      '. Is the Docker service enabled?'
+    );
+  }
 
   $DockerClient    = new DockerClient();
   $DockerTemplates = new DockerTemplates();
 
   $containers = $DockerClient->getDockerContainers();
-  if (!$containers) return [];
+
+  /* An empty list is legitimate - a server can genuinely have no containers.
+   * It is only an error when the Docker service itself is not up, so
+   * distinguish the two rather than silently rendering "0 containers" when
+   * the real problem is that dockerd is stopped. */
+  if (!$containers) {
+    if (!is_file('/var/run/dockerd.pid')) {
+      throw new RuntimeException('The Docker service is not running. Start it in Settings - Docker.');
+    }
+    return [];
+  }
 
   /* getAllInfo() resolves icon, WebUI URL, autostart, update status and the
    * user template for every container in one pass. */

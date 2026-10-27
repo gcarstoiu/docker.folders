@@ -21,6 +21,11 @@
 
 require_once __DIR__.'/lib/Paths.php';
 require_once __DIR__.'/lib/Guard.php';
+
+/* Armed before any further include, so a failure inside Unraid's own
+ * DockerClient.php is reported as JSON rather than a blank 500. */
+df_install_error_handler();
+
 require_once __DIR__.'/lib/Store.php';
 require_once __DIR__.'/lib/Containers.php';
 

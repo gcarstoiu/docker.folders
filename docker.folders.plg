@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.27">
-<!ENTITY md5       "173550658a56334e980d44e062eaf42e">
+<!ENTITY version   "2026.10.27a">
+<!ENTITY md5       "019cb2c05f18dbd56110769d73d85d09">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +21,16 @@
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.27a
+- Fix: the Docker page showed "Request failed (500)" and no containers.
+  Unraid's DockerClient.php was being required from inside a function, which
+  made the globals it declares ($dockerManPaths, $driver, $docroot) function
+  locals, so every `global` lookup inside it resolved to null.
+- Server errors now come back as JSON with the message and the failing file
+  and line, instead of a blank 500, and are written to syslog (tag
+  docker.folders).
+- A stopped Docker service now says so, rather than rendering "0 containers".
+
 ###2026.10.27
 - Initial release.
 </CHANGES>

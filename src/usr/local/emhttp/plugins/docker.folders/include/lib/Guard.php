@@ -15,6 +15,87 @@
  * method confusion, not to replace that gate.
  */
 
+/* ---------------------------------------------------------------------------
+ * Error reporting
+ *
+ * Without this, any PHP warning or uncaught error produces a bare HTTP 500
+ * with an HTML body, and the page can only say "Request failed (500)" - which
+ * says nothing about what actually broke on the server.
+ *
+ * These handlers turn every failure into the same JSON envelope the rest of
+ * the API uses, so the message reaches the UI and the browser console. The
+ * detail is also written to syslog, where Unraid users already look.
+ * ------------------------------------------------------------------------- */
+function df_install_error_handler(): void {
+  /* Report everything, but never let PHP print it: a warning echoed into the
+   * response would corrupt the JSON body. */
+  error_reporting(E_ALL);
+  ini_set('display_errors', '0');
+
+  /* Catch stray output too. Unraid's Docker helpers shell out, and a failing
+   * subprocess can write straight to stdout ("Couldn't create socket: ...").
+   * A single byte before the JSON makes the response unparseable, and the
+   * page can then only report "Request failed" - which is exactly the
+   * unhelpful message this whole handler exists to avoid. Everything printed
+   * before our reply is buffered, logged and discarded. */
+  ob_start();
+
+  set_exception_handler(function ($e) {
+    df_log('uncaught '.get_class($e).': '.$e->getMessage()
+          .' in '.$e->getFile().':'.$e->getLine());
+    df_json([
+      'ok'    => false,
+      'error' => $e->getMessage(),
+      'where' => basename($e->getFile()).':'.$e->getLine(),
+    ], 500);
+  });
+
+  /* Warnings, notices and deprecations are LOGGED, not thrown.
+   *
+   * Unraid's own Docker code emits them routinely (an unreachable socket, an
+   * undefined array key in a container's inspect payload) and carries on.
+   * Promoting those to exceptions would make this plugin fail on pages where
+   * the stock one works perfectly well. Returning true only stops PHP from
+   * printing them into the response and corrupting the JSON body. */
+  set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) return true;   // @-suppressed
+    df_log('warning: '.$message.' in '.basename($file).':'.$line);
+    return true;
+  });
+
+  /* A fatal (out of memory, a hard parse failure in an include) bypasses both
+   * handlers above, so catch it on the way out. */
+  register_shutdown_function(function () {
+    $error = error_get_last();
+    if (!$error || !in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) return;
+    df_log('fatal: '.$error['message'].' in '.$error['file'].':'.$error['line']);
+    df_discard_stray_output();
+    if (!headers_sent()) {
+      http_response_code(500);
+      header('Content-Type: application/json');
+      echo json_encode([
+        'ok'    => false,
+        'error' => $error['message'],
+        'where' => basename($error['file']).':'.$error['line'],
+      ]);
+    }
+  });
+}
+
+function df_log(string $message): void {
+  @exec('logger -t docker.folders -- '.escapeshellarg($message));
+}
+
+/* Throw away anything printed before our reply, so the response body is the
+ * JSON and nothing else. Whatever was captured goes to syslog instead. */
+function df_discard_stray_output(): void {
+  if (!ob_get_level()) return;
+  $stray = '';
+  while (ob_get_level()) $stray .= (string)ob_get_clean();
+  $stray = trim($stray);
+  if ($stray !== '') df_log('discarded stray output: '.substr($stray, 0, 400));
+}
+
 /* Reject anything that is not a POST. Mutating endpoints only. */
 function df_require_post(): void {
   if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -23,6 +104,8 @@ function df_require_post(): void {
 }
 
 function df_json($data, int $code = 200): void {
+  df_discard_stray_output();
+
   if (!headers_sent()) {
     http_response_code($code);
     header('Content-Type: application/json');

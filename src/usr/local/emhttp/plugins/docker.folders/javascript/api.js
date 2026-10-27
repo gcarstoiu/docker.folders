@@ -64,7 +64,12 @@
         if (response.status === 403) {
           throw new Error('Session expired — reload the page and try again');
         }
-        throw new Error((data && (data.error || data.success)) || ('Request failed (' + response.status + ')'));
+        /* Our endpoints report the failing file and line in `where`; include
+         * it so a server-side fault is diagnosable from the page itself. */
+        var message = (data && (data.error || data.success))
+          || ('Request failed (' + response.status + ')');
+        if (data && data.where) message += ' [' + data.where + ']';
+        throw new Error(message);
       }
       if (data && data.ok === false) throw new Error(data.error || 'Request failed');
       return data;
