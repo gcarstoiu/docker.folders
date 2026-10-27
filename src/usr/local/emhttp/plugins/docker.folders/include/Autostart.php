@@ -1,6 +1,6 @@
 <?PHP
 /* docker.folders - writing folder start order into Unraid's autostart file.
- * Copyright (C) 2026  george
+ * Copyright (C) 2026  gcarstoiu
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2, as published

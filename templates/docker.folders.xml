@@ -8,17 +8,17 @@
 -->
 <PluginEntry>
   <Name>Docker Folders</Name>
-  <Author>george</Author>
+  <Author>gcarstoiu</Author>
 
-  <PluginURL>https://raw.githubusercontent.com/george/docker.folders/main/docker.folders.plg</PluginURL>
-  <TemplateURL>https://raw.githubusercontent.com/george/docker.folders/main/templates/docker.folders.xml</TemplateURL>
+  <PluginURL>https://raw.githubusercontent.com/gcarstoiu/docker.folders/main/docker.folders.plg</PluginURL>
+  <TemplateURL>https://raw.githubusercontent.com/gcarstoiu/docker.folders/main/templates/docker.folders.xml</TemplateURL>
 
   <Repository>docker.folders</Repository>
-  <Support>https://github.com/george/docker.folders/issues</Support>
-  <Project>https://github.com/george/docker.folders</Project>
+  <Support>https://github.com/gcarstoiu/docker.folders/issues</Support>
+  <Project>https://github.com/gcarstoiu/docker.folders</Project>
   <License>GPL-2.0</License>
 
-  <Icon>https://raw.githubusercontent.com/george/docker.folders/main/src/usr/local/emhttp/plugins/docker.folders/images/icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/gcarstoiu/docker.folders/main/src/usr/local/emhttp/plugins/docker.folders/images/icon.png</Icon>
 
   <Category>Tools:Utilities Productivity:</Category>
   <MinVer>7.2.0</MinVer>

@@ -1,14 +1,14 @@
 <?xml version="1.0" standalone="yes"?>
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "docker.folders">
-<!ENTITY author    "george">
+<!ENTITY author    "gcarstoiu">
 <!ENTITY github    "&author;/&name;">
 <!ENTITY launch    "Settings/DockerFolders">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY version   "2026.10.27">
-<!ENTITY md5       "2669cf96671f6524b95198f8d313b661">
+<!ENTITY md5       "173550658a56334e980d44e062eaf42e">
 ]>
 
 <PLUGIN name="&name;"

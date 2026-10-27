@@ -56,7 +56,7 @@ $PLUGIN: across a whole folder in a defined order.
 $PLUGIN:
 $PLUGIN: Folder definitions live on the flash drive and survive reboots.
 $PLUGIN:
-$PLUGIN: Homepage: https://github.com/george/docker.folders
+$PLUGIN: Homepage: https://github.com/gcarstoiu/docker.folders
 $PLUGIN:
 $PLUGIN:
 EOF

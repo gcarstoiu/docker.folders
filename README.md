@@ -46,7 +46,7 @@ and move to "Not in a folder".
 **Manually** — Plugins → Install Plugin, and paste:
 
 ```
-https://raw.githubusercontent.com/george/docker.folders/main/docker.folders.plg
+https://raw.githubusercontent.com/gcarstoiu/docker.folders/main/docker.folders.plg
 ```
 
 Then open the **Docker** tab.
