@@ -584,7 +584,9 @@
  * 100vw includes the scrollbar, which would overhang.
  * ------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  .df-root { padding-bottom: 16px; }
+  /* Leave room for a bottom URL bar / home indicator, so the action bar is
+     not the thing hiding behind it. */
+  .df-root { padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); }
 
   .df-root .df-head {
     padding: 4px 12px 12px;

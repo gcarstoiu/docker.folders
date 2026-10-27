@@ -542,6 +542,86 @@ const TESTS = [
     ok(running === 0, `${running} containers still running after Stop all`);
   }),
 
+  /* The first version guessed "<name>.svg" on both CDNs and rendered an
+   * <img> without checking it existed: a name neither library carries gave
+   * a row of broken images, and a name they did carry still only offered
+   * three. The search now queries each catalogue's published index. */
+  t('icon search returns real matches, never broken images', async () => {
+    await fresh();
+    await clickButton('.df-head-actions', '+ New folder');
+    await page.waitForSelector('.df-dialog');
+
+    await page.$$eval('.df-tab', (tabs) =>
+      tabs.find((t) => t.textContent.trim() === 'From the web').click());
+    await page.waitForSelector('.df-icon-results', { timeout: 3000 });
+
+    /* A term both libraries carry: many results, exact match first. */
+    const search = '.df-ed-icon-panel input[type="search"]';
+    await page.$eval(search, (n) => { n.value = ''; });
+    await page.type(search, 'plex');
+    await page.waitForFunction(
+      () => document.querySelectorAll('.df-icon-card').length > 4, { timeout: 6000 });
+
+    const cards = await page.$$eval('.df-icon-card .df-icon-card-file', (n) => n.map((x) => x.textContent));
+    ok(cards.length > 4, `only ${cards.length} results for "plex"`);
+    ok(cards[0] === 'plex.svg', `first result was ${cards[0]}, expected the exact match`);
+
+    /* Every preview must actually load - no broken images. */
+    const broken = await page.$$eval('.df-icon-card img',
+      (imgs) => imgs.filter((i) => i.complete && i.naturalWidth === 0).length);
+    ok(broken === 0, `${broken} preview images failed to load`);
+
+    /* A term neither library carries: say so, and offer the monogram. */
+    await page.$eval(search, (n) => { n.value = ''; });
+    await page.type(search, 'cobra');
+    await page.waitForFunction(
+      () => /No icon named/.test(document.querySelector('.df-icon-results').textContent),
+      { timeout: 6000 });
+
+    const after = await page.$$eval('.df-icon-card .df-icon-card-name', (n) => n.map((x) => x.textContent));
+    ok(JSON.stringify(after) === '["Generated"]',
+       `expected only the monogram, got ${JSON.stringify(after)}`);
+    const stillBroken = await page.$$eval('.df-icon-card img',
+      (imgs) => imgs.filter((i) => i.complete && i.naturalWidth === 0).length);
+    ok(stillBroken === 0, 'a broken image was rendered for a term with no matches');
+
+    await shot('18-icon-search');
+    await page.keyboard.press('Escape');
+  }),
+
+  /* 100vh is the viewport without the browser's retractable chrome, so on a
+   * browser with the URL bar at the bottom the dialog's footer buttons end
+   * up behind it. */
+  t('dialog buttons stay on screen when the viewport is short', async () => {
+    await page.setViewport({ width: 420, height: 600, isMobile: true });
+    await fresh();
+    await clickButton('.df-head-actions', '+ New folder');
+    await page.waitForSelector('.df-dialog');
+
+    const fit = await page.evaluate(() => {
+      const foot = document.querySelector('.df-dialog-foot');
+      const r = foot.getBoundingClientRect();
+      return { bottom: r.bottom, viewport: window.innerHeight, visible: r.height > 0 };
+    });
+    ok(fit.visible, 'the dialog footer has no height');
+    ok(fit.bottom <= fit.viewport + 1,
+       `footer runs ${Math.round(fit.bottom - fit.viewport)}px past the bottom of the viewport`);
+
+    /* Confirm the rule is actually dvh, not just vh that happens to match. */
+    const usesDvh = await page.evaluate(() => {
+      const css = [...document.styleSheets]
+        .filter((s) => (s.href || '').includes('docker.folders'))
+        .flatMap((s) => { try { return [...s.cssRules]; } catch (e) { return []; } })
+        .map((r) => r.cssText).join('');
+      return /dvh/.test(css);
+    });
+    ok(usesDvh, 'no dvh units found - the fix is not in the stylesheets');
+
+    await shot('19-short-viewport');
+    await page.keyboard.press('Escape');
+    await page.setViewport({ width: 1440, height: 1000, isMobile: false });
+  }),
+
   t('every control is reachable by keyboard', async () => {
     await fresh('&folded=all');
     const reached = await page.evaluate(() => {

@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.27c">
-<!ENTITY md5       "f2f5cb016348d1df9d19067a248892b5">
+<!ENTITY version   "2026.10.27d">
+<!ENTITY md5       "01d5bdcad5ac86152c3fe6518c7e4e19">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +21,22 @@
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.27d
+- The tip line at the foot of the table is replaced by the eight actions from
+  the classic Docker view: Add Container, Start, Stop, Pause, Resume, Check
+  for Updates, Update and (in the overflow) Container Size. The four
+  lifecycle actions are one group labelled "All containers", and Stop and
+  Pause confirm first - they act on every container on the server.
+  Add Container uses Unraid's brand orange.
+- Fix: searching for a folder icon showed broken images and never more than
+  three results. It guessed filenames on both CDNs without checking they
+  existed. It now searches each library's published index: "plex" returns 19
+  real matches, and a name neither carries says so instead of showing
+  broken tiles.
+- Fix: on browsers with the URL bar at the bottom, a dialog's buttons were
+  hidden behind it. Dialogs, menus and the progress panel now size to the
+  visible viewport and keep clear of the home indicator.
+
 ###2026.10.27c
 - Fix: on a phone the table jumped back to the left a second after being
   scrolled sideways. The live CPU/memory stream republishes about once a

@@ -76,6 +76,25 @@ define('DF_DOCKER_MAN',          $harness.'/mock/plugins/dynamix.docker.manager'
 define('DF_DOCKER_MAN_AUTOSTART',$harness.'/state/unraid-autostart');
 define('DF_CONTAINER_SOURCE',    $harness.'/mock/container_source.php');
 
+/* Icon catalogues served locally, so a test never depends on the real CDNs
+ * being reachable. Same shape as production: an index URL plus a base the
+ * icon paths hang off. */
+$base = 'http://localhost:'.($_SERVER['SERVER_PORT'] ?? '8089').'/icondata/';
+define('DF_ICON_SOURCES', [
+  'dashboard-icons' => [
+    'label' => 'Dashboard Icons',
+    'base'  => $base.'dashboard-icons/',
+    'index' => $base.'dashboard-icons/index.json',
+    'host'  => 'localhost',
+  ],
+  'selfhst' => [
+    'label' => 'selfh.st icons',
+    'base'  => $base.'selfhst/',
+    'index' => $base.'selfhst/index.json',
+    'host'  => 'localhost',
+  ],
+]);
+
 /* Seed the folder store from the fixtures on first run so the page opens
  * looking like design/screenshots/01-overview.png. */
 if (!is_file(DF_CONFIG_DIR.'/folders.json')) {

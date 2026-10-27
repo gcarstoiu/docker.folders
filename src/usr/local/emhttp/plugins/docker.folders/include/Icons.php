@@ -41,20 +41,43 @@ df_install_error_handler();
 const DF_ICON_MAX_BYTES = 512 * 1024;      // 512 KB is generous for an icon
 const DF_ICON_TIMEOUT   = 12;
 
-/* jsDelivr serves both collections from GitHub with predictable paths.
- * Verified reachable 2026-10-27. */
-const DF_ICON_SOURCES = [
+/* jsDelivr serves both collections from GitHub with predictable paths, and
+ * each publishes an index of what it actually contains. Verified 2026-10-27:
+ *
+ *   dashboard-icons  tree.json   {"svg":["1337x.svg",...], "png":[...], ...}
+ *                                2255 svg icons
+ *   selfh.st         index.json  [{"Name","Reference","SVG","Tags",...}, ...]
+ *                                2968 entries, 2503 with svg
+ *
+ * Searching those indexes is the whole point: the first version guessed
+ * "<slug>.svg" on both CDNs and rendered an <img> for each without checking
+ * it existed, so any name the catalogues do not carry (for instance "cobra",
+ * which neither has) produced a row of broken images - and a name they do
+ * carry, like "plex" with 19 real matches, still only ever offered three.
+ *
+ * jsDelivr's own file-listing API is not usable here: these repos exceed its
+ * 50 MB package limit and it answers 403. */
+defined('DF_ICON_SOURCES') || define('DF_ICON_SOURCES', [
   'dashboard-icons' => [
     'label' => 'Dashboard Icons',
-    'base'  => 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/',
+    'base'  => 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@main/',
+    'index' => 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons@main/tree.json',
     'host'  => 'cdn.jsdelivr.net',
   ],
   'selfhst' => [
     'label' => 'selfh.st icons',
-    'base'  => 'https://cdn.jsdelivr.net/gh/selfhst/icons/',
+    'base'  => 'https://cdn.jsdelivr.net/gh/selfhst/icons@main/',
+    'index' => 'https://cdn.jsdelivr.net/gh/selfhst/icons@main/index.json',
     'host'  => 'cdn.jsdelivr.net',
   ],
-];
+]);
+
+/* The indexes are ~0.2 MB and ~0.9 MB. Cached in DF_RUN_DIR, which is tmpfs:
+ * they are re-fetched after a reboot, and the flash drive is never written
+ * to for something this disposable. */
+const DF_INDEX_TTL   = 86400;          // a day
+const DF_INDEX_MAX   = 8 * 1024 * 1024;
+const DF_SEARCH_LIMIT = 36;
 
 /* ------------------------------------------------------------------------
  * GET: serve a stored icon
@@ -94,29 +117,39 @@ $action = $_POST['action'] ?? '';
 
 if ($action === 'search') {
   $query = trim((string)($_POST['query'] ?? ''));
-  if ($query === '') df_ok(['results' => []]);
-
-  /* Both collections name files after a slug of the app name. We cannot list
-   * a CDN directory, so we offer the conventional path for each source and
-   * let the browser's <img> show whether it resolved. */
-  $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $query));
-  $slug = trim($slug, '-');
-  if ($slug === '') df_ok(['results' => []]);
+  if ($query === '') df_ok(['results' => [], 'query' => '']);
 
   $results = [];
+  $offline = [];
+
   foreach (DF_ICON_SOURCES as $key => $source) {
-    $results[] = [
-      'source'  => $key,
-      'label'   => $source['label'],
-      'file'    => $slug.'.svg',
-      'query'   => $slug,
-      'url'     => $source['base'].'svg/'.$slug.'.svg',
-      'preview' => $source['base'].'svg/'.$slug.'.svg',
-    ];
+    $index = df_icon_index($key, $source);
+    if ($index === null) { $offline[] = $source['label']; continue; }
+    foreach (df_icon_match($index, $query) as $hit) {
+      $results[] = [
+        'source'  => $key,
+        'label'   => $hit['label'],
+        'file'    => $hit['file'],
+        'query'   => $hit['slug'],
+        'url'     => $source['base'].$hit['path'],
+        'preview' => $source['base'].$hit['path'],
+        'rank'    => $hit['rank'],
+      ];
+    }
   }
 
-  /* Always offer a generated monogram, so there is a working choice even
-   * with no network or no match (spec 9). */
+  /* Best matches first, then alphabetical so the order is stable. */
+  usort($results, function ($a, $b) {
+    return $a['rank'] <=> $b['rank'] ?: strnatcasecmp($a['label'], $b['label']);
+  });
+  $total = count($results);
+  $results = array_slice($results, 0, DF_SEARCH_LIMIT);
+  foreach ($results as &$r) unset($r['rank']);
+  unset($r);
+
+  /* A monogram is always offered: it needs no network and always works, so
+   * there is a usable choice even when nothing matched. */
+  $slug = df_icon_slug($query);
   $results[] = [
     'source'  => 'generated',
     'label'   => 'Generated',
@@ -126,7 +159,13 @@ if ($action === 'search') {
     'preview' => '',
   ];
 
-  df_ok(['results' => $results]);
+  df_ok([
+    'results' => $results,
+    'total'   => $total,
+    'shown'   => max(0, count($results) - 1),
+    'query'   => $query,
+    'offline' => $offline,
+  ]);
 }
 
 if ($action === 'download') {
@@ -161,41 +200,187 @@ if ($action === 'download') {
 df_fail('Unknown action');
 
 /* ------------------------------------------------------------------------
+ * Catalogue indexes
+ * ---------------------------------------------------------------------- */
+
+function df_icon_slug(string $text): string {
+  $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $text));
+  return trim($slug, '-');
+}
+
+/* Fetch (and cache) one catalogue's index, normalised to a flat list of
+ *   [slug, label, file, path]
+ * Returns null when it cannot be had at all - offline, say - so the caller
+ * can tell "no matches" apart from "could not look". */
+function df_icon_index(string $key, array $source): ?array {
+  $cache = DF_RUN_DIR.'/index-'.$key.'.json';
+
+  if (is_file($cache) && (time() - (int)@filemtime($cache)) < DF_INDEX_TTL) {
+    $cached = json_decode((string)@file_get_contents($cache), true);
+    if (is_array($cached)) return $cached;
+  }
+
+  $raw = df_fetch_text($source['index'], DF_INDEX_MAX);
+  if ($raw === null) {
+    /* Serve a stale cache rather than nothing: a day-old icon list is far
+     * more useful than an empty search. */
+    if (is_file($cache)) {
+      $cached = json_decode((string)@file_get_contents($cache), true);
+      if (is_array($cached)) return $cached;
+    }
+    return null;
+  }
+
+  $parsed = json_decode($raw, true);
+  if (!is_array($parsed)) return null;
+
+  $entries = $key === 'selfhst'
+    ? df_index_selfhst($parsed)
+    : df_index_dashboard($parsed);
+
+  df_write_atomic($cache, json_encode($entries, JSON_UNESCAPED_SLASHES));
+  return $entries;
+}
+
+/* dashboard-icons: {"svg":["plex.svg", ...], "png":[...], "webp":[...]}.
+ * Only names - the filename stem is the label. svg is preferred; png covers
+ * the icons that have no vector. */
+function df_index_dashboard(array $tree): array {
+  $out = [];
+  $seen = [];
+
+  foreach (['svg', 'png'] as $ext) {
+    foreach ((array)($tree[$ext] ?? []) as $file) {
+      if (!is_string($file)) continue;
+      $slug = substr($file, 0, -(strlen($ext) + 1));
+      if ($slug === '' || isset($seen[$slug])) continue;
+      $seen[$slug] = true;
+      $out[] = [
+        'slug'  => $slug,
+        'label' => str_replace('-', ' ', $slug),
+        'file'  => $file,
+        'path'  => $ext.'/'.$file,
+        'terms' => $slug,
+      ];
+    }
+  }
+  return $out;
+}
+
+/* selfh.st: [{"Name","Reference","SVG","PNG","Tags",...}]. Carries proper
+ * display names and tags, so those are searched too. */
+function df_index_selfhst(array $list): array {
+  $out = [];
+  foreach ($list as $e) {
+    if (!is_array($e) || empty($e['Reference'])) continue;
+    $ref = (string)$e['Reference'];
+    $ext = (($e['SVG'] ?? '') === 'Yes') ? 'svg' : ((($e['PNG'] ?? '') === 'Yes') ? 'png' : null);
+    if ($ext === null) continue;
+
+    $out[] = [
+      'slug'  => $ref,
+      'label' => (string)($e['Name'] ?? $ref),
+      'file'  => $ref.'.'.$ext,
+      'path'  => $ext.'/'.$ref.'.'.$ext,
+      'terms' => strtolower($ref.' '.($e['Name'] ?? '').' '.($e['Tags'] ?? '')),
+    ];
+  }
+  return $out;
+}
+
+/* Rank 0 exact, 1 prefix, 2 word start, 3 anywhere. */
+function df_icon_match(array $index, string $query): array {
+  $q = strtolower(trim($query));
+  if ($q === '') return [];
+  $qSlug = df_icon_slug($query);
+
+  $hits = [];
+  foreach ($index as $entry) {
+    $slug  = strtolower($entry['slug']);
+    $terms = strtolower($entry['terms'] ?? $entry['slug']);
+
+    if ($slug === $q || $slug === $qSlug)          $rank = 0;
+    elseif (strpos($slug, $qSlug) === 0)           $rank = 1;
+    elseif (strpos(' '.$terms, ' '.$q) !== false)  $rank = 2;
+    elseif (strpos($terms, $q) !== false)          $rank = 3;
+    else continue;
+
+    $entry['rank'] = $rank;
+    $hits[] = $entry;
+  }
+  return $hits;
+}
+
+/* A plain text GET with a size cap, used for the catalogue indexes. */
+function df_fetch_text(string $url, int $max): ?string {
+  $ch = curl_init($url);
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_FOLLOWLOCATION => true,      // the CDN redirects to a versioned path
+    CURLOPT_MAXREDIRS      => 3,
+    CURLOPT_TIMEOUT        => 25,
+    CURLOPT_CONNECTTIMEOUT => 8,
+    CURLOPT_USERAGENT      => 'docker.folders (Unraid plugin)',
+    CURLOPT_ENCODING       => '',        // these indexes gzip well
+    CURLOPT_NOPROGRESS     => false,
+    CURLOPT_PROGRESSFUNCTION => function ($res, $dlTotal, $dlNow) use ($max) {
+      return ($dlTotal > $max || $dlNow > $max) ? 1 : 0;
+    },
+  ]);
+  $body = curl_exec($ch);
+  $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+  curl_close($ch);
+
+  if ($body === false || $code !== 200 || $body === '') return null;
+  return $body;
+}
+
+/* ------------------------------------------------------------------------
  * Fetching
  * ---------------------------------------------------------------------- */
 
 /** @return array{0:string,1:string,2:string} [bytes, extension, host] */
 function df_fetch_icon(string $url, string $source): array {
   $parts = parse_url($url);
-  if (!$parts || ($parts['scheme'] ?? '') !== 'https' || empty($parts['host'])) {
-    throw new RuntimeException('Only https image links are accepted');
+  if (!$parts || empty($parts['host'])) {
+    throw new RuntimeException('That is not a usable link');
   }
   $host = $parts['host'];
 
-  /* A known collection must stay on its own host. A pasted URL may be
-   * anywhere public, but must look like a direct image link - the spec lists
-   * the accepted extensions. */
-  if (isset(DF_ICON_SOURCES[$source])) {
-    if ($host !== DF_ICON_SOURCES[$source]['host']) {
+  /* A URL this plugin produced from a catalogue index is trusted as far as
+   * its shape goes: it came from the library's own manifest, so it needs no
+   * extension guessing and no public-DNS check. It must still be on that
+   * library's base URL - which is https in production. */
+  $fromCatalogue = isset(DF_ICON_SOURCES[$source])
+    && strpos($url, DF_ICON_SOURCES[$source]['base']) === 0;
+
+  if (!$fromCatalogue) {
+    /* A URL the user pasted. Anywhere public, but it has to look like a
+     * direct image link, and it must not be an address on this LAN. */
+    if (($parts['scheme'] ?? '') !== 'https') {
+      throw new RuntimeException('Only https image links are accepted');
+    }
+    if (isset(DF_ICON_SOURCES[$source]) && $host !== DF_ICON_SOURCES[$source]['host']) {
       throw new RuntimeException('That link is not from '.DF_ICON_SOURCES[$source]['label']);
     }
-  } else {
     $path = strtolower(parse_url($url, PHP_URL_PATH) ?: '');
     if (!preg_match('/\.(png|svg|jpe?g|webp|ico)$/', $path)) {
       throw new RuntimeException('The link must end in .png, .svg, .jpg, .jpeg, .webp or .ico');
     }
+    df_assert_public_host($host);
   }
-
-  df_assert_public_host($host);
 
   $ch = curl_init($url);
   curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_FOLLOWLOCATION => false,          // a redirect could leave the allowed host
+    /* A pasted URL must not redirect: it could leave the host we checked.
+     * A catalogue URL may - jsDelivr redirects to a versioned path. */
+    CURLOPT_FOLLOWLOCATION => $fromCatalogue,
+    CURLOPT_MAXREDIRS      => 3,
     CURLOPT_TIMEOUT        => DF_ICON_TIMEOUT,
     CURLOPT_CONNECTTIMEOUT => 6,
     CURLOPT_USERAGENT      => 'docker.folders (Unraid plugin)',
-    CURLOPT_PROTOCOLS      => CURLPROTO_HTTPS,
+    CURLOPT_PROTOCOLS      => $fromCatalogue ? (CURLPROTO_HTTPS | CURLPROTO_HTTP) : CURLPROTO_HTTPS,
     /* Stop reading the moment the response exceeds the cap, rather than
      * buffering an arbitrarily large body first. */
     CURLOPT_NOPROGRESS     => false,
@@ -227,6 +412,17 @@ function df_fetch_icon(string $url, string $source): array {
 /* Refuse to fetch from anything that is not a public address, so this
  * endpoint cannot be turned into a LAN scanner against the server itself. */
 function df_assert_public_host(string $host): void {
+  /* An address written as a literal needs checking, not resolving - a DNS
+   * lookup of "192.168.1.1" returns nothing and would otherwise be reported
+   * as "could not resolve", which hides the actual reason it was refused. */
+  if (filter_var($host, FILTER_VALIDATE_IP)) {
+    if (!filter_var($host, FILTER_VALIDATE_IP,
+          FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+      throw new RuntimeException('That address is not public');
+    }
+    return;
+  }
+
   $ips = [];
   foreach ((array)@dns_get_record($host, DNS_A | DNS_AAAA) as $record) {
     if (!empty($record['ip']))   $ips[] = $record['ip'];

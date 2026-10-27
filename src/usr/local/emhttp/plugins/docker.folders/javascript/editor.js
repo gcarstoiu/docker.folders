@@ -283,32 +283,32 @@
       var results = U.clear(refs.iconResults);
       if (!query) return;
 
-      results.appendChild(U.el('div.df-ed-hint', { text: 'Searching…' }));
+      results.appendChild(U.el('div.df-ed-hint', { text: 'Searching\u2026' }));
 
       DF.api.searchIcons(query)
         .then(function (res) {
           if (!refs.iconResults) return;
           var box = U.clear(refs.iconResults);
+          var list = res.results || [];
 
-          (res.results || []).forEach(function (item) {
-            box.appendChild(U.el('button.df-icon-card', {
-              type: 'button',
-              'aria-label': item.label + ': ' + item.file,
-              onClick: function () { pickWebIcon(item); }
-            }, [
-              U.el('span.df-icon-card-art', { 'data-source': item.source }, [
-                item.preview
-                  ? U.el('img', { src: item.preview, alt: '', loading: 'lazy' })
-                  : U.el('span.df-icon-card-letter', { text: (query.charAt(0) || '?').toUpperCase() })
-              ]),
-              U.el('span.df-icon-card-name', { text: item.label }),
-              U.el('span.df-icon-card-file', { text: item.file })
-            ]));
-          });
+          /* The server answers with entries it has verified exist in the
+           * catalogue index, plus a generated monogram last. */
+          var real = list.filter(function (i) { return i.source !== 'generated'; });
 
-          if (!(res.results || []).length) {
-            box.appendChild(U.el('div.df-ed-hint', { text: 'No icons matched “' + query + '”' }));
+          if (!real.length) {
+            box.appendChild(U.el('div.df-ed-hint', {
+              text: (res.offline && res.offline.length)
+                ? 'Could not reach ' + res.offline.join(' or ') + '. Use a monogram, or paste an image URL.'
+                : 'No icon named \u201C' + query + '\u201D in either library. '
+                  + 'Use the monogram below, or paste an image URL.'
+            }));
+          } else if (res.total > real.length) {
+            box.appendChild(U.el('div.df-ed-hint', {
+              text: 'Showing ' + real.length + ' of ' + res.total + ' matches \u2014 narrow the search for more.'
+            }));
           }
+
+          list.forEach(function (item) { box.appendChild(iconCard(item, query)); });
         })
         .catch(function (err) {
           if (!refs.iconResults) return;
@@ -316,6 +316,45 @@
             U.el('div.df-ed-error', { text: err.message })
           );
         });
+    }
+
+    /* One result tile. A preview that fails to load is replaced by the
+     * initial rather than left as a broken-image glyph - the old search
+     * guessed filenames, so a row of broken tiles was the normal outcome. */
+    function iconCard(item, query) {
+      var art = U.el('span.df-icon-card-art', { 'data-source': item.source });
+
+      if (item.preview) {
+        var img = U.el('img', {
+          src: item.preview, alt: '', loading: 'lazy',
+          onError: function () {
+            if (img.parentNode === art) {
+              art.replaceChild(letterFallback(item, query), img);
+            }
+          }
+        });
+        art.appendChild(img);
+      } else {
+        art.appendChild(letterFallback(item, query));
+      }
+
+      return U.el('button.df-icon-card', {
+        type: 'button',
+        'aria-label': item.label + ': ' + item.file,
+        title: item.file,
+        onClick: function () { pickWebIcon(item); }
+      }, [
+        art,
+        U.el('span.df-icon-card-name', { text: item.label }),
+        U.el('span.df-icon-card-file', { text: item.file })
+      ]);
+    }
+
+    function letterFallback(item, query) {
+      var source = item.label && item.source !== 'generated' ? item.label : query;
+      return U.el('span.df-icon-card-letter', {
+        text: ((source || '?').charAt(0) || '?').toUpperCase()
+      });
     }
 
     function pickWebIcon(item) {

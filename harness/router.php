@@ -80,6 +80,14 @@ foreach ($map as $prefix => $dir) {
   return true;
 }
 
+/* ---- icon catalogue stand-in ------------------------------------------ */
+if (preg_match('#^/icondata/([a-z-]+)/(.+)$#', $path, $m)) {
+  $_GET['source'] = $m[1];
+  $_GET['rest']   = $m[2];
+  require $root.'/mock/icons.php';
+  return true;
+}
+
 /* ---- design mockups --------------------------------------------------- */
 if ($path === '/mockups') {
   $_SERVER['DOCUMENT_ROOT'] = $root.'/mock';

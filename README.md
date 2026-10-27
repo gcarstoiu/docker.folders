@@ -31,8 +31,12 @@ Supports **Unraid 7.2 – 7.4**.
   starts containers in the same order the folder uses. No second, competing
   order to keep in sync.
 - **Folder icons** from a built-in set, from one of the member containers, or
-  downloaded from Dashboard Icons / selfh.st and stored locally so they still
-  render with no internet.
+  searched across Dashboard Icons and selfh.st — both libraries' published
+  indexes, so results are real files rather than guessed names — and stored
+  locally so they still render with no internet.
+- **The classic Docker actions** at the foot of the table: add a container,
+  start/stop/pause/resume everything, check for and apply updates, container
+  size. Stop and Pause confirm first.
 - **Classic view.** One switch puts Unraid's standard table back, untouched.
 
 ![A folder unfolded, showing its containers in start order](docs/screenshot-expanded.png)
