@@ -8,7 +8,7 @@
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
 <!ENTITY version   "2026.10.27">
-<!ENTITY md5       "4930892357a88184499fe31fe9c68981">
+<!ENTITY md5       "2669cf96671f6524b95198f8d313b661">
 ]>
 
 <PLUGIN name="&name;"

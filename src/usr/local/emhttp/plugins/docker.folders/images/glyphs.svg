@@ -100,4 +100,10 @@
     <circle cx="16.1" cy="11.6" r=".9"/>
     <circle cx="18" cy="13.6" r=".9"/>
   </symbol>
+
+  <!-- Not a folder icon: used by the filter box and the editor's searches. -->
+  <symbol id="df-g-search" viewBox="0 0 24 24">
+    <circle cx="10.6" cy="10.6" r="6.6"/>
+    <path d="M15.4 15.4l4.8 4.8"/>
+  </symbol>
 </svg>

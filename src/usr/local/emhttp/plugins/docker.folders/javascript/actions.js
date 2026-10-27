@@ -110,15 +110,17 @@
   /* ---------------------------------------------------------------------
    * Updates
    * ------------------------------------------------------------------- */
+  /* Unraid's DockerUpdate.php refreshes EVERY container's update flag in one
+   * pass; there is no per-folder variant. So this is a single step with a
+   * single progress row - listing each member would imply per-container work
+   * that never happens, leaving every row but the first stuck at "queued". */
   A.checkUpdates = function (folder) {
-    var names = folder ? DF.store.members(folder).map(nameOf) : [];
-    DF.jobs.run('Checking for updates', names, [{
-      name: names[0] || '',
+    var label = 'every container';
+    DF.jobs.run('Checking for updates', [label], [{
+      name: label,
       note: 'checking',
       doneNote: 'checked',
       busyLabel: 'Checking…',
-      /* Unraid's DockerUpdate.php refreshes every container at once; there is
-       * no per-folder variant, so this is a single step. */
       run: function () { return DF.api.checkUpdates(); }
     }]);
   };

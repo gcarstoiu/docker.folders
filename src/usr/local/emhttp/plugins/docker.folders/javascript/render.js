@@ -96,7 +96,7 @@
     var open = S.anyExpanded();
 
     var actions = U.el('div.df-head-actions', null, [
-      U.el('div.df-filter', null, [U.glyph('folder', 'df-filter-icon'), filter]),
+      U.el('div.df-filter', null, [U.glyph('search', 'df-filter-icon'), filter]),
 
       U.el('button.df-btn', {
         type: 'button',
@@ -198,10 +198,13 @@
       onClick: function (e) { DF.menus.folder(e.currentTarget, folder, 'left'); }
     }, [folderIconContent(folder)]);
 
+    /* Clicking the name folds the folder too - mouse convenience, not a second
+     * tab stop (spec 4.3), so tabindex="-1". It must NOT be aria-hidden:
+     * that would take the folder's name out of the accessibility tree and
+     * leave a screen reader with an unnamed row. */
     var nameButton = U.el('button.df-folder-name', {
       type: 'button',
-      tabindex: '-1',                 /* the chevron is the tab stop (spec 4.3) */
-      'aria-hidden': 'true',
+      tabindex: '-1',
       onClick: function () { if (!S.state.filter) S.toggle(folder.id); }
     }, folder.name);
 
