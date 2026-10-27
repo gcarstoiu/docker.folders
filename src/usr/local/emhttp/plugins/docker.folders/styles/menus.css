@@ -13,17 +13,19 @@
 /* The overlay host itself must occupy nothing and intercept nothing; it
    exists only to carry the token scope for its absolutely positioned
    children. .df-root's own padding would otherwise add a gap to the page. */
-.df-layer { padding: 0; position: static; }
-.df-layer > * { pointer-events: auto; }
+.df-root.df-layer { padding: 0; position: static; }
+.df-root.df-layer > * { pointer-events: auto; }
 
-.df-menu, .df-toasts, .df-panel {
+.df-root .df-menu,
+.df-root .df-toasts,
+.df-root .df-panel {
   font-family: var(--df-font-sans, inherit);
 }
 
 /* ---------------------------------------------------------------------------
  * Popover menu (spec 6)
  * ------------------------------------------------------------------------- */
-.df-menu {
+.df-root .df-menu {
   position: absolute;
   z-index: 10050;
   width: var(--df-menu-w, 260px);
@@ -41,7 +43,7 @@
   to   { opacity: 1; transform: none; }
 }
 
-.df-menu-head {
+.df-root .df-menu-head {
   padding: 7px 9px 9px;
   font-size: var(--df-fs-caption);
   font-weight: 600;
@@ -51,7 +53,7 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-.df-menu-sub {
+.df-root .df-menu-sub {
   padding: 9px 9px 4px;
   font-family: var(--df-font-mono);
   font-size: var(--df-fs-eyebrow);
@@ -60,7 +62,7 @@
   color: var(--df-text-faint);
 }
 
-.df-menu-item {
+.df-root .df-menu-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -73,21 +75,21 @@
   text-align: left;
   color: var(--df-text);
 }
-.df-menu-item:hover:not([disabled]) { background: var(--df-bg-hover-menu); }
-.df-menu-item[disabled] { opacity: .4; cursor: not-allowed; }
+.df-root .df-menu-item:hover:not([disabled]) { background: var(--df-bg-hover-menu); }
+.df-root .df-menu-item[disabled] { opacity: .4; cursor: not-allowed; }
 
-.df-menu-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.df-menu-hint {
+.df-root .df-menu-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.df-root .df-menu-hint {
   flex: none;
   font-family: var(--df-font-mono);
   font-size: var(--df-fs-eyebrow);
   color: var(--df-text-faint);
 }
 
-.df-menu-warn   .df-menu-label { color: var(--df-warn-fg); }
-.df-menu-danger .df-menu-label { color: var(--df-danger-fg); }
+.df-root .df-menu-warn   .df-menu-label { color: var(--df-warn-fg); }
+.df-root .df-menu-danger .df-menu-label { color: var(--df-danger-fg); }
 
-.df-menu-divider {
+.df-root .df-menu-divider {
   height: 1px;
   margin: 5px 4px;
   background: var(--df-border-soft);
@@ -96,7 +98,7 @@
 /* ---------------------------------------------------------------------------
  * Toasts (spec 7.2) - bottom-left, auto-dismiss after 4.2s
  * ------------------------------------------------------------------------- */
-.df-toasts {
+.df-root .df-toasts {
   position: fixed;
   left: 16px; bottom: 16px;
   z-index: 10060;
@@ -105,7 +107,7 @@
   gap: 8px;
   pointer-events: none;
 }
-.df-toast {
+.df-root .df-toast {
   max-width: 420px;
   padding: 11px 14px;
   border: 1px solid var(--df-border-popover);
@@ -116,12 +118,12 @@
   box-shadow: 0 10px 26px rgba(0, 0, 0, .38);
   animation: df-pop var(--df-t-popover) ease-out;
 }
-.df-toast-error { border-color: var(--df-danger-border); color: var(--df-danger-fg); }
+.df-root .df-toast-error { border-color: var(--df-danger-border); color: var(--df-danger-fg); }
 
 /* ---------------------------------------------------------------------------
  * Progress panel (spec 7.1) - fixed bottom-right, 340px
  * ------------------------------------------------------------------------- */
-.df-panel {
+.df-root .df-panel {
   position: fixed;
   right: 16px; bottom: 16px;
   z-index: 10055;
@@ -136,21 +138,21 @@
   animation: df-pop var(--df-t-popover) ease-out;
 }
 
-.df-panel-head {
+.df-root .df-panel-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
   padding: 12px 14px 8px;
 }
-.df-panel-title { font-size: var(--df-fs-small); font-weight: 600; }
-.df-panel-step  { font-family: var(--df-font-mono); font-size: var(--df-fs-eyebrow); color: var(--df-text-faint); }
+.df-root .df-panel-title { font-size: var(--df-fs-small); font-weight: 600; }
+.df-root .df-panel-step { font-family: var(--df-font-mono); font-size: var(--df-fs-eyebrow); color: var(--df-text-faint); }
 
-.df-progress {
+.df-root .df-progress {
   height: 4px;
   margin: 0 14px;
   border-radius: 2px;
   background: var(--df-stopped-seg);
   overflow: hidden;
 }
-.df-progress-fill {
+.df-root .df-progress-fill {
   height: 100%;
   width: 0;
   background: var(--df-accent);
@@ -158,56 +160,58 @@
   transition: width var(--df-t-progress) ease;
 }
 
-.df-panel-list {
+.df-root .df-panel-list {
   margin: 10px 0 0;
   padding: 0 6px 6px;
   overflow-y: auto;
   list-style: none;
 }
-.df-panel-row {
+.df-root .df-panel-row {
   display: flex; align-items: center; gap: 9px;
   padding: 6px 8px;
   border-radius: 7px;
   font-size: var(--df-fs-caption);
 }
-.df-panel-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.df-panel-note {
+.df-root .df-panel-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.df-root .df-panel-note {
   flex: none;
   font-family: var(--df-font-mono);
   font-size: var(--df-fs-eyebrow);
   color: var(--df-text-faint);
 }
-.df-panel-row.is-active { background: var(--df-bg-hover-menu); }
-.df-panel-row.is-failed .df-panel-note { color: var(--df-danger-fg); }
+.df-root .df-panel-row.is-active { background: var(--df-bg-hover-menu); }
+.df-root .df-panel-row.is-failed .df-panel-note { color: var(--df-danger-fg); }
 
 /* Queued = hollow ring, active = spinner, done = filled dot (spec 7.1). */
-.df-mark { flex: none; width: 10px; height: 10px; border-radius: 50%; }
-.df-mark-queued { box-shadow: inset 0 0 0 2px var(--df-stopped-ring); }
-.df-mark-done   { background: var(--df-running); }
-.df-mark-failed { background: var(--df-danger-fg); }
-.df-mark-active {
+.df-root .df-mark { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.df-root .df-mark-queued { box-shadow: inset 0 0 0 2px var(--df-stopped-ring); }
+.df-root .df-mark-done { background: var(--df-running); }
+.df-root .df-mark-failed { background: var(--df-danger-fg); }
+.df-root .df-mark-active {
   border: 2px solid var(--df-busy);
   border-top-color: transparent;
   animation: df-spin .8s linear infinite;
 }
 
-.df-panel-foot {
+.df-root .df-panel-foot {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 9px 14px 12px;
   border-top: 1px solid var(--df-border-soft);
   font-size: var(--df-fs-caption);
   color: var(--df-text-muted);
 }
-.df-panel-close {
+.df-root .df-panel-close {
   padding: 5px 10px;
   border: 1px solid var(--df-border-control);
   border-radius: 7px;
   font-size: var(--df-fs-caption);
   color: var(--df-text);
 }
-.df-panel-close:hover { background: var(--df-bg-hover-ghost); }
+.df-root .df-panel-close:hover { background: var(--df-bg-hover-ghost); }
 
 @media (prefers-reduced-motion: reduce) {
-  .df-menu, .df-toast, .df-panel { animation: none; }
-  .df-mark-active { animation: df-spin 2.4s linear infinite; }
+  .df-root .df-menu,
+.df-root .df-toast,
+.df-root .df-panel { animation: none; }
+  .df-root .df-mark-active { animation: df-spin 2.4s linear infinite; }
 }

@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.27a">
-<!ENTITY md5       "019cb2c05f18dbd56110769d73d85d09">
+<!ENTITY version   "2026.10.27b">
+<!ENTITY md5       "d2d68ef7c0cb063d302677b934a719d2">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +21,16 @@
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.27b
+- Fix: Unraid's own button styling repainted every control in the plugin -
+  uppercase text, letter-spacing, a minimum width of 86px and an orange
+  border - leaving switches, menus and icons as oversized orange boxes.
+  The plugin now carries Unraid's "unapi" opt-out class, and its own element
+  reset is both complete and specific enough to win on its own.
+- The page no longer prints a second "Docker Folders" section header or
+  repeats the "Containers" title. Unraid's heading is followed directly by
+  the container counts.
+
 ###2026.10.27a
 - Fix: the Docker page showed "Request failed (500)" and no containers.
   Unraid's DockerClient.php was being required from inside a function, which

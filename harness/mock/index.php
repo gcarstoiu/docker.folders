@@ -31,6 +31,10 @@ $plugin = __DIR__.'/../../src/usr/local/emhttp/plugins/docker.folders';
 <title>Docker — harness (<?=htmlspecialchars($theme)?>)</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="/webGui/javascript/nchan.js"></script>
+<!-- Unraid's element styling, which a plugin's UI has to survive. See the
+     file header: without this the harness is friendlier than a real server
+     and CSS collisions ship undetected. -->
+<link rel="stylesheet" href="/webGui/styles/unraid-base-excerpt.css">
 <style>
   /* A deliberately minimal stand-in for Unraid's stylesheets: enough structure
      to catch layout mistakes, not enough to mask them. */

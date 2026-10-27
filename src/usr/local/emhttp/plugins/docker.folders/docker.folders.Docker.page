@@ -1,5 +1,4 @@
 Menu="Docker"
-Title="Docker Folders"
 Cond="is_file('/var/run/dockerd.pid')"
 Markdown="false"
 Tabs="false"
@@ -21,6 +20,13 @@ Tabs="false"
  * document as the native table, with jQuery, NchanSubscriber, csrf_token,
  * docker[] and loadlist() already defined.
  *
+ * There is deliberately NO Title= above. emhttp renders a grey section
+ * header for every page that has one, so a Title would put a second
+ * "Docker Folders" bar under Unraid's own "Docker Containers" heading. Both
+ * page renderers (MainContentTabless and MainContentTabbed) evaluate a
+ * page's content whether or not it has a Title, so dropping it costs
+ * nothing and keeps a single heading on the page.
+ *
  * Nothing here patches a core file. Removing the plugin removes the feature
  * and leaves the stock page untouched.
  * ---------------------------------------------------------------------------
@@ -40,8 +46,13 @@ $dfTheme = $display['theme'] ?? 'black';
 
 <!-- Mount point. The app renders here; the native table above is hidden
      (not removed) so "Classic view" can bring it straight back. -->
+<!-- "unapi" is Unraid's own opt-out: its base stylesheet guards every
+     element rule with :where(:not(.unapi *)), so everything inside here is
+     exempt from the webGUI styling of button, input, select, textarea,
+     table and p. Without it, Unraid repaints every control in this plugin
+     (uppercase, letter-spacing, min-width 86px, an orange border). -->
 <div id="df-root"
-     class="df-root"
+     class="df-root unapi"
      data-theme="<?=htmlspecialchars($dfTheme)?>"
      data-base="<?=htmlspecialchars($dfBase)?>"
      hidden></div>

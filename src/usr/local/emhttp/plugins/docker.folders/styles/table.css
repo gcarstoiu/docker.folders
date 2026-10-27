@@ -17,19 +17,62 @@
   color: var(--df-text);
   padding: 0 0 24px;
 }
-.df-root *, .df-root *::before, .df-root *::after { box-sizing: border-box; }
+.df-root *,
+.df-root *::before,
+.df-root *::after { box-sizing: border-box; }
 
-/* The webGUI styles bare inputs and buttons heavily; reset only inside ours.
+/* ---------------------------------------------------------------------------
+ * Element reset
  *
- * :where() zeroes the selector's specificity, so this reset is (0,0,1) and
- * every component class below beats it. Written as ".df-root button" it
- * would be (0,1,1) and would out-specify single-class rules like .df-btn and
- * .df-switch - which silently strips their background and border. */
-:where(.df-root) button {
-  font: inherit; color: inherit; background: none; border: 0;
-  margin: 0; padding: 0; cursor: pointer;
+ * The webGUI styles bare controls hard. Its rule is, in full:
+ *
+ *   button:where(:not(.unapi *)) {
+ *     font-family: clear-sans; font-size: 1.1rem; font-weight: bold;
+ *     letter-spacing: 1.8px; text-transform: uppercase; min-width: 86px;
+ *     margin: 10px 12px 10px 0; padding: 8px; text-align: center;
+ *     white-space: nowrap; border-radius: 4px; border: var(--button-border);
+ *     color: var(--button-text-color); background: var(--button-background);
+ *     ...
+ *   }
+ *
+ * Two mistakes were made here and both shipped:
+ *
+ *  1. The reset was written as ":where(.df-root) button", specificity
+ *     (0,0,1) - a deliberate tie with Unraid's selector, decided only by
+ *     load order. Relying on load order inside someone else's page is not a
+ *     guarantee. It is now ".df-root button", (0,1,1), which beats Unraid's
+ *     outright; every component rule below is ".df-root .df-xxx", (0,2,0),
+ *     so they still beat this reset.
+ *
+ *  2. It reset too few properties. text-transform, letter-spacing,
+ *     min-width, text-align and border-radius were never cleared, so
+ *     controls came out UPPERCASE, letter-spaced and 86px wide. Everything
+ *     Unraid sets is cleared below.
+ *
+ * #df-root also carries Unraid's own "unapi" opt-out class, which exempts it
+ * from these rules entirely. This reset is the belt to that's braces: it
+ * holds even for rules that carry no opt-out.
+ * ------------------------------------------------------------------------- */
+.df-root button,
+.df-root input,
+.df-root select,
+.df-root textarea {
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  white-space: normal;
+  box-shadow: none;
+  outline-offset: 0;
 }
-:where(.df-root) input { font: inherit; }
+.df-root button { cursor: pointer; }
 
 .df-root :focus-visible {
   outline: 2px solid var(--df-accent);
@@ -37,44 +80,33 @@
   border-radius: 4px;
 }
 
-.df-mono  { font-family: var(--df-font-mono); font-size: var(--df-fs-small); }
-.df-muted { color: var(--df-text-dim); }
+.df-root .df-mono { font-family: var(--df-font-mono); font-size: var(--df-fs-small); }
+.df-root .df-muted { color: var(--df-text-dim); }
 
 /* ---------------------------------------------------------------------------
  * Header
  * ------------------------------------------------------------------------- */
-.df-head {
+/* Sits immediately under Unraid's own "Docker Containers" heading, so the
+   top padding is modest - this is a continuation of that heading, not a new
+   one. */
+.df-root .df-head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
-  padding: 20px 16px 16px;
+  padding: 4px 16px 14px;
 }
-.df-eyebrow {
-  font-family: var(--df-font-mono);
-  font-size: var(--df-fs-eyebrow);
-  letter-spacing: .14em;
-  color: var(--df-text-faint);
-  text-transform: uppercase;
-}
-.df-title {
-  margin: 6px 0 4px;
-  font-size: var(--df-fs-title);
-  font-weight: 600;
-  line-height: 1.15;
-  color: var(--df-text);
-}
-.df-summary { font-size: var(--df-fs-small); color: var(--df-text-muted); }
+.df-root .df-summary { font-size: var(--df-fs-body); color: var(--df-text-muted); }
 
-.df-head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.df-root .df-head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-.df-filter { position: relative; display: flex; align-items: center; }
-.df-filter-icon {
+.df-root .df-filter { position: relative; display: flex; align-items: center; }
+.df-root .df-filter-icon {
   position: absolute; left: 11px; width: 15px; height: 15px;
   color: var(--df-text-dim); pointer-events: none;
 }
-.df-filter-input {
+.df-root .df-filter-input {
   height: var(--df-control-h);
   width: 260px;
   padding: 0 12px 0 34px;
@@ -83,9 +115,9 @@
   background: var(--df-bg-input);
   color: var(--df-text);
 }
-.df-filter-input::placeholder { color: var(--df-text-dim); }
+.df-root .df-filter-input::placeholder { color: var(--df-text-dim); }
 
-.df-btn {
+.df-root .df-btn {
   height: var(--df-control-h);
   padding: 0 14px;
   border: 1px solid var(--df-border-control);
@@ -96,23 +128,23 @@
   font-weight: 500;
   white-space: nowrap;
 }
-.df-btn:hover:not(:disabled) { background: var(--df-bg-hover-ghost); }
-.df-btn:disabled { opacity: .4; cursor: not-allowed; }
+.df-root .df-btn:hover:not(:disabled) { background: var(--df-bg-hover-ghost); }
+.df-root .df-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-.df-btn-primary {
+.df-root .df-btn-primary {
   background: var(--df-accent);
   border-color: var(--df-accent);
   color: var(--df-on-accent);
   font-weight: 600;
 }
-.df-btn-primary:hover:not(:disabled) { background: var(--df-accent-hover); border-color: var(--df-accent-hover); }
+.df-root .df-btn-primary:hover:not(:disabled) { background: var(--df-accent-hover); border-color: var(--df-accent-hover); }
 
-.df-classic {
+.df-root .df-classic {
   display: inline-flex; align-items: center; gap: 7px;
   font-size: var(--df-fs-caption); color: var(--df-text-muted);
   cursor: pointer; user-select: none;
 }
-.df-classic input { accent-color: var(--df-accent); width: 14px; height: 14px; cursor: pointer; }
+.df-root .df-classic input { accent-color: var(--df-accent); width: 14px; height: 14px; cursor: pointer; }
 
 /* ---------------------------------------------------------------------------
  * Card
@@ -120,7 +152,7 @@
  * The grid has a hard minimum width; below it the CARD scrolls sideways, so
  * columns never overlap on a narrow screen (spec 3.1).
  * ------------------------------------------------------------------------- */
-.df-card {
+.df-root .df-card {
   margin: 0 16px;
   border: 1px solid var(--df-border-card);
   border-radius: var(--df-r-card);
@@ -129,7 +161,7 @@
   overflow-y: hidden;
 }
 
-.df-row {
+.df-root .df-row {
   display: grid;
   grid-template-columns: var(--df-grid);
   column-gap: var(--df-grid-gap);
@@ -138,11 +170,11 @@
   padding: 0 var(--df-row-pad-x);
 }
 
-.df-cell { min-width: 0; }
-.df-cell-tree { display: flex; align-items: center; justify-content: center; align-self: stretch; }
-.df-cell-menu { display: flex; justify-content: flex-end; }
+.df-root .df-cell { min-width: 0; }
+.df-root .df-cell-tree { display: flex; align-items: center; justify-content: center; align-self: stretch; }
+.df-root .df-cell-menu { display: flex; justify-content: flex-end; }
 
-.df-row-head {
+.df-root .df-row-head {
   height: 42px;
   border-bottom: 1px solid var(--df-border-row);
   font-family: var(--df-font-mono);
@@ -152,7 +184,7 @@
   color: var(--df-text-faint);
 }
 
-.df-section {
+.df-root .df-section {
   min-width: var(--df-table-min);
   padding: 16px var(--df-row-pad-x) 7px;
   border-top: 1px solid var(--df-border-soft);
@@ -162,9 +194,9 @@
   text-transform: uppercase;
   color: var(--df-text-faint);
 }
-.df-section-count { margin-left: 5px; }
+.df-root .df-section-count { margin-left: 5px; }
 
-.df-notice {
+.df-root .df-notice {
   margin: 0 16px;
   padding: 28px 16px;
   border: 1px solid var(--df-border-card);
@@ -173,9 +205,9 @@
   color: var(--df-text-muted);
   text-align: center;
 }
-.df-notice-error { color: var(--df-danger-fg); border-color: var(--df-danger-border); }
+.df-root .df-notice-error { color: var(--df-danger-fg); border-color: var(--df-danger-border); }
 
-.df-tip {
+.df-root .df-tip {
   padding: 14px 16px 0;
   font-family: var(--df-font-mono);
   font-size: var(--df-fs-caption);
@@ -185,7 +217,7 @@
 /* ---------------------------------------------------------------------------
  * Folder row
  * ------------------------------------------------------------------------- */
-.df-row-folder {
+.df-root .df-row-folder {
   position: relative;
   min-height: var(--df-folder-row-min);
   padding-top: var(--df-folder-row-pad);
@@ -193,32 +225,32 @@
   background: var(--df-bg-folder);
   border-top: 1px solid var(--df-border-row);
 }
-.df-body > .df-row-folder:first-child { border-top: 0; }
-.df-row-folder:hover { background: var(--df-bg-hover-row); }
+.df-root .df-body > .df-row-folder:first-child { border-top: 0; }
+.df-root .df-row-folder:hover { background: var(--df-bg-hover-row); }
 
-.df-chevron {
+.df-root .df-chevron {
   width: 26px; height: 26px;
   display: grid; place-items: center;
   border-radius: 6px;
   color: var(--df-text-muted);
 }
-.df-chevron:hover:not(:disabled) { background: var(--df-bg-hover-ghost); color: var(--df-text); }
-.df-chevron:disabled { opacity: .35; cursor: default; }
+.df-root .df-chevron:hover:not(:disabled) { background: var(--df-bg-hover-ghost); color: var(--df-text); }
+.df-root .df-chevron:disabled { opacity: .35; cursor: default; }
 
 /* A chevron drawn from borders: no extra sprite lookup for the most-used
    control on the page. */
-.df-chevron-mark {
+.df-root .df-chevron-mark {
   width: 6px; height: 6px;
   border-right: 1.8px solid currentColor;
   border-bottom: 1.8px solid currentColor;
   transform: rotate(-45deg) translate(-1px, -1px);
   transition: transform var(--df-t-chevron) ease;
 }
-.df-chevron[aria-expanded="true"] .df-chevron-mark { transform: rotate(45deg) translate(-1px, -1px); }
+.df-root .df-chevron[aria-expanded="true"] .df-chevron-mark { transform: rotate(45deg) translate(-1px, -1px); }
 
-.df-cell-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.df-root .df-cell-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
 
-.df-folder-icon {
+.df-root .df-folder-icon {
   flex: none;
   width: var(--df-folder-icon); height: var(--df-folder-icon);
   display: grid; place-items: center;
@@ -228,98 +260,98 @@
   box-shadow: inset 0 0 0 0 transparent;
   transition: box-shadow var(--df-t-popover) ease;
 }
-.df-folder-icon:hover { box-shadow: inset 0 0 0 2px var(--df-accent); }
-.df-folder-glyph { width: 21px; height: 21px; }
-.df-folder-img {
+.df-root .df-folder-icon:hover { box-shadow: inset 0 0 0 2px var(--df-accent); }
+.df-root .df-folder-glyph { width: 21px; height: 21px; }
+.df-root .df-folder-img {
   width: 26px; height: 26px;
   border-radius: 6px;
   object-fit: contain;
 }
 
 /* The folder's colour tints its icon tile. */
-.df-row-folder[data-color="slate"]  .df-folder-icon { background: var(--df-slate-tile);  color: var(--df-slate-glyph); }
-.df-row-folder[data-color="blue"]   .df-folder-icon { background: var(--df-blue-tile);   color: var(--df-blue-glyph); }
-.df-row-folder[data-color="teal"]   .df-folder-icon { background: var(--df-teal-tile);   color: var(--df-teal-glyph); }
-.df-row-folder[data-color="green"]  .df-folder-icon { background: var(--df-green-tile);  color: var(--df-green-glyph); }
-.df-row-folder[data-color="amber"]  .df-folder-icon { background: var(--df-amber-tile);  color: var(--df-amber-glyph); }
-.df-row-folder[data-color="orange"] .df-folder-icon { background: var(--df-orange-tile); color: var(--df-orange-glyph); }
-.df-row-folder[data-color="rose"]   .df-folder-icon { background: var(--df-rose-tile);   color: var(--df-rose-glyph); }
-.df-row-folder[data-color="violet"] .df-folder-icon { background: var(--df-violet-tile); color: var(--df-violet-glyph); }
+.df-root .df-row-folder[data-color="slate"]  .df-folder-icon { background: var(--df-slate-tile);  color: var(--df-slate-glyph); }
+.df-root .df-row-folder[data-color="blue"]   .df-folder-icon { background: var(--df-blue-tile);   color: var(--df-blue-glyph); }
+.df-root .df-row-folder[data-color="teal"]   .df-folder-icon { background: var(--df-teal-tile);   color: var(--df-teal-glyph); }
+.df-root .df-row-folder[data-color="green"]  .df-folder-icon { background: var(--df-green-tile);  color: var(--df-green-glyph); }
+.df-root .df-row-folder[data-color="amber"]  .df-folder-icon { background: var(--df-amber-tile);  color: var(--df-amber-glyph); }
+.df-root .df-row-folder[data-color="orange"] .df-folder-icon { background: var(--df-orange-tile); color: var(--df-orange-glyph); }
+.df-root .df-row-folder[data-color="rose"]   .df-folder-icon { background: var(--df-rose-tile);   color: var(--df-rose-glyph); }
+.df-root .df-row-folder[data-color="violet"] .df-folder-icon { background: var(--df-violet-tile); color: var(--df-violet-glyph); }
 
-.df-folder-text { min-width: 0; flex: 1 1 auto; }
-.df-folder-line1 { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.df-folder-name {
+.df-root .df-folder-text { min-width: 0; flex: 1 1 auto; }
+.df-root .df-folder-line1 { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.df-root .df-folder-name {
   font-size: var(--df-fs-folder);
   font-weight: 600;
   color: var(--df-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   min-width: 0;
 }
-.df-folder-count { flex: none; font-size: var(--df-fs-caption); color: var(--df-text-dim); }
-.df-folder-sub   { margin-top: 3px; font-size: var(--df-fs-caption); color: var(--df-text-dim); }
+.df-root .df-folder-count { flex: none; font-size: var(--df-fs-caption); color: var(--df-text-dim); }
+.df-root .df-folder-sub { margin-top: 3px; font-size: var(--df-fs-caption); color: var(--df-text-dim); }
 
 /* ---- icon strip (spec 4.1) ----
    Its own line under the name, wrapping. Never beside the name: at the
    Container column's minimum width only two icons fit alongside it. */
-.df-strip {
+.df-root .df-strip {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
   margin-top: 4px;
   margin-left: -4px;
 }
-.df-strip-btn {
+.df-root .df-strip-btn {
   position: relative;
   width: var(--df-strip-btn); height: var(--df-strip-btn);
   display: grid; place-items: center;
   border-radius: var(--df-r-control);
 }
-.df-strip-btn:hover { background: var(--df-bg-hover-ghost); }
+.df-root .df-strip-btn:hover { background: var(--df-bg-hover-ghost); }
 
-.df-strip-tile {
+.df-root .df-strip-tile {
   width: var(--df-strip-tile); height: var(--df-strip-tile);
   border-radius: 8px;
 }
-.df-strip-dot {
+.df-root .df-strip-dot {
   position: absolute;
   right: 3px; bottom: 3px;
   width: var(--df-strip-dot); height: var(--df-strip-dot);
   border-radius: 50%;
   box-shadow: 0 0 0 2px var(--df-bg-folder);
 }
-.df-row-folder:hover .df-strip-dot { box-shadow: 0 0 0 2px var(--df-bg-hover-row); }
+.df-root .df-row-folder:hover .df-strip-dot { box-shadow: 0 0 0 2px var(--df-bg-hover-row); }
 
 /* ---- status summary ---- */
-.df-folder-status { font-size: var(--df-fs-small); color: var(--df-text-secondary); }
-.df-folder-status.is-all  { color: var(--df-running-text); }
-.df-folder-status.is-busy { color: var(--df-busy-text); }
+.df-root .df-folder-status { font-size: var(--df-fs-small); color: var(--df-text-secondary); }
+.df-root .df-folder-status.is-all { color: var(--df-running-text); }
+.df-root .df-folder-status.is-busy { color: var(--df-busy-text); }
 
-.df-segments { display: flex; gap: 2px; width: 100px; margin-top: 6px; }
-.df-segment  { flex: 1 1 0; height: 4px; border-radius: 2px; background: var(--df-stopped-seg); }
-.df-seg-running { background: var(--df-running); }
-.df-seg-paused  { background: var(--df-paused); }
-.df-seg-busy    { background: var(--df-busy); }
-.df-seg-stopped { background: var(--df-stopped-seg); }
+.df-root .df-segments { display: flex; gap: 2px; width: 100px; margin-top: 6px; }
+.df-root .df-segment { flex: 1 1 0; height: 4px; border-radius: 2px; background: var(--df-stopped-seg); }
+.df-root .df-seg-running { background: var(--df-running); }
+.df-root .df-seg-paused { background: var(--df-paused); }
+.df-root .df-seg-busy { background: var(--df-busy); }
+.df-root .df-seg-stopped { background: var(--df-stopped-seg); }
 
 /* ---------------------------------------------------------------------------
  * Container row
  * ------------------------------------------------------------------------- */
-.df-row-ct {
+.df-root .df-row-ct {
   min-height: var(--df-ct-row-min);
   border-top: 1px solid var(--df-border-soft);
 }
-.df-row-ct:hover { background: var(--df-bg-hover-row); }
+.df-root .df-row-ct:hover { background: var(--df-bg-hover-row); }
 
 /* The tree line that ties a nested row to its folder. */
-.df-tree {
+.df-root .df-tree {
   width: 1px;
   align-self: stretch;
   background: var(--df-border-row);
   margin-left: 11px;
 }
-.df-row-ct.is-nested .df-cell-name { padding-left: 2px; }
+.df-root .df-row-ct.is-nested .df-cell-name { padding-left: 2px; }
 
-.df-order {
+.df-root .df-order {
   flex: none;
   width: 14px;
   text-align: right;
@@ -327,63 +359,64 @@
   font-size: var(--df-fs-eyebrow);
 }
 
-.df-ct-icon {
+.df-root .df-ct-icon {
   flex: none;
   width: var(--df-ct-tile); height: var(--df-ct-tile);
   border-radius: 8px;
 }
-.df-ct-icon:hover { box-shadow: 0 0 0 2px var(--df-accent); }
-.df-ct-tile { width: var(--df-ct-tile); height: var(--df-ct-tile); border-radius: 8px; }
+.df-root .df-ct-icon:hover { box-shadow: 0 0 0 2px var(--df-accent); }
+.df-root .df-ct-tile { width: var(--df-ct-tile); height: var(--df-ct-tile); border-radius: 8px; }
 
-.df-tile-img { object-fit: contain; background: var(--df-bg-well); display: block; }
-.df-tile-letter {
+.df-root .df-tile-img { object-fit: contain; background: var(--df-bg-well); display: block; }
+.df-root .df-tile-letter {
   display: grid; place-items: center;
   font-weight: 600; font-size: var(--df-fs-caption);
   background: var(--df-slate-tile); color: var(--df-slate-glyph);
 }
-.df-tile-letter[data-tint="slate"]  { background: var(--df-slate-tile);  color: var(--df-slate-glyph); }
-.df-tile-letter[data-tint="blue"]   { background: var(--df-blue-tile);   color: var(--df-blue-glyph); }
-.df-tile-letter[data-tint="teal"]   { background: var(--df-teal-tile);   color: var(--df-teal-glyph); }
-.df-tile-letter[data-tint="green"]  { background: var(--df-green-tile);  color: var(--df-green-glyph); }
-.df-tile-letter[data-tint="amber"]  { background: var(--df-amber-tile);  color: var(--df-amber-glyph); }
-.df-tile-letter[data-tint="orange"] { background: var(--df-orange-tile); color: var(--df-orange-glyph); }
-.df-tile-letter[data-tint="rose"]   { background: var(--df-rose-tile);   color: var(--df-rose-glyph); }
-.df-tile-letter[data-tint="violet"] { background: var(--df-violet-tile); color: var(--df-violet-glyph); }
+.df-root .df-tile-letter[data-tint="slate"] { background: var(--df-slate-tile);  color: var(--df-slate-glyph); }
+.df-root .df-tile-letter[data-tint="blue"] { background: var(--df-blue-tile);   color: var(--df-blue-glyph); }
+.df-root .df-tile-letter[data-tint="teal"] { background: var(--df-teal-tile);   color: var(--df-teal-glyph); }
+.df-root .df-tile-letter[data-tint="green"] { background: var(--df-green-tile);  color: var(--df-green-glyph); }
+.df-root .df-tile-letter[data-tint="amber"] { background: var(--df-amber-tile);  color: var(--df-amber-glyph); }
+.df-root .df-tile-letter[data-tint="orange"] { background: var(--df-orange-tile); color: var(--df-orange-glyph); }
+.df-root .df-tile-letter[data-tint="rose"] { background: var(--df-rose-tile);   color: var(--df-rose-glyph); }
+.df-root .df-tile-letter[data-tint="violet"] { background: var(--df-violet-tile); color: var(--df-violet-glyph); }
 
-.df-ct-text  { min-width: 0; }
-.df-ct-name  { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.df-ct-image { font-size: var(--df-fs-caption); color: var(--df-text-dim);
+.df-root .df-ct-text { min-width: 0; }
+.df-root .df-ct-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.df-root .df-ct-image { font-size: var(--df-fs-caption); color: var(--df-text-dim);
                overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.df-ct-status { display: flex; align-items: center; gap: 8px; }
-.df-status-text { font-size: var(--df-fs-small); }
-.df-status-running { color: var(--df-running-text); }
-.df-status-paused  { color: var(--df-paused-text); }
-.df-status-busy    { color: var(--df-busy-text); }
-.df-status-stopped { color: var(--df-text-muted); }
+.df-root .df-ct-status { display: flex; align-items: center; gap: 8px; }
+.df-root .df-status-text { font-size: var(--df-fs-small); }
+.df-root .df-status-running { color: var(--df-running-text); }
+.df-root .df-status-paused { color: var(--df-paused-text); }
+.df-root .df-status-busy { color: var(--df-busy-text); }
+.df-root .df-status-stopped { color: var(--df-text-muted); }
 
 /* ---- status markers ----
    Each state has a different SHAPE as well as colour, so the status is
    readable without colour vision (spec 5, spec 14):
      running - filled disc      paused - two bars
      stopped - hollow ring      busy   - spinning arc */
-.df-dot { position: relative; flex: none; width: 10px; height: 10px; border-radius: 50%; }
-.df-strip-dot.df-dot-running,
-.df-dot-running { background: var(--df-running); }
+.df-root .df-dot { position: relative; flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.df-root .df-strip-dot.df-dot-running,
+.df-root .df-dot-running { background: var(--df-running); }
 
-.df-strip-dot.df-dot-stopped,
-.df-dot-stopped { background: transparent; box-shadow: inset 0 0 0 2px var(--df-stopped-ring); }
-.df-strip-dot.df-dot-stopped { box-shadow: inset 0 0 0 2px var(--df-stopped-ring), 0 0 0 2px var(--df-bg-folder); }
+.df-root .df-strip-dot.df-dot-stopped,
+.df-root .df-dot-stopped { background: transparent; box-shadow: inset 0 0 0 2px var(--df-stopped-ring); }
+.df-root .df-strip-dot.df-dot-stopped { box-shadow: inset 0 0 0 2px var(--df-stopped-ring), 0 0 0 2px var(--df-bg-folder); }
 
-.df-dot-paused { background: transparent; }
-.df-dot-paused::before, .df-dot-paused::after {
+.df-root .df-dot-paused { background: transparent; }
+.df-root .df-dot-paused::before,
+.df-root .df-dot-paused::after {
   content: ""; position: absolute; top: 1px; bottom: 1px; width: 3px;
   background: var(--df-paused); border-radius: 1px;
 }
-.df-dot-paused::before { left: 1px; }
-.df-dot-paused::after  { right: 1px; }
+.df-root .df-dot-paused::before { left: 1px; }
+.df-root .df-dot-paused::after { right: 1px; }
 
-.df-dot-busy {
+.df-root .df-dot-busy {
   background: transparent;
   border: 2px solid var(--df-busy);
   border-top-color: transparent;
@@ -392,7 +425,7 @@
 @keyframes df-spin { to { transform: rotate(360deg); } }
 
 /* ---- badges ---- */
-.df-badge {
+.df-root .df-badge {
   display: inline-block;
   padding: 3px 8px;
   border-radius: var(--df-r-pill);
@@ -400,15 +433,15 @@
   font-weight: 500;
   white-space: nowrap;
 }
-.df-badge-warn {
+.df-root .df-badge-warn {
   background: var(--df-warn-bg);
   color: var(--df-warn-fg);
   border: 1px solid var(--df-warn-border);
 }
 
 /* ---- switch ---- */
-.df-switch-wrap { display: flex; align-items: center; gap: 8px; }
-.df-switch {
+.df-root .df-switch-wrap { display: flex; align-items: center; gap: 8px; }
+.df-root .df-switch {
   flex: none;
   position: relative;
   width: 34px; height: 19px;
@@ -416,41 +449,43 @@
   background: var(--df-switch-off);
   transition: background var(--df-t-switch) ease;
 }
-.df-switch[data-state="on"]    { background: var(--df-switch-on); }
-.df-switch[data-state="mixed"] { background: var(--df-switch-mixed); }
+.df-root .df-switch[data-state="on"] { background: var(--df-switch-on); }
+.df-root .df-switch[data-state="mixed"] { background: var(--df-switch-mixed); }
 
-.df-switch-knob {
+.df-root .df-switch-knob {
   position: absolute; top: 2.5px; left: 2.5px;
   width: 14px; height: 14px;
   border-radius: 50%;
   background: var(--df-switch-knob);
   transition: transform var(--df-t-switch) ease;
 }
-.df-switch[data-state="on"]    .df-switch-knob { transform: translateX(15px); }
-.df-switch[data-state="mixed"] .df-switch-knob { transform: translateX(7.5px); }
+.df-root .df-switch[data-state="on"]    .df-switch-knob { transform: translateX(15px); }
+.df-root .df-switch[data-state="mixed"] .df-switch-knob { transform: translateX(7.5px); }
 
-.df-switch-label { font-size: var(--df-fs-caption); color: var(--df-text-muted); white-space: nowrap; }
+.df-root .df-switch-label { font-size: var(--df-fs-caption); color: var(--df-text-muted); white-space: nowrap; }
 
 /* ---- kebab ---- */
-.df-kebab {
+.df-root .df-kebab {
   width: var(--df-icon-btn); height: var(--df-icon-btn);
   display: grid; place-items: center;
   border-radius: var(--df-r-control);
   color: var(--df-text-muted);
   font-size: 16px; line-height: 1;
 }
-.df-kebab:hover { background: var(--df-bg-hover-ghost); color: var(--df-text); }
+.df-root .df-kebab:hover { background: var(--df-bg-hover-ghost); color: var(--df-text); }
 
 /* ---------------------------------------------------------------------------
  * Reduced motion
  * ------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-  .df-root *, .df-root *::before, .df-root *::after {
+  .df-root *,
+.df-root *::before,
+.df-root *::after {
     animation-duration: .001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
   }
   /* The busy spinner is the only indicator that work is happening, so keep
      it turning - just slowly enough not to be a motion trigger. */
-  .df-dot-busy { animation: df-spin 2.4s linear infinite !important; }
+  .df-root .df-dot-busy { animation: df-spin 2.4s linear infinite !important; }
 }

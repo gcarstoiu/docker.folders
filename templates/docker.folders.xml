@@ -45,6 +45,10 @@
   </Overview>
 
   <Changes>
+### 2026.10.27b
+- Fix: Unraid's button styling repainted the plugin's controls as oversized orange boxes.
+- The page no longer repeats Unraid's heading.
+
 ### 2026.10.27a
 - Fix: the Docker page showed "Request failed (500)" and no containers.
 - Server errors are now reported with a message instead of a blank 500.

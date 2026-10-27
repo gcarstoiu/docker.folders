@@ -113,10 +113,12 @@
       classicToggle()
     ]);
 
+    /* No eyebrow and no "Containers" heading: Unraid already prints its own
+     * "Docker Containers" heading directly above this, and repeating it put
+     * three stacked titles on the page. The summary line carries straight on
+     * from Unraid's heading. */
     return U.el('header.df-head', null, [
       U.el('div.df-head-text', null, [
-        U.el('div.df-eyebrow', { text: 'UNRAID · DOCKER' }),
-        U.el('h2.df-title', { text: 'Containers' }),
         U.el('div.df-summary', { text: summary })
       ]),
       actions

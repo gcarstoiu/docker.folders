@@ -88,7 +88,9 @@
   U.layer = function () {
     if (layer && document.body.contains(layer)) return layer;
     var mount = document.getElementById('df-root');
-    layer = U.el('div.df-root.df-layer', {
+    /* .unapi exempts everything inside from Unraid's element styling, the
+     * same way #df-root does; menus and dialogs are not inside it. */
+    layer = U.el('div.df-root.df-layer.unapi', {
       'data-theme': (mount && mount.dataset.theme) || 'black'
     });
     document.body.appendChild(layer);

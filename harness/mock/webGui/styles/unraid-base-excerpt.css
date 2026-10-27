@@ -1,0 +1,328 @@
+/* Excerpt of Unraid's webGUI element styling, for the harness only.
+ *
+ * Copied from emhttp/plugins/dynamix/styles/default-base.css (Unraid webgui,
+ * GPL-2.0, Lime Technology / Bergware). Only the rules carrying the
+ * ":where(:not(.unapi *))" opt-out are reproduced - those are precisely the
+ * ones that collide with a plugin's own controls.
+ *
+ * WHY THIS IS HERE: without it the harness is a far friendlier environment
+ * than a real server, and CSS collisions ship undetected. The first build
+ * did exactly that - Unraid's "button" rule (uppercase, letter-spacing,
+ * min-width 86px, a border) repainted every control in the plugin, and the
+ * harness showed nothing wrong.
+ *
+ * The cure is Unraid's own escape hatch: anything inside an element with
+ * class "unapi" is excluded from all of it.
+ *
+ * NOT part of the plugin package. Never shipped.
+ */
+
+:root {
+  --button-border: 1px solid #ff8c2f;
+  --button-text-color: #ff8c2f;
+  --button-background: transparent;
+  --button-background-size: auto;
+  --text-color: #1b1b1b;
+  --background-color: #f2f2f2;
+  --input-border: 1px solid #cdcdcd;
+  --input-text-color: #1b1b1b;
+  --input-background: #fff;
+}
+
+p:where(:not(.unapi *)) {
+    text-align: justify;
+}
+
+input[type="text"]:where(:not(.unapi *)),
+input[type="password"]:where(:not(.unapi *)),
+input[type="number"]:where(:not(.unapi *)),
+input[type="url"]:where(:not(.unapi *)),
+input[type="email"]:where(:not(.unapi *)),
+input[type="date"]:where(:not(.unapi *)),
+input[type="file"]:where(:not(.unapi *)),
+textarea:where(:not(.unapi *)),
+.textarea:where(:not(.unapi *)) {
+    color: var(--text-color);
+    font-family: clear-sans;
+    font-size: 1.3rem;
+    background-color: transparent;
+    border-width: 0;
+    border-style: solid;
+    border-color: var(--input-border-color);
+    border-bottom-width: 1px;
+    padding: .5rem;
+    text-indent: 0;
+    min-height: 2rem;
+    line-height: 2rem;
+    outline: none;
+    width: 100%;
+    margin: 0;
+    box-shadow: none;
+    border-radius: 0;
+    box-sizing: border-box;
+}
+
+input[type="button"]:where(:not(.unapi *)),
+input[type="reset"]:where(:not(.unapi *)),
+input[type="submit"]:where(:not(.unapi *)),
+button:where(:not(.unapi *)),
+button[type="button"]:where(:not(.unapi *)),
+a.button:where(:not(.unapi *)) {
+    font-family: clear-sans;
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    min-width: 86px;
+    margin: 10px 12px 10px 0;
+    padding: 8px;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    outline: none;
+    border-radius: 4px;
+    border: var(--button-border);
+    color: var(--button-text-color);
+    background: var(--button-background);
+    background-size: var(--button-background-size);
+}
+
+input:focus[type="text"]:where(:not(.unapi *)),
+input:focus[type="password"]:where(:not(.unapi *)),
+input:focus[type="number"]:where(:not(.unapi *)),
+input:focus[type="url"]:where(:not(.unapi *)),
+input:focus[type="email"]:where(:not(.unapi *)),
+input:focus[type="file"]:where(:not(.unapi *)),
+textarea:focus:where(:not(.unapi *)) {
+    background-color: var(--focus-input-bg-color);
+    outline: 0;
+}
+
+input:hover[type="button"]:where(:not(.unapi *)),
+input:hover[type="reset"]:where(:not(.unapi *)),
+input:hover[type="submit"]:where(:not(.unapi *)),
+button:hover:where(:not(.unapi *)),
+button:hover[type="button"]:where(:not(.unapi *)),
+a.button:hover:where(:not(.unapi *)) {
+    color: var(--hover-button-text-color);
+    background: var(--hover-button-background);
+}
+
+input[disabled]:where(:not(.unapi *)),
+textarea[disabled]:where(:not(.unapi *)) {
+    color: var(--text-color);
+    border-bottom-color: var(--disabled-input-border-color);
+    opacity: 0.5;
+    cursor: default;
+}
+
+input[type="button"][disabled]:where(:not(.unapi *)),
+input[type="reset"][disabled]:where(:not(.unapi *)),
+input[type="submit"][disabled]:where(:not(.unapi *)),
+button[disabled]:where(:not(.unapi *)),
+button[type="button"][disabled]:where(:not(.unapi *)),
+a.button[disabled]:where(:not(.unapi *)),
+input:hover[type="button"][disabled]:where(:not(.unapi *)),
+input:hover[type="reset"][disabled]:where(:not(.unapi *)),
+input:hover[type="submit"][disabled]:where(:not(.unapi *)),
+button:hover[disabled]:where(:not(.unapi *)),
+button:hover[type="button"][disabled]:where(:not(.unapi *)),
+a.button:hover[disabled]:where(:not(.unapi *)),
+input:active[type="button"][disabled]:where(:not(.unapi *)),
+input:active[type="reset"][disabled]:where(:not(.unapi *)),
+input:active[type="submit"][disabled]:where(:not(.unapi *)),
+button:active[disabled]:where(:not(.unapi *)),
+button:active[type="button"][disabled]:where(:not(.unapi *)),
+a.button:active[disabled]:where(:not(.unapi *)) {
+    opacity: 0.5;
+    cursor: default;
+    color: var(--disabled-text-color);
+    background: -webkit-gradient(
+                linear,
+                left top,
+                right top,
+                from(var(--gray-600)),
+                to(var(--gray-500))
+            )
+            0 0 no-repeat,
+        -webkit-gradient(
+                linear,
+                left top,
+                right top,
+                from(var(--gray-600)),
+                to(var(--gray-500))
+            ) 0 100% no-repeat,
+        -webkit-gradient(
+                linear,
+                left bottom,
+                left top,
+                from(var(--gray-600)),
+                to(var(--gray-600))
+            ) 0 100% no-repeat,
+        -webkit-gradient(
+                linear,
+                left bottom,
+                left top,
+                from(var(--gray-500)),
+                to(var(--gray-500))
+            ) 100% 100% no-repeat;
+    background: linear-gradient(90deg, var(--gray-600) 0, var(--gray-500)) 0 0 no-repeat,
+        linear-gradient(90deg, var(--gray-600) 0, var(--gray-500)) 0 100% no-repeat,
+        linear-gradient(0deg, var(--gray-600) 0, var(--gray-600)) 0 100% no-repeat,
+        linear-gradient(0deg, var(--gray-500) 0, var(--gray-500)) 100% 100% no-repeat;
+    background-size: 100% 2px, 100% 2px, 2px 100%, 2px 100%;
+}
+
+select:where(:not(.unapi *)) {
+    -webkit-appearance: none;
+    font-family: clear-sans;
+    font-size: 1.3rem;
+    width: 100%;
+    padding: .5rem .8rem .5rem .5rem;
+    text-indent: 0;
+    margin: 0;
+    border: none;
+    border-bottom: 1px solid var(--input-border-color);
+    box-shadow: none;
+    border-radius: 0;
+    color: var(--text-color);
+    background-color: transparent;
+    background-image: linear-gradient(66.6deg, transparent 60%, var(--input-border-color) 40%),
+        linear-gradient(113.4deg, var(--input-border-color) 40%, transparent 60%);
+    background-position: calc(100% - 4px), 100%;
+    background-size: 4px 6px, 4px 6px;
+    background-repeat: no-repeat;
+    outline: none;
+    display: inline-block;
+    cursor: pointer;
+}
+
+select:where(:not(.unapi *)) option {
+    color: var(--text-color);
+    background-color: var(--mild-background-color);
+}
+
+select:where(:not(.unapi *)) option:disabled {
+    color: var(--disabled-text-color);
+}
+
+select:focus:where(:not(.unapi *)) {
+    background-color: var(--focus-input-bg-color);
+    outline: 0;
+}
+
+select[disabled]:where(:not(.unapi *)) {
+    color: var(--text-color);
+    border-bottom-color: var(--disabled-border-color);
+    opacity: 0.5;
+    cursor: default;
+}
+
+textarea:where(:not(.unapi *)) {
+    resize: none;
+    padding: 6px;
+    border: 1px solid var(--textarea-border-color);
+    border-bottom: 1px solid var(--input-border-color);
+}
+
+table:where(:not(.unapi *)) {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border-style: hidden;
+    margin: 0;
+    width: 100%;
+    background-color: var(--background-color);
+}
+
+table:where(:not(.unapi *)) thead td {
+    line-height: 2.8rem;
+    height: 2.8rem;
+    white-space: nowrap;
+}
+
+table:where(:not(.unapi *)) tbody td {
+    line-height: 2.6rem;
+    height: 2.6rem;
+    white-space: nowrap;
+}
+
+p:where(:not(.unapi *)) {
+        text-align: left;
+}
+
+input[type="text"]:where(:not(.unapi *)) ,
+input[type="password"]:where(:not(.unapi *)) ,
+input[type="number"]:where(:not(.unapi *)) ,
+input[type="url"]:where(:not(.unapi *)) ,
+input[type="email"]:where(:not(.unapi *)) ,
+input[type="date"]:where(:not(.unapi *)) ,
+input[type="file"]:where(:not(.unapi *)) ,
+textarea,
+.textarea {
+        padding: 5px 6px;
+        border-width: 1px;
+}
+
+input[type="button"],
+input[type="reset"],
+input[type="submit"],
+button:where(:not(.unapi *)),
+button[type="button"]:where(:not(.unapi *)),
+a.button:where(:not(.unapi *)) {
+        font-family: clear-sans;
+        font-size: 1.2rem;
+        font-weight: normal;
+        text-transform: none;
+        letter-spacing: normal;
+        border: 1px solid var(--button-border);
+        color: var(--button-text-color);
+        background: none;
+        background-color: var(--button-background);
+}
+
+input:hover[type="button"]:where(:not(.unapi *)) ,
+input:hover[type="reset"]:where(:not(.unapi *)) ,
+input:hover[type="submit"]:where(:not(.unapi *)) ,
+button:hover:where(:not(.unapi *)) ,
+button:hover[type="button"]:where(:not(.unapi *)) ,
+a.button:hover {
+        border-color: var(--hover-button-border);
+        color: var(--hover-button-text-color);
+        background: none;
+        background-color: var(--hover-button-background) !important;
+}
+
+input[disabled]:where(:not(.unapi *)) ,
+button[disabled]:where(:not(.unapi *)) ,
+input:hover[type="button"][disabled]:where(:not(.unapi *)) ,
+input:hover[type="reset"][disabled]:where(:not(.unapi *)) ,
+input:hover[type="submit"][disabled]:where(:not(.unapi *)) ,
+button:hover[disabled]:where(:not(.unapi *)) ,
+button:hover[type="button"][disabled]:where(:not(.unapi *)) ,
+input:active[type="button"][disabled]:where(:not(.unapi *)) ,
+input:active[type="reset"][disabled]:where(:not(.unapi *)) ,
+input:active[type="submit"][disabled]:where(:not(.unapi *)) ,
+button:active[disabled]:where(:not(.unapi *)) ,
+button:active[type="button"][disabled]:where(:not(.unapi *)) ,
+textarea[disabled]:where(:not(.unapi *)) {
+        color: var(--disabled-text-color) !important;
+        border-color: var(--disabled-input-border-color) !important;
+        background: none !important;
+        background-size: 0 !important;
+        background-color: var(--disabled-input-background-color) !important;
+}
+
+select:where(:not(.unapi *)) {
+        min-width: 188px;
+        max-width: 314px;
+        padding: 6px 14px 6px 6px;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        background-image: linear-gradient(66.6deg, transparent 60%, var(--border-color) 40%),
+            linear-gradient(113.4deg, var(--border-color) 40%, transparent 60%);
+        background-position: calc(100% - 8px), calc(100% - 4px);
+        background-size:
+            4px 6px,
+            4px 6px;
+}

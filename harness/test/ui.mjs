@@ -312,6 +312,70 @@ const TESTS = [
     await page.keyboard.press('Escape');
   }),
 
+  /* The harness loads Unraid's own element styling (see
+   * harness/mock/webGui/styles/unraid-base-excerpt.css). Its "button" rule
+   * repaints every control - uppercase, letter-spacing, min-width 86px, an
+   * orange border - and on a real server it did exactly that. The cure is
+   * Unraid's .unapi opt-out; this test fails if that ever comes off. */
+  t('Unraid\'s element styling does not leak into the plugin', async () => {
+    await fresh('&folded=all');
+
+    const host = await page.$eval('#df-root', (n) => n.className);
+    ok(/\bunapi\b/.test(host), `#df-root must carry "unapi", had "${host}"`);
+
+    const probe = (sel) => page.$eval(sel, (n) => {
+      const s = getComputedStyle(n);
+      return {
+        transform: s.textTransform,
+        minWidth: s.minWidth,
+        spacing: s.letterSpacing,
+        borderTop: s.borderTopWidth,
+        marginRight: s.marginRight
+      };
+    });
+
+    for (const sel of ['.df-kebab', '.df-chevron', '.df-switch', '.df-strip-btn']) {
+      const got = await probe(sel);
+      ok(got.transform === 'none', `${sel} is ${got.transform}, Unraid's uppercase leaked in`);
+      ok(got.minWidth !== '86px', `${sel} picked up Unraid's min-width:86px`);
+      ok(got.spacing === 'normal', `${sel} picked up Unraid's letter-spacing`);
+      ok(got.borderTop === '0px', `${sel} picked up Unraid's button border (${got.borderTop})`);
+    }
+
+    /* Our own buttons must keep the styling we gave them. */
+    const primary = await page.$eval('.df-btn-primary', (n) => {
+      const s = getComputedStyle(n);
+      return { bg: s.backgroundColor, border: s.borderTopWidth, transform: s.textTransform };
+    });
+    ok(primary.border === '1px', `the primary button lost its border (${primary.border})`);
+    ok(primary.transform === 'none', 'the primary button got uppercased');
+    ok(primary.bg !== 'rgba(0, 0, 0, 0)', 'the primary button lost its background');
+
+    /* And the menu, which lives outside #df-root in the overlay layer. */
+    await page.click('.df-row-folder[data-folder="f-media"] .df-folder-icon');
+    await page.waitForSelector('.df-menu');
+    const item = await page.$eval('.df-menu-item', (n) => {
+      const s = getComputedStyle(n);
+      return { transform: s.textTransform, minWidth: s.minWidth, border: s.borderTopWidth };
+    });
+    ok(item.transform === 'none', 'menu items got uppercased by Unraid');
+    ok(item.minWidth !== '86px', 'menu items picked up Unraid min-width');
+    ok(item.border === '0px', `menu items picked up Unraid's border (${item.border})`);
+    await page.keyboard.press('Escape');
+    await shot('14-no-style-leak');
+  }),
+
+  t('the page shows a single heading, not three', async () => {
+    await fresh();
+    /* Unraid prints "Docker Containers" above; the plugin must not add its
+     * own "Docker Folders" section bar or repeat "Containers". */
+    ok(await count('.df-eyebrow') === 0, 'the UNRAID-DOCKER eyebrow should be gone');
+    ok(await count('.df-title') === 0, 'the duplicate "Containers" heading should be gone');
+    ok(await count('.df-summary') === 1, 'the summary line should remain');
+    const summary = await text('.df-summary');
+    ok(/containers/.test(summary), `summary was: ${summary}`);
+  }),
+
   t('every control is reachable by keyboard', async () => {
     await fresh('&folded=all');
     const reached = await page.evaluate(() => {
