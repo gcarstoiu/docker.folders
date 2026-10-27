@@ -78,13 +78,58 @@ else
   # which is exactly what has been staged - so build it directly. This is the
   # normal path when building off-server.
   echo "    building the .txz directly (no Slackware makepkg here)"
-  ( cd "$BUILD" && tar --owner=root --group=root --numeric-owner -cJf "$PKG" . )
+  # Deterministic: same sources must give the same bytes, so the md5 stamped
+  # into the .plg only changes when the plugin actually changed. Without
+  # --sort and a fixed mtime the archive differs on every build and every
+  # rebuild looks like a new release.
+  ( cd "$BUILD" && tar --owner=root --group=root --numeric-owner \
+      --sort=name --mtime="UTC 2020-01-01" --format=gnu \
+      -cJf "$PKG" . )
 fi
 
 MD5="$(md5sum "$PKG" | cut -d' ' -f1)"
 
 # Stamp the checksum into the .plg; the plugin manager verifies it on install.
 sed -i "s/<!ENTITY md5 *\"[^\"]*\">/<!ENTITY md5       \"$MD5\">/" "$PLG"
+
+# ---------------------------------------------------------------------------
+# Validate the XML before anyone can publish it.
+#
+# Unraid's plugin manager parses the .plg and nothing else: a malformed one
+# fails with "XML file doesn't exist or xml parse error" and the plugin will
+# not install at all. It is easy to break by hand - a literal <folder> in the
+# changelog is enough, because there is no CDATA section and the parser reads
+# it as an element that never closes. So the build refuses to finish rather
+# than leave a broken manifest for the next push.
+# ---------------------------------------------------------------------------
+validate_xml() {
+  python3 - "$1" <<'PYEOF'
+import sys, xml.dom.minidom
+path = sys.argv[1]
+try:
+    xml.dom.minidom.parse(path)
+except Exception as exc:
+    print(f"  INVALID  {path}\n           {exc}")
+    sys.exit(1)
+print(f"  ok       {path}")
+PYEOF
+}
+
+echo "==> validating XML"
+xml_ok=0
+for f in "$PLG" "$ROOT/ca_profile.xml" "$ROOT/templates/$PLUGIN.xml"; do
+  [ -f "$f" ] || continue
+  validate_xml "$f" || xml_ok=1
+done
+
+if [ "$xml_ok" -ne 0 ]; then
+  echo
+  echo "error: the XML above is malformed - not publishing." >&2
+  echo "       Unraid reports this as \"XML file doesn't exist or xml parse error\"" >&2
+  echo "       and refuses to install the plugin." >&2
+  rm -f "$PKG"
+  exit 1
+fi
 
 echo "==> $PKG"
 echo "    md5 $MD5  (written to $PLUGIN.plg)"
