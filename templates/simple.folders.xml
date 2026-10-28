@@ -47,6 +47,9 @@
   </Overview>
 
   <Changes>
+### 2026.10.28g
+- Attribution for the Dashboard Icons and selfh.st icon libraries.
+
 ### 2026.10.28f
 - Grip and fold arrow aligned in one column.
 - Dragging reorders loose containers, matching Unraid's own sort order.

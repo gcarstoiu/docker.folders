@@ -190,6 +190,19 @@ Known deviations, all deliberate:
 GPL-2.0. See [LICENSE](LICENSE).
 
 The plugin interoperates with, and calls into, Unraid's GPL-2.0 Docker manager.
-It ships no third-party application logos: container icons come from Unraid's
-own resolution, and folder icons are either the built-in set (original to this
+
+**It bundles no third-party artwork.** Container icons come from Unraid's own
+resolution. Folder icons are either the built-in glyph set (original to this
 project), a container's own icon, or a file the user chooses to download.
+
+Icon search reads, and downloads on the user's request, from two libraries:
+
+| Library | Licence |
+|---|---|
+| [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons) | Apache-2.0 |
+| [selfh.st/icons](https://selfh.st/icons/) | CC BY 4.0 |
+
+Both permit redistribution; CC BY 4.0 requires attribution, which is given
+here, in Settings → Simple Folders, and beside the search itself. Individual
+logos remain the property of their respective owners — neither the libraries'
+licences nor this one grant any trademark rights.

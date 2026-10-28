@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.28f">
-<!ENTITY md5       "13b48657acee04e2fafda64276914d85">
+<!ENTITY version   "2026.10.28g">
+<!ENTITY md5       "e2e4bf6590ecbf7942e654baf7596b2d">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +21,12 @@
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.28g
+- Credit the two icon libraries the search draws on: Dashboard Icons
+  (Apache-2.0) and selfh.st/icons (CC BY 4.0). CC BY requires attribution,
+  so it now appears beside the search, in Settings and in the README. No
+  artwork is bundled with the plugin; logos belong to their owners.
+
 ###2026.10.28f
 - The drag grip and the fold arrow now sit level in one column instead of
   the grip floating above and to the left of it. Both keep a full-size

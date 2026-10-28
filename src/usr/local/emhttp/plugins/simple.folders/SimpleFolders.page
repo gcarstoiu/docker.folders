@@ -96,6 +96,25 @@ $dfIcons   = is_dir(SF_ICON_DIR) ? count(glob(SF_ICON_DIR.'/*') ?: []) : 0;
 </table>
 
 <table class="tablesorter shift">
+<thead><tr><th colspan="2">_(Credits)_</th></tr></thead>
+<tbody>
+  <tr>
+    <td>_(Folder icons)_:</td>
+    <td>
+      <span class="sf-ed-hint">
+        _(Downloaded on request from)_
+        <a href="https://github.com/homarr-labs/dashboard-icons" target="_blank" rel="noopener">Dashboard Icons</a>
+        (Apache-2.0) _(and)_
+        <a href="https://selfh.st/icons/" target="_blank" rel="noopener">selfh.st/icons</a>
+        (CC BY 4.0).
+        _(Individual logos remain the property of their respective owners)_.
+      </span>
+    </td>
+  </tr>
+</tbody>
+</table>
+
+<table class="tablesorter shift">
 <thead><tr><th colspan="2">_(Removing the plugin)_</th></tr></thead>
 <tbody>
   <tr>

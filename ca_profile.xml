@@ -29,6 +29,8 @@ recreates a container, and a "Classic view" switch restores the standard
 Unraid table at any time.
 
 Requires Unraid 7.2 or newer. Support through the repository's Issues page.
+
+Folder icons can be searched and downloaded from [Dashboard Icons](https://github.com/homarr-labs/dashboard-icons) (Apache-2.0) and [selfh.st/icons](https://selfh.st/icons/) (CC BY 4.0); no artwork is bundled with the plugin.
   </Profile>
   <Icon>https://raw.githubusercontent.com/gcarstoiu/simple.folders/main/src/usr/local/emhttp/plugins/simple.folders/images/icon.png</Icon>
   <WebPage>https://github.com/gcarstoiu/simple.folders</WebPage>

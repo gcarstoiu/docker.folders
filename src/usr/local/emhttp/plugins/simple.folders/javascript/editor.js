@@ -275,6 +275,19 @@
         text: 'The icon is copied to the server, so it still shows when offline.'
       }));
 
+      /* Attribution. selfh.st's collection is CC BY 4.0, which requires it;
+       * Dashboard Icons is Apache-2.0. Individual logos remain the property
+       * of whoever owns the brand. */
+      panel.appendChild(U.el('div.sf-ed-hint', null, [
+        'Icons from ',
+        U.el('a', { href: 'https://github.com/homarr-labs/dashboard-icons',
+                    target: '_blank', rel: 'noopener', text: 'Dashboard Icons' }),
+        ' (Apache-2.0) and ',
+        U.el('a', { href: 'https://selfh.st/icons/',
+                    target: '_blank', rel: 'noopener', text: 'selfh.st/icons' }),
+        ' (CC BY 4.0). Logos belong to their respective owners.'
+      ]));
+
       if (draft.name) runSearch(draft.name);
     }
 
