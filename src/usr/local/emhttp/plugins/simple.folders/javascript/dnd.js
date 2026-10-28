@@ -31,7 +31,10 @@
 
   /* Movement before a press becomes a drag. Below this a press is a tap, so
    * the grip can still be focused and clicked without the row jumping. */
-  var THRESHOLD = 5;
+  /* Enough that a slightly unsteady click on an icon is still a click; the
+   * whole row is a drag source now, so this is the only thing separating
+   * "open the menu" from "move this somewhere". */
+  var THRESHOLD = 8;
   var EDGE = 64;           // autoscroll band at the top and bottom
   var EDGE_SPEED = 14;
 
@@ -64,52 +67,88 @@
       /* A finger anywhere but the grip means "scroll", not "drag". */
       if (e.pointerType === 'touch' && !onGrip) return;
 
-      /* Leave the real controls alone - switches, menus, the chevron. */
-      if (!onGrip && e.target.closest &&
-          e.target.closest('button, input, select, textarea, a, label')) return;
+      /* One exception to "anywhere in the row drags": the autostart switch.
+       * A toggle is the control people swipe at, and having the row sail off
+       * when they do is a nasty surprise. Everything else - icons, names,
+       * the kebab - is fair game, because those are what you reach for when
+       * you want to move something. */
+      if (!onGrip && e.target.closest && e.target.closest('.sf-switch, input')) return;
 
       begin(e, onGrip || row, row, kind, key);
     });
+
+    /* Swallow the click that follows a real drag.
+     *
+     * Anywhere in the row starts a drag, including the icons - which is the
+     * whole point, since an icon is the obvious thing to grab. But those
+     * icons are buttons that open menus on click, and a pointerup after a
+     * drag still fires one. Refusing to drag from buttons was the first
+     * attempt and it left most of a row undraggable: on a folder row the
+     * icon, the name AND the chevron are all buttons, so on a laptop the
+     * feature looked dead while a phone (grip only) worked.
+     *
+     * Capture phase, so this runs before the button's own handler. */
+    row.addEventListener('click', function (e) {
+      if (!row.dataset.sfDragged) return;
+      delete row.dataset.sfDragged;
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
   };
 
   function begin(e, handle, row, kind, key) {
-    var grip = handle;
     var startX = e.clientX, startY = e.clientY;
+    var pointerId = e.pointerId;
     var started = false;
 
-    /* Capture on the grip so the gesture keeps reporting even when the
-     * pointer leaves the row - including over the ghost element. */
-    try { grip.setPointerCapture(e.pointerId); } catch (err) { /* older engines */ }
-
+    /* Pointer capture is taken ONLY once the press becomes a drag.
+     *
+     * Capturing on pointerdown - the obvious place - retargets pointerup to
+     * the captured element, and a browser only fires `click` when down and
+     * up share a target. So capturing up front silently killed every click
+     * in a row: the icons' menus, the chevron, the autostart switch.
+     *
+     * Listening on the window rather than the element means the gesture is
+     * still tracked either way, capture or not. */
     function onMove(ev) {
+      if (ev.pointerId !== pointerId) return;
+
       if (!started) {
         if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) < THRESHOLD) return;
         started = true;
+        try { row.setPointerCapture(pointerId); } catch (err) { /* older engines */ }
         start(row, kind, key, ev);
       }
+
       move(ev);
-      /* Stop the page scrolling under a touch drag. */
-      ev.preventDefault();
+      /* Keep a touch drag from scrolling the page under it. */
+      if (ev.cancelable) ev.preventDefault();
     }
 
     function onUp(ev) {
-      grip.removeEventListener('pointermove', onMove);
-      grip.removeEventListener('pointerup', onUp);
-      grip.removeEventListener('pointercancel', onCancel);
-      try { grip.releasePointerCapture(ev.pointerId); } catch (err) {}
+      if (ev.pointerId !== pointerId) return;
+      detach();
+      try { row.releasePointerCapture(pointerId); } catch (err) {}
       if (started) finish();
     }
 
-    function onCancel() {
-      grip.removeEventListener('pointermove', onMove);
-      grip.removeEventListener('pointerup', onUp);
-      grip.removeEventListener('pointercancel', onCancel);
+    function onCancel(ev) {
+      if (ev.pointerId !== pointerId) return;
+      detach();
       if (started) cancel();
     }
 
-    grip.addEventListener('pointermove', onMove);
-    grip.addEventListener('pointerup', onUp);
-    grip.addEventListener('pointercancel', onCancel);
+    function detach() {
+      root.removeEventListener('pointermove', onMove, true);
+      root.removeEventListener('pointerup', onUp, true);
+      root.removeEventListener('pointercancel', onCancel, true);
+    }
+
+    root.addEventListener('pointermove', onMove, true);
+    root.addEventListener('pointerup', onUp, true);
+    root.addEventListener('pointercancel', onCancel, true);
+
+    void handle;
   }
 
   function start(row, kind, key, ev) {
@@ -137,6 +176,7 @@
     U.layer().appendChild(drag.indicator);
 
     row.classList.add('is-dragging');
+    row.dataset.sfDragged = '1';
     document.body.classList.add('sf-dragging');
 
     drag.zones = buildZones(kind, key);
@@ -334,6 +374,7 @@
     var from = ids.indexOf(id);
     if (from === -1) return;
 
+    if (at === from || at === from + 1) return;    // dropped where it was
     ids.splice(from, 1);
     /* Removing the dragged folder shifts everything after it up by one. */
     ids.splice(at > from ? at - 1 : at, 0, id);
@@ -355,6 +396,8 @@
       var members = folder.members.slice();
       var from = members.indexOf(name);
       if (from === -1) return;                      // here via a rule or label
+      /* Dropped on its own position - either edge of its own row. */
+      if (index === from || index === from + 1) return;
       members.splice(from, 1);
       members.splice(index > from ? index - 1 : index, 0, name);
 

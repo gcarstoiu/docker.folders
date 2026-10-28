@@ -750,6 +750,64 @@ const TESTS = [
     ok(true);
   }),
 
+  /* On a laptop the obvious thing to grab is the container's icon, or a
+   * folder's icon or name. All of those are <button>s, and the first cut
+   * refused to drag from any button - so on a mouse the feature looked
+   * dead, while a phone (grip only) worked. */
+  t('a drag started from a container icon works', async () => {
+    await fresh('&folded=all');
+    await dragGrip('.sf-row-ct[data-container="immich"]',
+                   '.sf-row-folder[data-folder="f-ai"]', 'middle', '.sf-ct-icon');
+    await page.waitForFunction(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      return d.folders.find((f) => f.id === 'f-ai').resolved.includes('immich');
+    }, { timeout: 5000 });
+    ok(true);
+  }),
+
+  t('a folder drags by its icon and by its name', async () => {
+    for (const handle of ['.sf-folder-icon', '.sf-folder-name']) {
+      await fresh('&folded=all');
+      await dragGrip('.sf-row-folder[data-folder="f-media"]',
+                     '.sf-row-folder[data-folder="f-ai"]', 'bottom', handle);
+      await page.waitForFunction(async () => {
+        const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+        return d.folders[d.folders.length - 1].id === 'f-media';
+      }, { timeout: 5000 }).catch(() => {
+        throw new Error(`dragging a folder by ${handle} did nothing`);
+      });
+    }
+  }),
+
+  t('a drag from an icon does not also open its menu', async () => {
+    await fresh('&folded=all');
+    await dragGrip('.sf-row-ct[data-container="immich"]',
+                   '.sf-row-folder[data-folder="f-ai"]', 'middle', '.sf-ct-icon');
+    await new Promise((r) => setTimeout(r, 300));
+    ok(!(await page.$('.sf-menu')), 'the container menu opened after a drag');
+  }),
+
+  t('the table shows Container Port and LAN IP:Port', async () => {
+    await fresh();
+
+    const heads = await page.$$eval('.sf-row-head .sf-cell', (n) => n.map((x) => x.textContent.trim()));
+    ok(heads.includes('Container Port'), `headers were ${JSON.stringify(heads)}`);
+    ok(heads.includes('LAN IP:Port'), `headers were ${JSON.stringify(heads)}`);
+    /* The vague single "Port" column is gone, not duplicated. */
+    ok(!heads.includes('Port'), 'the old generic Port column is still there');
+
+    const row = '.sf-row-ct[data-container="nextcloud"]';
+    const cells = await page.$$eval(`${row} .sf-cell`, (n) => n.map((x) => x.textContent.trim()));
+    ok(cells.some((c) => c === '443:TCP'), `no container port in ${JSON.stringify(cells)}`);
+    ok(cells.some((c) => /^10\.0\.0\.10:443$/.test(c)), `no LAN address in ${JSON.stringify(cells)}`);
+
+    /* A stopped container publishes nothing on the LAN. */
+    const stopped = await page.$$eval('.sf-row-ct[data-container="immich"] .sf-cell',
+      (n) => n.map((x) => x.textContent.trim()));
+    ok(stopped.some((c) => c === '2283:TCP'), 'a stopped container should still show its container port');
+    await shot('21-port-columns');
+  }),
+
   t('the browser cannot drag the artwork out from under the gesture', async () => {
     await fresh();
     const bad = await page.$$eval('#sf-root img', (imgs) => imgs
@@ -759,19 +817,26 @@ const TESTS = [
     ok(bad.length === 0, `${bad.length} image(s) are still natively draggable: ${JSON.stringify(bad)}`);
   }),
 
-  t('pressing a control in a row does not start a drag', async () => {
+  t('the autostart switch still toggles, and never drags the row', async () => {
     await fresh('&folded=all');
+    const sel = '.sf-row-ct[data-container="mariadb"] .sf-switch';
 
-    /* The autostart switch sits inside the row; pressing it must toggle,
-     * not begin a drag. */
-    const sw = await page.$('.sf-row-ct[data-container="mariadb"] .sf-switch');
-    const b = await sw.boundingBox();
+    /* Swiping a toggle must not send the row somewhere. */
+    const b = await (await page.$(sel)).boundingBox();
     await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
     await page.mouse.down();
     await page.mouse.move(b.x + b.width / 2 + 60, b.y + 40, { steps: 8 });
     const ghost = await page.$('.sf-drag-ghost');
     await page.mouse.up();
-    ok(!ghost, 'dragging from the autostart switch started a row drag');
+    ok(!ghost, 'swiping the autostart switch started a row drag');
+
+    /* And a plain click still works. */
+    const before = await page.$eval(sel, (n) => n.getAttribute('aria-pressed'));
+    await page.click(sel);
+    await page.waitForFunction(
+      (s, was) => document.querySelector(s).getAttribute('aria-pressed') !== was,
+      { timeout: 5000 }, sel, before);
+    ok(true);
   }),
 
   t('the stock Docker table is hidden before it can be seen', async () => {

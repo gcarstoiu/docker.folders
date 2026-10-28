@@ -19,7 +19,11 @@
   var U = SF.util;
   var R = SF.render = {};
 
-  var COLUMNS = ['', 'Container', 'Status', 'Version', 'Port', 'CPU', 'Memory', 'Autostart', ''];
+  /* "Container Port" and "LAN IP:Port" replace the single vague "Port" this
+ * started with - they are what Unraid's own table shows, and keeping all
+ * three would have put the same number on screen twice. */
+  var COLUMNS = ['', 'Container', 'Status', 'Version', 'Container Port',
+                 'LAN IP:Port', 'CPU', 'Memory', 'Autostart', ''];
 
   /* ---------------------------------------------------------------------
    * Entry point
@@ -350,7 +354,9 @@
         : U.el('span.sf-muted', { text: 'Up to date' })
     ]));
 
-    /* 5-7 - port, cpu, memory */
+    /* 5-8 - the two port columns (a folder aggregates no address of its
+     * own), then cpu and memory, which R.updateLive() patches in place. */
+    row.appendChild(U.el('div.sf-cell.sf-mono.sf-muted', { text: '—' }));
     row.appendChild(U.el('div.sf-cell.sf-mono.sf-muted', { text: '—' }));
     row.appendChild(U.el('div.sf-cell.sf-mono.sf-cell-cpu', { text: U.cpu(sum.cpu) }));
     row.appendChild(U.el('div.sf-cell.sf-mono.sf-cell-mem', { text: U.memory(sum.mem) }));
@@ -471,8 +477,9 @@
       : U.el('span.sf-muted', { text: 'Up to date' })
     ]));
 
-    /* 5-7 */
-    row.appendChild(U.el('div.sf-cell.sf-mono', { text: ct.port ? ':' + ct.port : '—' }));
+    /* 5-8 */
+    row.appendChild(portCell(ct.ports && ct.ports.internal));
+    row.appendChild(portCell(ct.ports && ct.ports.external));
     row.appendChild(U.el('div.sf-cell.sf-mono.sf-cell-cpu', { text: U.cpu(S.cpu(ct)) }));
     row.appendChild(U.el('div.sf-cell.sf-mono.sf-cell-mem', { text: U.memory(S.mem(ct)) }));
 
@@ -562,6 +569,17 @@
       track,
       U.el('span.sf-switch-label', { text: opts.label })
     ]);
+  }
+
+  /* A port column. A container can publish several, so they stack; the cell
+   * stays on one line per entry rather than wrapping mid-address. */
+  function portCell(list) {
+    var values = (list || []).filter(Boolean);
+    if (!values.length) return U.el('div.sf-cell.sf-mono.sf-muted', { text: '—' });
+
+    var cell = U.el('div.sf-cell.sf-mono.sf-ports', { title: values.join('\n') });
+    values.forEach(function (v) { cell.appendChild(U.el('span.sf-port', { text: v })); });
+    return cell;
   }
 
   /* The drag handle. A real button so it is focusable and announced, but it

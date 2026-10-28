@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.28c">
-<!ENTITY md5       "6db0304cd241f8a618fc5a438df428ab">
+<!ENTITY version   "2026.10.28d">
+<!ENTITY md5       "1b6d1189914528768eda6d8edb32a3a0">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +21,15 @@
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.28d
+- Fix: drag and drop did nothing with a mouse. Pointer capture was taken on
+  press rather than once the press became a drag, and a browser only fires a
+  click when press and release share a target - so grabbing a row either did
+  nothing or swallowed the click. The whole row drags now, including the
+  icons and a folder's name, which is what you reach for.
+- Container Port and LAN IP:Port columns, matching Unraid's own table. They
+  replace the single vague "Port" column rather than sitting beside it.
+
 ###2026.10.28c
 - Fix: dragging a container appeared to work but dropping it did nothing.
   Only an 18px grip, invisible until hovered, was a drag source - so the

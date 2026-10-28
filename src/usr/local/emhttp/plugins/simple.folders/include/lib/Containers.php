@@ -104,6 +104,9 @@ function sf_containers(): array {
    * one "<name> <seconds>" line per container, in start order. */
   $waits = sf_autostart_waits();
 
+  /* The LAN address ports are published on, for the "LAN IP:Port" column. */
+  $host = class_exists('DockerUtil') ? DockerUtil::host() : '';
+
   $out = [];
   foreach ($containers as $ct) {
     $name = $ct['Name'];
@@ -127,6 +130,7 @@ function sf_containers(): array {
       'state'     => $state,
       'update'    => $update,
       'port'      => sf_primary_port($ct),
+      'ports'     => sf_port_columns($ct, $host),
       'autostart' => !empty($info['autostart']),
       'wait'      => $waits[$name] ?? 0,
       'webui'     => html_entity_decode($info['url'] ?? ''),
@@ -141,6 +145,61 @@ function sf_containers(): array {
   return $out;
 }
 
+/* The two port columns, matching what Unraid's own Docker page shows:
+ *
+ *   internal  "<PrivatePort>:<TYPE>"      -> the Container Port column
+ *   external  "<HostIp>:<PublicPort>"     -> the LAN IP:Port column
+ *
+ * Host networking is a special case in both: everything is reachable, so the
+ * container side reads "all" and the LAN side is the network's own address.
+ * Containers on an ipvlan/macvlan network publish nothing through the host,
+ * so neither column applies.
+ *
+ * Logic mirrors dynamix.docker.manager/include/DockerContainers.php, except
+ * that this de-duplicates: that loop walks every network and re-reads every
+ * port inside each, so a container on two networks lists its ports twice.
+ */
+function sf_port_columns(array $ct, string $host): array {
+  $internal = [];
+  $external = [];
+
+  $networks = is_array($ct['Networks'] ?? null) ? $ct['Networks'] : [];
+  $ports    = is_array($ct['Ports'] ?? null) ? $ct['Ports'] : [];
+  $isHost   = isset($networks['host']);
+  $isVlan   = isset($ports['vlan']);
+
+  if ($isHost) {
+    foreach ($networks as $net) {
+      if (!empty($net['IPAddress'])) $external[] = (string)$net['IPAddress'];
+    }
+    $internal[] = 'all';
+    return ['internal' => array_values(array_unique($internal)),
+            'external' => array_values(array_unique($external))];
+  }
+
+  if ($isVlan && strpos((string)($ct['NetworkMode'] ?? ''), 'container:') === false) {
+    /* On an ipvlan/macvlan the container has its own LAN address and nothing
+     * is mapped through the host. */
+    foreach ($ports['vlan'] as $ip) if ($ip) $external[] = (string)$ip;
+    return ['internal' => [], 'external' => array_values(array_unique($external))];
+  }
+
+  foreach ($ports as $port) {
+    if (!is_array($port) || empty($port['PrivatePort'])) continue;   // skips 'host'/'vlan'
+
+
+    $internal[] = $port['PrivatePort'].':'.strtoupper((string)($port['Type'] ?? 'tcp'));
+
+    if (!empty($port['PublicPort']) && ($port['Driver'] ?? '') === 'bridge') {
+      $ip = !empty($port['HostIp']) ? $port['HostIp'] : $host;
+      $external[] = ($ip !== '' ? $ip.':' : '').$port['PublicPort'];
+    }
+  }
+
+  return ['internal' => array_values(array_unique($internal)),
+          'external' => array_values(array_unique($external))];
+}
+
 /* The port shown in the Port column: the first published (host) port, falling
  * back to the first exposed one. Returns null when the container publishes
  * nothing, which the UI renders as an em dash. */
@@ -151,7 +210,7 @@ function sf_primary_port(array $ct): ?int {
   foreach ($ports as $port) {
     if (is_array($port) && !empty($port['PublicPort'])) return (int)$port['PublicPort'];
   }
-  foreach ($ports as $key => $port) {
+  foreach ($ports as $port) {
     if (is_array($port) && !empty($port['PrivatePort'])) return (int)$port['PrivatePort'];
     if (is_numeric($key)) return (int)$key;
   }

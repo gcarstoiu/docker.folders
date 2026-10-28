@@ -20,6 +20,11 @@ function sf_containers_source(): array {
       'state'     => $ct['state'],
       'update'    => (int)$ct['update'],
       'port'      => $ct['port'] ?: null,
+      /* Same shape sf_port_columns() builds on a real server. */
+      'ports'     => [
+        'internal' => $ct['port'] ? [$ct['port'].':TCP'] : [],
+        'external' => ($ct['port'] && $ct['state'] !== 'stopped') ? ['10.0.0.10:'.$ct['port']] : [],
+      ],
       'autostart' => (bool)$ct['autostart'],
       'wait'      => (int)($ct['wait'] ?? 0),
       'webui'     => $ct['webui'] ?? '',

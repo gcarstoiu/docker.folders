@@ -471,6 +471,13 @@
 /* ---------------------------------------------------------------------------
  * Reduced motion
  * ------------------------------------------------------------------------- */
+/* A container can publish more than one port; they stack in the cell. */
+.sf-root .sf-ports { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sf-root .sf-port {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  line-height: 1.35;
+}
+
 /* ---------------------------------------------------------------------------
  * Dragging
  *

@@ -47,6 +47,10 @@
   </Overview>
 
   <Changes>
+### 2026.10.28d
+- Fix: drag and drop did nothing with a mouse.
+- Added Container Port and LAN IP:Port columns.
+
 ### 2026.10.28c
 - Fix: dropping a dragged container did nothing unless you grabbed the small grip.
 - The Plugins page now shows "Simple Folders" and the plugin's icon.

@@ -122,8 +122,10 @@
   --sf-r-pill:    999px;
 
   /* ---- metrics ---- */
-  --sf-table-min:      1100px;
-  --sf-grid: 40px minmax(280px, 1fr) 150px 124px 84px 72px 92px 104px 44px;
+  /* 40 + 260 + 150 + 124 + 112 + 150 + 72 + 92 + 104 + 44 = 1148,
+     plus nine 10px gaps and 24px of side padding. */
+  --sf-table-min:      1262px;
+  --sf-grid: 40px minmax(260px, 1fr) 150px 124px 112px 150px 72px 92px 104px 44px;
   --sf-grid-gap:       10px;
   --sf-row-pad-x:      12px;
   --sf-folder-row-min: 64px;
