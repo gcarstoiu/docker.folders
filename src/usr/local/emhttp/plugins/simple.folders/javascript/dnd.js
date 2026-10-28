@@ -43,19 +43,37 @@
    * Starting
    * ------------------------------------------------------------------- */
 
-  /* render.js calls this on each grip it creates. */
-  D.attach = function (grip, kind, key) {
-    grip.addEventListener('pointerdown', function (e) {
-      /* Left button or a touch; never a right-click or a running job. */
+  /* render.js calls this once per row.
+   *
+   * The whole row is the drag source, not just the grip. The grip alone was
+   * an 18px target that only appeared on hover, so the natural thing to
+   * grab was the row or the container's icon - and an icon is an <img>,
+   * which browsers drag natively. That produced a convincing drag that did
+   * nothing on drop, because none of this code had run. render.js now also
+   * marks the artwork undraggable so the native behaviour cannot start.
+   *
+   * Touch is the exception: a finger on the row has to scroll the page, so
+   * a touch drag starts from the grip only - which is permanently visible
+   * on touch devices for exactly that reason. */
+  D.attach = function (row, kind, key) {
+    row.addEventListener('pointerdown', function (e) {
       if (e.button !== 0 || SF.jobs.running()) return;
-      begin(e, grip, kind, key);
+
+      var onGrip = e.target.closest && e.target.closest('.sf-grip');
+
+      /* A finger anywhere but the grip means "scroll", not "drag". */
+      if (e.pointerType === 'touch' && !onGrip) return;
+
+      /* Leave the real controls alone - switches, menus, the chevron. */
+      if (!onGrip && e.target.closest &&
+          e.target.closest('button, input, select, textarea, a, label')) return;
+
+      begin(e, onGrip || row, row, kind, key);
     });
   };
 
-  function begin(e, grip, kind, key) {
-    var row = grip.closest('.sf-row');
-    if (!row) return;
-
+  function begin(e, handle, row, kind, key) {
+    var grip = handle;
     var startX = e.clientX, startY = e.clientY;
     var started = false;
 

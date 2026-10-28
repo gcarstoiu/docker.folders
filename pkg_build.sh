@@ -131,6 +131,53 @@ if [ "$xml_ok" -ne 0 ]; then
   exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# Check what the Plugins page will actually show.
+#
+# It takes the row's title from plugins/<name>/README.md rendered as
+# Markdown, falling back to the bare plugin id when there is none - which is
+# how this shipped once reading "simple.folders" instead of "Simple Folders".
+# The icon attribute is resolved against plugins/<name>/images/, and silently
+# falls back to a generic plugin icon when the file is missing.
+# ---------------------------------------------------------------------------
+echo "==> checking the Plugins page entry"
+python3 - "$BUILD" "$PLG" <<'PYEOF' || { echo "error: see above - not publishing." >&2; rm -f "$PKG"; exit 1; }
+import os, re, sys, pathlib
+
+build, plg_path = sys.argv[1], sys.argv[2]
+plg  = pathlib.Path(plg_path).read_text()
+ent  = dict(re.findall(r'<!ENTITY (\w+)\s+"([^"]*)">', plg))
+name = ent.get('name', '')
+icon = (re.search(r'icon="([^"]*)"', plg) or [None, ''])[1]
+root = pathlib.Path(build) / 'usr/local/emhttp'
+bad  = False
+
+readme = root / 'plugins' / name / 'README.md'
+if readme.exists():
+    first = readme.read_text().strip().splitlines()[0]
+    shown = re.sub(r'\*\*(.+?)\*\*', r'\1', first).strip()
+    print(f'  title    {shown!r}')
+    if shown == name:
+        print(f'  PROBLEM  the title is the plugin id; give README.md a readable name')
+        bad = True
+else:
+    print(f'  PROBLEM  no plugins/{name}/README.md - the page would show {name!r}')
+    bad = True
+
+if icon.endswith('.png'):
+    for rel in (f'plugins/{name}/images/{icon}', f'plugins/{name}/{icon}'):
+        if (root / rel).exists():
+            print(f'  icon     /{rel}')
+            break
+    else:
+        print(f'  PROBLEM  icon="{icon}" is not in the package; it would fall back to the generic icon')
+        bad = True
+else:
+    print(f'  icon     FontAwesome "{icon}" (not the plugin artwork)')
+
+sys.exit(1 if bad else 0)
+PYEOF
+
 echo "==> $PKG"
 echo "    md5 $MD5  (written to $PLUGIN.plg)"
 echo "    size $(du -h "$PKG" | cut -f1)"

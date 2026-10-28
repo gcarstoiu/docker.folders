@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.28b">
-<!ENTITY md5       "a85dde4f02e34060a1464ba9078b3326">
+<!ENTITY version   "2026.10.28c">
+<!ENTITY md5       "6db0304cd241f8a618fc5a438df428ab">
 ]>
 
 <PLUGIN name="&name;"
@@ -16,11 +16,23 @@
         version="&version;"
         launch="&launch;"
         pluginURL="&pluginURL;"
-        icon="folder-open-o"
+        icon="icon.png"
         min="7.2.0"
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.28c
+- Fix: dragging a container appeared to work but dropping it did nothing.
+  Only an 18px grip, invisible until hovered, was a drag source - so the
+  natural thing to grab was the row or the container's icon, and an icon is
+  an image the browser drags by itself. That looked like a drag and dropped
+  nowhere. The whole row is now a drag source, the artwork can no longer be
+  dragged by the browser, and the grip is visible at rest.
+  On a touch screen the grip is still the way to drag, so a finger on the
+  row continues to scroll the page.
+- The plugin now appears as "Simple Folders" with its own icon on the
+  Plugins page, instead of "simple.folders" with a generic folder glyph.
+
 ###2026.10.28b
 - Drag and drop. A grip appears at the left of each row: drag a container
   onto a folder to move it there, between two members to set where it starts,

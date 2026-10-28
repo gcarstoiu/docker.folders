@@ -731,6 +731,49 @@ const TESTS = [
     ok(after[after.length - 1] === 'f-media', `Media should be last, order is ${JSON.stringify(after)}`);
   }),
 
+  /* The grip was an 18px target that only appeared on hover, so the natural
+   * thing to grab was the row itself or the container's icon. An icon is an
+   * <img>, which browsers drag natively - a convincing drag that drops
+   * nowhere, because none of our code ran. */
+  t('a drag started from the row body works, not just the grip', async () => {
+    await fresh('&folded=all');
+
+    /* Grab the container's NAME - no grip, no button, just the row. */
+    await dragGrip('.sf-row-ct[data-container="immich"]',
+                   '.sf-row-folder[data-folder="f-ai"]', 'middle', '.sf-ct-name');
+    await page.waitForFunction(() => !document.querySelector('.sf-drag-ghost'), { timeout: 3000 });
+
+    await page.waitForFunction(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      return d.folders.find((f) => f.id === 'f-ai').resolved.includes('immich');
+    }, { timeout: 5000 });
+    ok(true);
+  }),
+
+  t('the browser cannot drag the artwork out from under the gesture', async () => {
+    await fresh();
+    const bad = await page.$$eval('#sf-root img', (imgs) => imgs
+      .filter((i) => i.getAttribute('draggable') !== 'false'
+                  && getComputedStyle(i).webkitUserDrag !== 'none')
+      .map((i) => i.className));
+    ok(bad.length === 0, `${bad.length} image(s) are still natively draggable: ${JSON.stringify(bad)}`);
+  }),
+
+  t('pressing a control in a row does not start a drag', async () => {
+    await fresh('&folded=all');
+
+    /* The autostart switch sits inside the row; pressing it must toggle,
+     * not begin a drag. */
+    const sw = await page.$('.sf-row-ct[data-container="mariadb"] .sf-switch');
+    const b = await sw.boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width / 2 + 60, b.y + 40, { steps: 8 });
+    const ghost = await page.$('.sf-drag-ghost');
+    await page.mouse.up();
+    ok(!ghost, 'dragging from the autostart switch started a row drag');
+  }),
+
   t('the stock Docker table is hidden before it can be seen', async () => {
     await page.goto(`${BASE}/_reset`, { waitUntil: 'domcontentloaded' });
     await page.evaluateOnNewDocument(() => { try { localStorage.clear(); } catch (e) {} });
@@ -818,9 +861,9 @@ async function tickMembers(names) {
 /* Drive a real pointer drag from one element's grip to a point on another
  * row. CDP's mouse API dispatches genuine pointer events, so this exercises
  * the same path a person does - not a synthetic shortcut. */
-async function dragGrip(fromSelector, toSelector, where = 'middle') {
-  const grip = await page.$(`${fromSelector} .sf-grip`);
-  if (!grip) throw new Error(`no grip on ${fromSelector}`);
+async function dragGrip(fromSelector, toSelector, where = 'middle', handle = '.sf-grip') {
+  const grip = await page.$(`${fromSelector} ${handle}`.trim());
+  if (!grip) throw new Error(`no ${handle} on ${fromSelector}`);
   const g = await grip.boundingBox();
 
   const target = await page.$(toSelector);

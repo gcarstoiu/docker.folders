@@ -482,12 +482,16 @@
 
 .sf-root .sf-grip {
   position: absolute;
-  left: -2px;
-  width: 18px; height: 28px;
+  left: -3px;
+  width: 20px; height: 30px;
   display: grid; place-items: center;
   border-radius: 5px;
   color: var(--sf-text-faint);
-  opacity: 0;
+  /* Faintly visible at rest rather than hidden: invisible until hover made
+     it undiscoverable, so people grabbed the row or the container icon
+     instead. The row is a drag source now too, but the grip still has to
+     advertise that the rows move. */
+  opacity: .42;
   cursor: grab;
   /* The browser must not pan the page or start its own drag from here. */
   touch-action: none;
@@ -512,10 +516,27 @@
 /* A folder row's grip shares the column with the chevron, so it sits above. */
 .sf-root .sf-row-folder .sf-grip { left: -4px; top: 4px; height: 24px; }
 
-/* No hover on a touch screen, so the grip has to be permanently visible. */
+/* No hover on a touch screen, and a finger on the row has to scroll - so on
+   touch the grip is the ONLY way to start a drag, and is fully visible. */
 @media (hover: none) {
-  .sf-root .sf-grip { opacity: .55; }
+  .sf-root .sf-grip { opacity: .9; }
 }
+
+/* The row itself drags (with a mouse or pen). Keep the browser from
+   selecting text or dragging the artwork out from under the gesture. */
+.sf-root .sf-row-ct,
+.sf-root .sf-row-folder { -webkit-user-select: none; user-select: none; }
+.sf-root img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+}
+.sf-root .sf-row-ct:hover,
+.sf-root .sf-row-folder:hover { cursor: grab; }
+/* ...but not over the things you click. */
+.sf-root .sf-row button,
+.sf-root .sf-row input,
+.sf-root .sf-row label { cursor: pointer; }
 
 .sf-root .sf-row.is-dragging { opacity: .4; }
 

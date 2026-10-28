@@ -283,6 +283,7 @@
       'data-folder': folder.id,
       'data-color': folder.color
     });
+    if (SF.dnd) SF.dnd.attach(row, 'folder', folder.id);
 
     /* 1 - chevron */
     var chevron = U.el('button.sf-chevron', {
@@ -428,6 +429,7 @@
       role: 'row',
       'data-container': ct.name
     });
+    if (SF.dnd) SF.dnd.attach(row, 'container', ct.name);
 
     /* 1 - tree line when nested, plus the drag grip */
     row.appendChild(U.el('div.sf-cell.sf-cell-tree', null, [
@@ -506,6 +508,9 @@
         src: ct.icon,
         alt: '',
         loading: 'lazy',
+        /* Without this the browser starts its own image drag, which looks
+         * exactly like ours and does nothing on drop. */
+        draggable: 'false',
         /* A broken icon URL must not leave an empty hole in the row. */
         onError: function (e) {
           var fallback = letterTile(ct, cls);
@@ -530,7 +535,7 @@
     if (icon.type === 'web' && icon.localFile) {
       return U.el('img.sf-folder-img', {
         src: SF.config.base + '/include/Icons.php?file=' + encodeURIComponent(icon.localFile),
-        alt: '', loading: 'lazy'
+        alt: '', loading: 'lazy', draggable: 'false'
       });
     }
 
@@ -574,7 +579,6 @@
       onClick: function (e) { e.preventDefault(); }
     }, [U.el('span.sf-grip-dots', { 'aria-hidden': 'true' })]);
 
-    if (SF.dnd) SF.dnd.attach(node, kind, key);
     return node;
   }
 
