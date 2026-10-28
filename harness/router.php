@@ -104,13 +104,6 @@ if (preg_match('#^/icondata/([a-z-]+)/(.+)$#', $path, $m)) {
   return true;
 }
 
-/* ---- design mockups --------------------------------------------------- */
-if ($path === '/mockups') {
-  $_SERVER['DOCUMENT_ROOT'] = $root.'/mock';
-  require $root.'/mock/mockups.php';
-  return true;
-}
-
 /* ---- the Docker page -------------------------------------------------- */
 if ($path === '/' || $path === '/index.php' || $path === '/Docker') {
   $_SERVER['DOCUMENT_ROOT'] = $root.'/mock';

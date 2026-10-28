@@ -185,6 +185,68 @@ Known deviations, all deliberate:
 
 ---
 
+## Picking this up again
+
+Hard-won constraints. Each of these shipped as a bug first; none is obvious
+from the code alone, and all of them are easy to undo by accident.
+
+**Never parse `DockerContainers.php`'s row HTML.** It changed substantially
+between 7.2.1 and 7.4 and is the usual reason folder plugins break on
+upgrade. Read containers through `DockerClient`/`DockerTemplates` instead;
+those are stable across the range.
+
+**Require `DockerClient.php` at file scope, never inside a function.** It
+declares `$dockerManPaths`, `$driver`, `$docroot` and `$dockercfg` at its top
+level and thirteen of its methods reach for them with `global`. An include
+takes the scope of whatever included it, so requiring it in a function makes
+them locals and every lookup resolves to null.
+
+**Asset mtimes must change between releases.** `autov()` cache-busts on
+`filemtime`. `pkg_build.sh` derives the archive mtime from the version for
+exactly this reason — a fixed one made three releases install correctly and
+change nothing, because browsers kept the old JavaScript. The build refuses
+to run if that derivation stops varying.
+
+**Keep the `unapi` class on the mount and the overlay layer.** Unraid guards
+88 element rules with `:where(:not(.unapi *))`. Without it, its `button` rule
+repaints every control (uppercase, `min-width: 86px`, an orange border). The
+element reset in `table.css` is the second line of defence and is scoped
+`.sf-root button` (0,1,1) on purpose: component rules are `.sf-root .sf-xxx`
+(0,2,0) so they still win. A tie decided by load order is not a guarantee.
+
+**Take pointer capture only once a drag starts, not on `pointerdown`.**
+Capture retargets `pointerup`, and a browser only fires `click` when press
+and release share a target — capturing early silently kills every click in
+the row.
+
+**Don't call Unraid's `UserPrefs.php`.** It saves the display order *and*
+re-sorts `unraid-autostart` to match, which would undo the start order a
+folder owns. `Order.php` writes the display order alone.
+
+**Every POST is CSRF-gated** by `local_prepend.php` (a php.ini
+`auto_prepend_file`). jQuery's `$.post` is patched to add the token; `fetch`
+is not, so `api.js` sends `X-CSRF-Token`. The harness reproduces this, which
+is the point — otherwise code passes locally and 403s on hardware.
+
+**Apply behaviour to both container sources.** `sf_containers()` returns
+early for the harness fixture reader. Logic added after that early return is
+never exercised by the tests; the display order shipped doing nothing that
+way.
+
+### Where things stand
+
+Submitted to Community Applications and awaiting manual moderator review.
+Until it is listed, installation is the `.plg` URL above, which is also how
+updates reach existing installs.
+
+Open: `<Support>` points at GitHub issues; the Unraid convention for plugins
+is a forum support thread, and if one is created it should be pointed at in
+both `templates/simple.folders.xml` and `ca_profile.xml`. The plugin has only
+ever run on one server — the APIs it uses were verified identical in the
+7.2.1 and 7.4.0-rc.2.1 sources, but 7.3.x hardware is untested.
+
+---
+
 ## Licence
 
 GPL-2.0. See [LICENSE](LICENSE).
