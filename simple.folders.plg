@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.28e">
-<!ENTITY md5       "1413f91de65c57da146fc2adf5bc1227">
+<!ENTITY version   "2026.10.28f">
+<!ENTITY md5       "13b48657acee04e2fafda64276914d85">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +21,16 @@
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.28f
+- The drag grip and the fold arrow now sit level in one column instead of
+  the grip floating above and to the left of it. Both keep a full-size
+  target.
+- Dragging a container that is not in a folder now reorders it, the same way
+  the lock-and-drag on Unraid's own Docker page does, and writes the same
+  file so both tables agree. A folder's start order is untouched by this:
+  Unraid's own save rewrites the autostart file to match the display order,
+  which would undo it, so this writes the display order alone.
+
 ###2026.10.28e
 - Fix: releases 2026.10.28b through 2026.10.28d appeared to install but
   changed nothing. Unraid cache-busts scripts and stylesheets on their file

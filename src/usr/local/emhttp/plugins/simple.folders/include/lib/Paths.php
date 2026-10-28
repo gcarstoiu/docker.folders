@@ -33,6 +33,16 @@ defined('SF_DOCKER_MAN') || define('SF_DOCKER_MAN', '/usr/local/emhttp/plugins/d
  * alongside it (DESIGN_SPEC.md 13.9). */
 defined('SF_DOCKER_MAN_AUTOSTART') || define('SF_DOCKER_MAN_AUTOSTART', '/var/lib/docker/unraid-autostart');
 
+/* Unraid's container DISPLAY order, as the lock-and-drag on the stock Docker
+ * page writes it: one <index>="<name>" line per container.
+ *
+ * Separate from the start order above, and deliberately so. Unraid's own
+ * UserPrefs.php rewrites BOTH - saving a display order there re-sorts the
+ * autostart file to match - which would quietly undo the start order a
+ * folder owns. This plugin writes this file alone and never touches
+ * unraid-autostart from here. */
+defined('SF_USER_PREFS') || define('SF_USER_PREFS', '/boot/config/plugins/dockerMan/userprefs.cfg');
+
 /* Docker label that assigns a container to a folder: simple.folders=<slug>.
  * Containers created later carrying this label join automatically. */
 defined('SF_LABEL')      || define('SF_LABEL', 'simple.folders');

@@ -99,6 +99,13 @@
     return post(PLUGIN + '/Folders.php', { action: 'insert', container: ct, folder: id, index: index });
   };
 
+  /* The container display order, written into Unraid's own userprefs.cfg so
+   * the stock table agrees. Start order is separate and lives with the
+   * folders - see include/Order.php for why these are not one call. */
+  API.setDisplayOrder = function (names) {
+    return post(PLUGIN + '/Order.php', { action: 'set', names: names.join(',') });
+  };
+
   API.applyAutostart = function (id)   { return post(PLUGIN + '/Autostart.php', { action: 'apply', id: id }); };
 
   API.searchIcons    = function (q)    { return post(PLUGIN + '/Icons.php', { action: 'search',   query: q }); };

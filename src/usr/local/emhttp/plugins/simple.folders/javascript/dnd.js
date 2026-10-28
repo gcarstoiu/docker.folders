@@ -227,6 +227,7 @@
     /* Dragging a container. */
     var currentFolder = null;
     var indexInFolder = 0;
+    var looseIndex = 0;
 
     rows.forEach(function (node) {
       var r = node.getBoundingClientRect();
@@ -244,8 +245,14 @@
 
       if (node.classList.contains('sf-section')) {
         currentFolder = null;              // the "Not in a folder" heading
+        looseIndex = 0;
+        /* Anchored at the heading's centre, not its bottom edge: at the
+         * bottom it tied with the last folder member's own edge zone just
+         * above, and a drop on "Not in a folder" would reorder inside that
+         * folder instead of leaving it. */
         zones.push({
-          y: r.top + r.height / 2, edge: r.bottom, node: node, kind: 'loose'
+          y: r.top + r.height / 2, edge: r.bottom, node: node,
+          kind: 'loose-at', index: 0
         });
         return;
       }
@@ -263,7 +270,14 @@
           });
           indexInFolder++;
         } else {
-          zones.push({ y: r.top + r.height / 2, edge: r.bottom, node: node, kind: 'loose' });
+          /* Loose containers have an order of their own - the one Unraid's
+           * lock-and-drag sets - so these are insertion points, not one
+           * undifferentiated "put it here". */
+          zones.push({ y: r.top,    edge: r.top,    node: node,
+                       kind: 'loose-at', index: looseIndex });
+          zones.push({ y: r.bottom, edge: r.bottom, node: node,
+                       kind: 'loose-at', index: looseIndex + 1 });
+          looseIndex++;
         }
       }
     });
@@ -353,7 +367,7 @@
 
     if (zone.kind === 'into-folder')  { commitIntoFolder(key, zone.folder, null); return; }
     if (zone.kind === 'at-index')     { commitIntoFolder(key, zone.folder, zone.index); return; }
-    if (zone.kind === 'loose')        { commitLoose(key); return; }
+    if (zone.kind === 'loose-at')     { commitLoose(key, zone.index); return; }
   }
 
   function cancel() { teardown(); }
@@ -418,16 +432,44 @@
     }).catch(function (err) { SF.jobs.toast(err.message, 'error'); });
   }
 
-  function commitLoose(name) {
+  /* Dropped among the loose containers: out of any folder, and into that
+   * position in the display order. */
+  function commitLoose(name, index) {
     var owner = SF.store.folderOf(name);
-    if (!owner) return;                              // already loose
+    var loose = SF.store.state.loose.slice();
+    var from = loose.indexOf(name);
 
-    SF.api.assign(name, null)
+    /* Dropped back exactly where it already was. */
+    if (!owner && (index === from || index === from + 1)) return;
+
+    if (from !== -1) loose.splice(from, 1);
+    loose.splice(index > from && from !== -1 ? index - 1 : index, 0, name);
+
+    var step = owner ? SF.api.assign(name, null) : Promise.resolve();
+
+    step
+      .then(function () { return SF.api.setDisplayOrder(displayOrder(loose, name)); })
       .then(function () {
-        SF.jobs.toast(name + ' removed from “' + owner.name + '”');
+        if (owner) SF.jobs.toast(name + ' removed from \u201C' + owner.name + '\u201D');
         return SF.refresh();
       })
       .catch(function (err) { SF.jobs.toast(err.message, 'error'); });
+  }
+
+  /* The full order to persist: folder members in their folders' order, then
+   * the loose ones. Unraid's prefs file is a single global list, so the
+   * whole thing has to be sent, not just the part that moved. */
+  function displayOrder(loose, moved) {
+    var names = [];
+
+    SF.store.state.folders.forEach(function (f) {
+      (f.resolved || []).forEach(function (n) {
+        if (n !== moved && names.indexOf(n) === -1) names.push(n);
+      });
+    });
+
+    loose.forEach(function (n) { if (names.indexOf(n) === -1) names.push(n); });
+    return names;
   }
 
   void U;

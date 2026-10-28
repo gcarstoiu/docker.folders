@@ -74,6 +74,7 @@ define('SF_CONFIG_DIR',          $harness.'/state/config');
 define('SF_RUN_DIR',             $harness.'/state/run');
 define('SF_DOCKER_MAN',          $harness.'/mock/plugins/dynamix.docker.manager');
 define('SF_DOCKER_MAN_AUTOSTART',$harness.'/state/unraid-autostart');
+define('SF_USER_PREFS',          $harness.'/state/userprefs.cfg');
 define('SF_CONTAINER_SOURCE',    $harness.'/mock/container_source.php');
 
 /* Icon catalogues served locally, so a test never depends on the real CDNs

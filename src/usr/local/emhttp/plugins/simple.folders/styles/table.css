@@ -171,7 +171,25 @@
 }
 
 .sf-root .sf-cell { min-width: 0; }
-.sf-root .sf-cell-tree { display: flex; align-items: center; justify-content: center; align-self: stretch; }
+/* Grip, then a fixed slot holding the chevron (folder) or the tree line
+   (container). Both are real targets sitting side by side; the grip used to
+   be absolutely positioned over this cell, which left it floating above and
+   to the left of the chevron. */
+.sf-root .sf-cell-tree {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  align-self: stretch;
+}
+.sf-root .sf-tree-slot {
+  flex: none;
+  width: 26px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .sf-root .sf-cell-menu { display: flex; justify-content: flex-end; }
 
 .sf-root .sf-row-head {
@@ -341,7 +359,6 @@
   width: 1px;
   align-self: stretch;
   background: var(--sf-border-row);
-  margin-left: 11px;
 }
 .sf-root .sf-row-ct.is-nested .sf-cell-name { padding-left: 2px; }
 
@@ -485,11 +502,8 @@
  * add noise to a table that is mostly read, not rearranged. On touch there
  * is no hover, so it is always visible there.
  * ------------------------------------------------------------------------- */
-.sf-root .sf-cell-tree { position: relative; }
-
 .sf-root .sf-grip {
-  position: absolute;
-  left: -3px;
+  flex: none;
   width: 20px; height: 30px;
   display: grid; place-items: center;
   border-radius: 5px;
@@ -519,9 +533,6 @@
   background-position: 0 1px;
   opacity: .85;
 }
-
-/* A folder row's grip shares the column with the chevron, so it sits above. */
-.sf-root .sf-row-folder .sf-grip { left: -4px; top: 4px; height: 24px; }
 
 /* No hover on a touch screen, and a finger on the row has to scroll - so on
    touch the grip is the ONLY way to start a drag, and is fully visible. */

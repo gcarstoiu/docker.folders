@@ -47,6 +47,10 @@
   </Overview>
 
   <Changes>
+### 2026.10.28f
+- Grip and fold arrow aligned in one column.
+- Dragging reorders loose containers, matching Unraid's own sort order.
+
 ### 2026.10.28e
 - Fix: 28b-28d installed but changed nothing - browsers kept the old assets.
 

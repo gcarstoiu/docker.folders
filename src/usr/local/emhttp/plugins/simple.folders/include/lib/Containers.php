@@ -62,7 +62,13 @@ if (!function_exists('sf_containers_source')) {
  * update : 0 up to date | 1 update ready | 2 rebuild ready | 3 unknown
  */
 function sf_containers(): array {
-  if (function_exists('sf_containers_source')) return sf_containers_source();
+  /* The display order is this plugin's behaviour, not a property of where
+   * the container list came from - so it is applied to both paths. Applying
+   * it only to the real one left it untested by the harness, which is how
+   * it shipped doing nothing. */
+  if (function_exists('sf_containers_source')) {
+    return sf_apply_display_order(sf_containers_source());
+  }
 
   /* Required at file scope above; see the note there for why. */
   if (!class_exists('DockerClient')) {
@@ -141,8 +147,35 @@ function sf_containers(): array {
     ];
   }
 
-  usort($out, fn($a, $b) => strnatcasecmp($a['name'], $b['name']));
-  return $out;
+  return sf_apply_display_order($out);
+}
+
+/* Order containers the way Unraid's stock Docker page does: by the position
+ * recorded in userprefs.cfg, with anything unlisted after, name-sorted. The
+ * stock table and this one then agree. */
+function sf_apply_display_order(array $containers): array {
+  $order = sf_display_order();
+
+  usort($containers, function ($a, $b) use ($order) {
+    $ia = $order[$a['name']] ?? PHP_INT_MAX;
+    $ib = $order[$b['name']] ?? PHP_INT_MAX;
+    if ($ia !== $ib) return $ia <=> $ib;
+    return strnatcasecmp($a['name'], $b['name']);
+  });
+  return $containers;
+}
+
+/* [name => position] from userprefs.cfg, whose lines are <index>="<name>". */
+function sf_display_order(): array {
+  if (!is_file(SF_USER_PREFS)) return [];
+  $prefs = @parse_ini_file(SF_USER_PREFS);
+  if (!is_array($prefs)) return [];
+
+  $order = [];
+  foreach ($prefs as $index => $name) {
+    if (is_string($name) && $name !== '') $order[$name] = (int)$index;
+  }
+  return $order;
 }
 
 /* The two port columns, matching what Unraid's own Docker page shows:

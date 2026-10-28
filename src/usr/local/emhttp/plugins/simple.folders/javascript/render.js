@@ -297,9 +297,11 @@
       disabled: !!S.state.filter,
       onClick: function () { S.toggle(folder.id); }
     }, [U.el('span.sf-chevron-mark', { 'aria-hidden': 'true' })]);
+    /* Grip first, then the chevron in a fixed slot, so the grip lines up
+     * across every row and both keep a full hit area of their own. */
     row.appendChild(U.el('div.sf-cell.sf-cell-tree', null, [
-      chevron,
-      grip('folder', folder.id, 'Drag to reorder folder ' + folder.name)
+      grip('folder', folder.id, 'Drag to reorder folder ' + folder.name),
+      U.el('div.sf-tree-slot', null, [chevron])
     ]));
 
     /* 2 - icon, name, count, and either the icon strip or the sub-line */
@@ -437,11 +439,13 @@
     });
     if (SF.dnd) SF.dnd.attach(row, 'container', ct.name);
 
-    /* 1 - tree line when nested, plus the drag grip */
+    /* 1 - the grip, then the tree line in the same slot the chevron uses on
+     * a folder row, so the indent reads straight down the column. */
     row.appendChild(U.el('div.sf-cell.sf-cell-tree', null, [
-      inFolder ? U.el('span.sf-tree', { 'aria-hidden': 'true' }) : null,
-      grip('container', ct.name,
-           'Drag to move ' + ct.name + ' between folders')
+      grip('container', ct.name, 'Drag to move or reorder ' + ct.name),
+      U.el('div.sf-tree-slot', null, [
+        inFolder ? U.el('span.sf-tree', { 'aria-hidden': 'true' }) : null
+      ])
     ]));
 
     /* 2 - start-order number, icon, name, image */

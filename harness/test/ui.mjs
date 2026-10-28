@@ -808,6 +808,70 @@ const TESTS = [
     await shot('21-port-columns');
   }),
 
+  t('dragging a loose container reorders it, like Unraid\'s own sort', async () => {
+    await fresh('&folded=all');
+
+    const looseNow = () => page.evaluate(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      return d.loose;
+    });
+
+    const before = await looseNow();
+    ok(before[0] === 'immich', `expected immich first, got ${before[0]}`);
+
+    /* Drag the first loose container below the last one. */
+    await dragGrip(`.sf-row-ct[data-container="${before[0]}"]`,
+                   `.sf-row-ct[data-container="${before[before.length - 1]}"]`, 'bottom');
+    await page.waitForFunction(() => !document.querySelector('.sf-drag-ghost'), { timeout: 3000 });
+
+    await page.waitForFunction(async (was) => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      return d.loose[0] !== was;
+    }, { timeout: 5000 }, before[0]);
+
+    const after = await looseNow();
+    ok(after.length === before.length, `lost one: ${JSON.stringify(after)}`);
+    ok(after[after.length - 1] === before[0],
+       `${before[0]} should be last, order is ${JSON.stringify(after)}`);
+
+    /* It must land in Unraid's own prefs file, and leave start order alone. */
+    const stillLoose = await page.evaluate(async () => {
+      const d = await (await fetch('/plugins/simple.folders/include/Data.php')).json();
+      return d.folders.every((f) => !f.resolved.includes('immich'));
+    });
+    ok(stillLoose, 'reordering pulled the container into a folder');
+  }),
+
+  t('the drag grip and the chevron sit level with each other', async () => {
+    await fresh('&folded=all');
+
+    const box = (sel) => page.$eval(sel, (n) => {
+      const r = n.getBoundingClientRect();
+      return { left: r.left, right: r.right, mid: r.top + r.height / 2, w: r.width, h: r.height };
+    });
+
+    const row = '.sf-row-folder[data-folder="f-media"]';
+    const grip = await box(`${row} .sf-grip`);
+    const chev = await box(`${row} .sf-chevron`);
+
+    /* Same vertical centre... */
+    ok(Math.abs(grip.mid - chev.mid) <= 1,
+       `grip centre ${grip.mid} vs chevron ${chev.mid}`);
+    /* ...side by side, not overlapping... */
+    ok(grip.right <= chev.left + 1,
+       `grip (ends ${grip.right}) overlaps the chevron (starts ${chev.left})`);
+    /* ...and both still big enough to hit. */
+    ok(grip.w >= 18 && grip.h >= 24, `grip is only ${grip.w}x${grip.h}`);
+    ok(chev.w >= 24 && chev.h >= 24, `chevron is only ${chev.w}x${chev.h}`);
+
+    /* A container row's grip lines up with the folder row's. */
+    const ctGrip = await box('.sf-row-ct .sf-grip');
+    ok(Math.abs(ctGrip.left - grip.left) <= 1,
+       `grips not in one column: folder ${grip.left}, container ${ctGrip.left}`);
+
+    await shot('22-tree-column');
+  }),
+
   t('the browser cannot drag the artwork out from under the gesture', async () => {
     await fresh();
     const bad = await page.$$eval('#sf-root img', (imgs) => imgs
