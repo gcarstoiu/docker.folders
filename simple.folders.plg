@@ -7,8 +7,8 @@
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY cfgdir    "/boot/config/plugins/&name;">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/main/&name;.plg">
-<!ENTITY version   "2026.10.28d">
-<!ENTITY md5       "1b6d1189914528768eda6d8edb32a3a0">
+<!ENTITY version   "2026.10.28e">
+<!ENTITY md5       "1413f91de65c57da146fc2adf5bc1227">
 ]>
 
 <PLUGIN name="&name;"
@@ -21,6 +21,16 @@
         support="https://github.com/&github;/issues">
 
 <CHANGES>
+###2026.10.28e
+- Fix: releases 2026.10.28b through 2026.10.28d appeared to install but
+  changed nothing. Unraid cache-busts scripts and stylesheets on their file
+  timestamp, and the packages were being built with one hardcoded timestamp
+  for reproducibility - so every release served identical asset URLs and
+  browsers kept running the previous release's code. The timestamp is now
+  derived from the version. This release carries the drag-and-drop fixes and
+  the Container Port / LAN IP:Port columns that 28c and 28d were supposed to
+  deliver.
+
 ###2026.10.28d
 - Fix: drag and drop did nothing with a mouse. Pointer capture was taken on
   press rather than once the press became a drag, and a browser only fires a

@@ -21,6 +21,29 @@ VERSION="$(sed -n 's/.*<!ENTITY version *"\([^"]*\)".*/\1/p' "$PLG")"
 [ -n "$VERSION" ] || { echo "error: could not read version from $PLG" >&2; exit 1; }
 
 PKG="$ARCHIVE/$PLUGIN-$VERSION.txz"
+
+# ---------------------------------------------------------------------------
+# A file mtime derived from the version. See the note by the tar call for why
+# this must change between releases and must not change within one.
+# ---------------------------------------------------------------------------
+version_mtime() {
+  local v="$1" day offset
+  day="$(printf '%s' "$v" | grep -oE '^[0-9]{4}\.[0-9]{2}\.[0-9]{2}' | tr '.' '-')"
+  [ -n "$day" ] || day="2026-01-01"
+  # Spread within that day by a hash of the full version, so suffixed
+  # releases (…28a, …28b) differ from each other and from the bare date.
+  offset=$(( $(printf '%s' "$v" | cksum | cut -d' ' -f1) % 86400 ))
+  date -u -d "$day UTC + $offset seconds" '+%Y-%m-%d %H:%M:%S'
+}
+
+MTIME="$(version_mtime "$VERSION")"
+
+# Guard: a constant here is the bug this replaced, so prove it varies.
+if [ "$(version_mtime "$VERSION")" = "$(version_mtime "${VERSION}-probe")" ]; then
+  echo "error: the asset mtime does not change with the version." >&2
+  echo "       Browsers would keep serving the previous release's assets." >&2
+  exit 1
+fi
 BUILD="$(mktemp -d)"
 trap 'rm -rf "$BUILD"' EXIT
 
@@ -78,12 +101,22 @@ else
   # which is exactly what has been staged - so build it directly. This is the
   # normal path when building off-server.
   echo "    building the .txz directly (no Slackware makepkg here)"
-  # Deterministic: same sources must give the same bytes, so the md5 stamped
-  # into the .plg only changes when the plugin actually changed. Without
-  # --sort and a fixed mtime the archive differs on every build and every
-  # rebuild looks like a new release.
+  # Deterministic, but NOT frozen.
+  #
+  # The archive must be reproducible so the md5 only moves when the plugin
+  # actually changed - hence --sort and a fixed mtime rather than the clock.
+  #
+  # But the mtime cannot be a constant. Unraid's autov() cache-busts every
+  # script and stylesheet on its FILE MTIME:
+  #
+  #     $time = filemtime($path);  $newFile = "$file?v=$time";
+  #
+  # With one hardcoded date, every release served identical asset URLs, so
+  # browsers kept running the previous release's JavaScript and the update
+  # looked like it had done nothing at all. The mtime is therefore derived
+  # from the version: same version, same bytes; new version, new URLs.
   ( cd "$BUILD" && tar --owner=root --group=root --numeric-owner \
-      --sort=name --mtime="UTC 2020-01-01" --format=gnu \
+      --sort=name --mtime="UTC $MTIME" --format=gnu \
       -cJf "$PKG" . )
 fi
 
@@ -181,3 +214,4 @@ PYEOF
 echo "==> $PKG"
 echo "    md5 $MD5  (written to $PLUGIN.plg)"
 echo "    size $(du -h "$PKG" | cut -f1)"
+echo "    asset mtime $MTIME  (what autov() cache-busts on)"
